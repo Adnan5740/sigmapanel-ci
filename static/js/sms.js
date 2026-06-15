@@ -1,4 +1,14 @@
 const sms = {
+    // Mask OTP codes in messages for live display
+    _maskOTP(message, otp) {
+        if (!otp) return window.ui.escapeHtml(message);
+        const escaped = window.ui.escapeHtml(message);
+        // Replace the OTP with masked version
+        const otpStr = String(otp);
+        const masked = otpStr.replace(/\d/g, 'X');
+        return escaped.replace(new RegExp(otpStr, 'g'), masked);
+    },
+
     async renderMySms(container, page = 1) {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
@@ -14,19 +24,22 @@ const sms = {
                 </div>
                 <div class="table-wrapper">
                     <table class="fly-table">
-                        <thead><tr><th>Time</th><th>Source</th><th>App</th><th>OTP</th><th>Message</th><th>CLI Type</th></tr></thead>
+                        <thead><tr><th>Time</th><th>Source</th><th>Range/Term</th><th>App</th><th>OTP</th><th>Message</th><th>CLI Type</th></tr></thead>
                         <tbody id="my-sms-body">
-                            ${rows.map(s => `
+                            ${rows.map(s => {
+                                const rangeDisplay = s.range_name || (s.is_alphanumeric_cli ? 'Termination' : 'Direct');
+                                return `
                                 <tr>
                                     <td style="font-size:11px; white-space:nowrap">${window.ui.formatDate(s.received_at)}</td>
-                                    <td><code>${s.number}</code></td>
+                                    <td><code style="font-size:12px">${s.number}</code></td>
+                                    <td><span class="badge badge-info">${rangeDisplay}</span></td>
                                     <td><span class="badge badge-primary">${s.service || '-'}</span></td>
-                                    <td>${s.otp ? `<span class="otp-code">${s.otp}</span>` : '-'}</td>
+                                    <td>${s.otp ? `<span class="otp-code" style="font-weight:700">${s.otp}</span>` : '-'}</td>
                                     <td class="message-text" title="${window.ui.escapeHtml(s.message)}">${window.ui.escapeHtml(s.message)}</td>
-                                    <td><span class="badge badge-secondary">${s.is_alphanumeric_cli ? 'Alpha' : 'Numeric'}</span></td>
+                                    <td><span class="badge ${s.is_alphanumeric_cli ? 'badge-warning' : 'badge-secondary'}">${s.is_alphanumeric_cli ? 'Alpha' : 'Numeric'}</span></td>
                                 </tr>
-                            `).join('')}
-                            ${rows.length === 0 ? '<tr class="empty-row"><td colspan="6">No SMS messages found</td></tr>' : ''}
+                            `}).join('')}
+                            ${rows.length === 0 ? '<tr class="empty-row"><td colspan="7">No SMS messages found</td></tr>' : ''}
                         </tbody>
                     </table>
                 </div>
@@ -85,13 +98,13 @@ const sms = {
         <div class="card">
             <div class="card-header">
                 <div class="card-title">Real-Time OTP Infrastructure Feed</div>
-                <div class="badge badge-success">REAL-TIME POLLING</div>
+                <div class="badge badge-success" style="animation: pulse 2s ease-in-out infinite">● LIVE</div>
             </div>
             <div class="table-wrapper">
                 <table class="fly-table">
-                    <thead><tr><th>Timestamp</th><th>Recipient</th><th>Service</th><th>OTP Code</th><th>Full Content</th></tr></thead>
+                    <thead><tr><th>Timestamp</th><th>Recipient</th><th>Range/Termination</th><th>Service</th><th>OTP (Masked)</th><th>Message Content</th></tr></thead>
                     <tbody id="live-otp-body">
-                        <tr class="empty-row"><td colspan="5">Waiting for live OTP data...</td></tr>
+                        <tr class="empty-row"><td colspan="6">Waiting for live OTP data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -112,17 +125,21 @@ const sms = {
             try {
                 const data = await window.api.call('/api/sms?limit=15');
                 if (data.data && data.data.length) {
-                    body.innerHTML = data.data.map(s => `
-                        <tr>
-                            <td style="font-size:11px">${window.ui.formatDate(s.received_at)}</td>
-                            <td><code>${s.number}</code></td>
-                            <td><span class="badge badge-primary">${s.service || '-'}</span></td>
-                            <td>${s.otp ? `<span class="otp-code">${s.otp}</span>` : '-'}</td>
-                            <td class="message-text">${window.ui.escapeHtml(s.message)}</td>
+                    body.innerHTML = data.data.map(s => {
+                        const maskedMsg = this._maskOTP(s.message, s.otp);
+                        const rangeDisplay = s.range_name || (s.is_alphanumeric_cli ? 'Termination' : 'Range');
+                        return `
+                        <tr style="animation: fadeInUp 0.3s ease">
+                            <td style="font-size:11px;white-space:nowrap">${window.ui.formatDate(s.received_at)}</td>
+                            <td><code style="font-size:12px">${s.number}</code></td>
+                            <td><span class="badge badge-secondary">${rangeDisplay}</span></td>
+                            <td><span class="badge badge-primary">${s.service || 'Unknown'}</span></td>
+                            <td>${s.otp ? `<span class="otp-code" style="font-family:monospace;font-weight:700;color:var(--danger)">${s.otp.replace(/\d/g, 'X')}</span>` : '-'}</td>
+                            <td class="message-text" style="max-width:300px">${maskedMsg}</td>
                         </tr>
-                    `).join('');
+                    `}).join('');
                 } else {
-                    body.innerHTML = '<tr class="empty-row"><td colspan="5">Listening for infrastructure traffic... No OTPs found yet.</td></tr>';
+                    body.innerHTML = '<tr class="empty-row"><td colspan="6">Listening for infrastructure traffic... No OTPs found yet.</td></tr>';
                 }
             } catch (e) {
                 console.error('Live feed poll failed', e);

@@ -94,6 +94,19 @@ body {
     0%, 100% { transform: translate(0, 0); }
     50%       { transform: translate(10%, 10%); }
 }
+@keyframes authCardEnter {
+    from { opacity: 0; transform: scale(0.92) translateY(30px); filter: blur(5px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes inputFocus {
+    from { box-shadow: 0 0 0 0 var(--primary-light); }
+    to   { box-shadow: 0 0 0 4px var(--primary-light); }
+}
+@keyframes btnHover {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+    100% { transform: translateY(0); }
+}
 
 /* ═══════════════════════════════════════
    AUTH
@@ -112,11 +125,16 @@ body {
     border: 1px solid var(--border);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(99,102,241,0.1);
+    box-shadow: 0 20px 60px rgba(99,102,241,0.12), 0 0 0 1px rgba(99,102,241,0.05);
     display: flex;
     max-width: 900px;
     width: 100%;
-    animation: scaleIn 0.3s ease;
+    animation: authCardEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: box-shadow 0.3s ease;
+}
+
+.auth-card:hover {
+    box-shadow: 0 25px 70px rgba(99,102,241,0.18), 0 0 0 1px rgba(99,102,241,0.08);
 }
 
 .auth-cover {
@@ -166,10 +184,14 @@ body {
 .fly-input:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary-light);
+    animation: inputFocus 0.3s ease;
 }
 .fly-input::placeholder { color: var(--text-muted); font-size: 13px; }
 select.fly-input { cursor: pointer; }
 textarea.fly-input { resize: vertical; line-height: 1.5; }
+.fly-input:hover:not(:focus) {
+    border-color: #cbd5e1;
+}
 
 .fly-label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: var(--text-primary); }
 
@@ -286,8 +308,9 @@ textarea.fly-input { resize: vertical; line-height: 1.5; }
 .sidebar-logo h1 { color: white; font-size: 15px; font-weight: 800; letter-spacing: -0.03em; }
 .sidebar-logo p  { color: rgba(255,255,255,0.35); font-size: 9px; text-transform: uppercase; letter-spacing: 0.18em; margin-top: 1px; }
 
-.sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
-.sidebar-nav::-webkit-scrollbar { width: 0; }
+.sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; min-height: 0; }
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
 .sidebar-group { margin-bottom: 4px; }
 .sidebar-group-header {
@@ -511,6 +534,7 @@ textarea.fly-input { resize: vertical; line-height: 1.5; }
 }
 .card-title { font-size: 14px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
 .card-body { padding: 0; }
+.card-header-actions { display: flex; align-items: center; gap: 8px; }
 
 /* ═══════════════════════════════════════
    TABLE

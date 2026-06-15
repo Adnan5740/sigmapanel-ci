@@ -38,21 +38,40 @@ const ranges = {
 
     showAdd() {
         window.ui.showModal('Create New Range', `
-            <div class="form-group"><label>Range Name *</label><input type="text" id="rn-name" class="fly-input" placeholder="e.g. US Numbers"></div>
+            <div class="form-group"><label class="fly-label">Range Name *</label><input type="text" id="rn-name" class="fly-input" placeholder="e.g. US Numbers"></div>
             <div class="form-row">
-                <div class="form-group"><label>Number Prefix</label><input type="text" id="rn-pre" class="fly-input" placeholder="+1"></div>
-                <div class="form-group"><label>Rate ($/SMS)</label><input type="number" id="rn-rate" class="fly-input" value="0.05" step="0.01" min="0"></div>
+                <div class="form-group"><label class="fly-label">Number Prefix</label><input type="text" id="rn-pre" class="fly-input" placeholder="+1"></div>
+                <div class="form-group"><label class="fly-label">Rate ($/SMS)</label><input type="number" id="rn-rate" class="fly-input" value="0.05" step="0.01" min="0"></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>Country Name</label><input type="text" id="rn-cn" class="fly-input" placeholder="United States"></div>
-                <div class="form-group"><label>Profit Margin (%)</label><input type="number" id="rn-pm" class="fly-input" value="50" min="0"></div>
+                <div class="form-group"><label class="fly-label">Country Name</label><input type="text" id="rn-cn" class="fly-input" placeholder="United States"></div>
+                <div class="form-group"><label class="fly-label">Profit Margin (%)</label><input type="number" id="rn-pm" class="fly-input" value="50" min="0"></div>
             </div>
-        `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" onclick="window.ranges.save()">Create Range</button>');
+            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+            <div style="padding:14px;background:rgba(99,102,241,0.08);border-radius:8px;margin-bottom:16px">
+                <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px">📋 Optional: Add Numbers Now</div>
+                <div style="font-size:12px;color:var(--text-secondary)">You can add test numbers and assignable numbers after creating the range, or upload them now.</div>
+            </div>
+            <div class="form-group">
+                <label class="fly-label">Test Numbers (optional, one per line)</label>
+                <textarea id="rn-test-nums" class="fly-input" rows="4" placeholder="+12025550100\n+12025550101\nThese numbers will be marked as TEST" style="font-family:monospace;font-size:12px"></textarea>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">💡 Test numbers will appear in the Test Panel</div>
+            </div>
+            <div class="form-group">
+                <label class="fly-label">Assignable Numbers (optional, one per line)</label>
+                <textarea id="rn-assign-nums" class="fly-input" rows="6" placeholder="+12025550200\n+12025550201\nThese numbers can be assigned to users" style="font-family:monospace;font-size:12px"></textarea>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">💡 These numbers will be available for allocation to resellers</div>
+            </div>
+        `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" onclick="window.ranges.save()">Create Range</button>', 'large');
     },
 
     async save() {
         const name = document.getElementById('rn-name').value.trim();
         if (!name) { window.ui.showToast('Range name is required', 'error'); return; }
+        
+        const testNumsText = document.getElementById('rn-test-nums').value.trim();
+        const assignNumsText = document.getElementById('rn-assign-nums').value.trim();
+        
         const payload = {
             name,
             numberPrefix: document.getElementById('rn-pre').value.trim(),
@@ -61,7 +80,41 @@ const ranges = {
             profitMargin: parseFloat(document.getElementById('rn-pm').value) || 50
         };
         try {
-            await window.api.call('/api/ranges', { method: 'POST', body: JSON.stringify(payload) });
+            const result = await window.api.call('/api/ranges', { method: 'POST', body: JSON.stringify(payload) });
+            const rangeId = result.id || result.range_id;
+            
+            // Add test numbers if provided
+            if (testNumsText) {
+                const testNumbers = testNumsText.split('\n').map(n => n.trim()).filter(n => n);
+                if (testNumbers.length > 0) {
+                    try {
+                        await window.api.call(`/api/ranges/${rangeId}/test-numbers`, { 
+                            method: 'POST', 
+                            body: JSON.stringify({ numbers: testNumbers }) 
+                        });
+                        window.ui.showToast(`Added ${testNumbers.length} test number(s)`, 'success');
+                    } catch (e) {
+                        console.error('Failed to add test numbers:', e);
+                    }
+                }
+            }
+            
+            // Add assignable numbers if provided
+            if (assignNumsText) {
+                const assignNumbers = assignNumsText.split('\n').map(n => n.trim()).filter(n => n);
+                if (assignNumbers.length > 0) {
+                    try {
+                        await window.api.call(`/api/ranges/${rangeId}/numbers`, { 
+                            method: 'POST', 
+                            body: JSON.stringify({ numbers: assignNumbers }) 
+                        });
+                        window.ui.showToast(`Added ${assignNumbers.length} assignable number(s)`, 'success');
+                    } catch (e) {
+                        console.error('Failed to add assignable numbers:', e);
+                    }
+                }
+            }
+            
             window.api.invalidate('/api/ranges');
             window.ui.showToast('Range created successfully', 'success');
             window.ui.closeModal();

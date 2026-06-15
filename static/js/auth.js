@@ -37,43 +37,46 @@ const auth = {
             <div class="auth-card">
                 <div class="auth-cover">
                     <div class="auth-cover-content">
-                        <div style="font-size:52px;margin-bottom:16px">📡</div>
-                        <h1 style="color:white;font-size:26px;font-weight:900;letter-spacing:-0.03em;margin-bottom:10px">Sigma SMS</h1>
-                        <p style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:500">Trusted A2P & P2P IPRN SMS Partner</p>
+                        <div style="font-size:60px;margin-bottom:18px;animation: pulse 2s ease-in-out infinite">📡</div>
+                        <h1 style="color:white;font-size:28px;font-weight:900;letter-spacing:-0.03em;margin-bottom:10px;text-shadow:0 2px 8px rgba(0,0,0,0.15)">Sigma SMS</h1>
+                        <p style="color:rgba(255,255,255,0.9);font-size:14px;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.1)">Trusted A2P & P2P IPRN SMS Partner</p>
                     </div>
                 </div>
                 <div class="auth-form">
                     <div class="auth-form-inner">
-                        <h2>Welcome back</h2>
-                        <p>Sign in to your account</p>
-                        <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
+                        <h2 style="animation: fadeInUp 0.3s ease">Welcome back</h2>
+                        <p style="animation: fadeInUp 0.35s ease">Sign in to your account</p>
+                        <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;animation: fadeInUp 0.3s ease"></div>
                         <form id="login-form">
-                            <div class="form-group">
+                            <div class="form-group" style="animation: fadeInUp 0.4s ease">
                                 <label class="fly-label">Username</label>
                                 <div class="input-wrapper">
-                                    <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)">${ICONS.user}</span>
-                                    <input type="text" id="l-user" class="fly-input" style="padding-left:38px" placeholder="Enter username" required autocomplete="username">
+                                    <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);transition:color 0.2s ease">${ICONS.user}</span>
+                                    <input type="text" id="l-user" class="fly-input" style="padding-left:38px" placeholder="Enter username" required autocomplete="username" onfocus="this.previousElementSibling.style.color='var(--primary)';" onblur="this.previousElementSibling.style.color='var(--text-muted)';">
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" style="animation: fadeInUp 0.45s ease">
                                 <label class="fly-label">Password</label>
                                 <div class="input-wrapper">
-                                    <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)">${ICONS.lock}</span>
-                                    <input type="password" id="l-pass" class="fly-input" style="padding-left:38px" placeholder="Enter password" required autocomplete="current-password">
+                                    <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);transition:color 0.2s ease">${ICONS.lock}</span>
+                                    <input type="password" id="l-pass" class="fly-input" style="padding-left:38px" placeholder="Enter password" required autocomplete="current-password" onfocus="this.previousElementSibling.style.color='var(--primary)';" onblur="this.previousElementSibling.style.color='var(--text-muted)';">
                                     <button type="button" class="password-toggle" onclick="window.auth._togglePwd('l-pass',this)">${ICONS.eyeOff}</button>
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" style="animation: fadeInUp 0.5s ease">
                                 <label class="fly-label">Security Check: <strong id="captcha-q" style="color:var(--primary)">${captchaQ}</strong> = ?</label>
                                 <input type="number" id="l-captcha" class="fly-input" placeholder="Answer" required>
                             </div>
-                            <button type="submit" id="login-btn" class="fly-btn" style="width:100%;margin-top:4px">
-                                ${ICONS.send}&nbsp; Sign In
+                            <button type="submit" id="login-btn" class="fly-btn" style="width:100%;margin-top:8px;animation: fadeInUp 0.55s ease;position:relative">
+                                <span id="login-btn-content">${ICONS.send}&nbsp; Sign In</span>
+                                <span id="login-btn-loading" style="display:none">
+                                    <div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>
+                                </span>
                             </button>
                         </form>
-                        <div style="margin-top:20px;text-align:center;font-size:13px;color:var(--text-secondary)">
+                        <div style="margin-top:24px;text-align:center;font-size:13px;color:var(--text-secondary);animation: fadeInUp 0.6s ease">
                             Don't have an account?
-                            <a href="#" id="to-signup" style="color:var(--primary);font-weight:600;text-decoration:none;margin-left:4px">Create Account</a>
+                            <a href="#" id="to-signup" style="color:var(--primary);font-weight:600;text-decoration:none;margin-left:4px;transition:all 0.2s ease" onmouseover="this.style.color='var(--primary-dark)';this.style.transform='translateX(2px)'" onmouseout="this.style.color='var(--primary)';this.style.transform='translateX(0)'">Create Account →</a>
                         </div>
                     </div>
                 </div>
@@ -93,7 +96,11 @@ const auth = {
                 return;
             }
             const btn = document.getElementById('login-btn');
-            btn.disabled = true; btn.textContent = 'Signing in…';
+            const btnContent = document.getElementById('login-btn-content');
+            const btnLoading = document.getElementById('login-btn-loading');
+            btn.disabled = true;
+            btnContent.style.display = 'none';
+            btnLoading.style.display = 'inline-block';
             try {
                 await this.login(document.getElementById('l-user').value.trim(), document.getElementById('l-pass').value);
                 window.renderDashboardShell();
@@ -102,7 +109,9 @@ const auth = {
                 const q = this._newCaptcha();
                 document.getElementById('captcha-q').textContent = q;
                 document.getElementById('l-captcha').value = '';
-                btn.disabled = false; btn.innerHTML = ICONS.send + '&nbsp; Sign In';
+                btn.disabled = false;
+                btnContent.style.display = 'inline';
+                btnLoading.style.display = 'none';
             }
         };
 
@@ -121,13 +130,13 @@ const auth = {
     renderSignup() {
         document.getElementById('app').innerHTML = `
         <div class="auth-page">
-            <div class="auth-card" style="max-width:960px;min-height:600px">
-                <div class="auth-cover" style="width:280px;flex-shrink:0;min-height:600px">
+            <div class="auth-card" style="max-width:1000px;min-height:620px">
+                <div class="auth-cover" style="width:320px;flex-shrink:0;min-height:620px">
                     <div class="auth-cover-content">
-                        <div style="font-size:44px;margin-bottom:12px">📡</div>
-                        <h1 style="color:white;font-size:20px;font-weight:900;letter-spacing:-0.02em;margin-bottom:8px">Sigma SMS</h1>
-                        <p style="color:rgba(255,255,255,0.75);font-size:12px;margin-bottom:28px">Trusted A2P & P2P IPRN SMS Partner</p>
-                        <div style="display:flex;flex-direction:column;gap:12px">
+                        <div style="font-size:52px;margin-bottom:14px;animation: pulse 2s ease-in-out infinite">📡</div>
+                        <h1 style="color:white;font-size:22px;font-weight:900;letter-spacing:-0.02em;margin-bottom:10px">Sigma SMS</h1>
+                        <p style="color:rgba(255,255,255,0.8);font-size:13px;margin-bottom:32px;line-height:1.5">Trusted A2P & P2P IPRN SMS Partner</p>
+                        <div style="display:flex;flex-direction:column;gap:14px">
                             <div id="step-ind-1" class="signup-step-ind signup-step-ind--active">
                                 <span class="step-num">1</span>
                                 <span>Your Information</span>
@@ -139,13 +148,13 @@ const auth = {
                         </div>
                     </div>
                 </div>
-                <div class="auth-form" style="align-items:flex-start;padding:2rem 2.5rem;overflow-y:auto;max-height:100vh">
-                    <div style="width:100%;max-width:460px">
-                        <div id="signup-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
+                <div class="auth-form" style="flex:1;align-items:flex-start;padding:2.5rem 2.5rem;overflow-y:auto;max-height:620px">
+                    <div style="width:100%;max-width:520px;margin:0 auto">
+                        <div id="signup-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;animation: fadeInUp 0.3s ease"></div>
                         <div id="signup-step-content"></div>
-                        <div style="margin-top:16px;text-align:center;font-size:13px;color:var(--text-secondary)">
+                        <div style="margin-top:20px;text-align:center;font-size:13px;color:var(--text-secondary)">
                             Already have an account?
-                            <a href="#" id="to-login" style="color:var(--primary);font-weight:600;text-decoration:none;margin-left:4px">Sign In</a>
+                            <a href="#" id="to-login" style="color:var(--primary);font-weight:600;text-decoration:none;margin-left:4px;transition:color 0.2s ease" onmouseover="this.style.color='var(--primary-dark)'" onmouseout="this.style.color='var(--primary)'">Sign In</a>
                         </div>
                     </div>
                 </div>

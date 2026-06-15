@@ -92,6 +92,22 @@ const NAV_STRUCTURE = [
         ]
     },
     {
+        group: 'COMMUNICATION',
+        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
+        items: [
+            { key: 'news', label: 'News & Announcements', icon: ICONS.bell, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'support', label: 'Support Tickets', icon: ICONS.help, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+        ]
+    },
+    {
+        group: 'ACCOUNT',
+        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
+        items: [
+            { key: 'my-profile', label: 'My Profile', icon: ICONS.user, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-payouts', label: 'My Payouts', icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+        ]
+    },
+    {
         group: 'SETTINGS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
@@ -159,6 +175,14 @@ function init() {
     window.router.addRoute('security-settings', (c) => window.settings.renderSecurity(c));
     window.router.addRoute('smpp-settings', (c) => window.settings.renderSmppSettings(c));
     window.router.addRoute('backup-restore', (c) => window.settings.renderBackupRestore(c));
+
+    // Account
+    window.router.addRoute('my-profile', (c) => window.profile.renderProfile(c));
+    window.router.addRoute('my-payouts', (c) => window.payouts.renderMyPayouts(c));
+
+    // Communication
+    window.router.addRoute('news', (c) => window.notifications.renderNews(c));
+    window.router.addRoute('support', (c) => window.notifications.renderSupport(c));
 
     // Test Panel
     window.router.addRoute('test-numbers', (c) => window.numbers.renderTestNumbers(c));
