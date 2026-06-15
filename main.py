@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from security_middleware import FirewallMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from contextlib import asynccontextmanager
@@ -57,6 +58,7 @@ app.add_middleware(
 )
 
 app.add_middleware(FirewallMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Health Endpoints
 @app.get("/health")
