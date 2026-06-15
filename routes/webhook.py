@@ -68,8 +68,11 @@ async def webhook_receive(request: Request):
         if not payload:
              return JSONResponse(status_code=400, content={"error": "Empty payload"})
 
+        # The authenticated user identifies which system or user is delivering the SMS
         result = process_incoming_sms(payload, auth_user=user)
-        return JSONResponse(content={"status": "ok", "result": "processed"})
+
+        # Carrier requirements: Return exact JSON format
+        return JSONResponse(content={"status": "ok", "message": "processed"})
 
     except HTTPException as e:
         return JSONResponse(status_code=e.status_code, content={"error": e.detail})

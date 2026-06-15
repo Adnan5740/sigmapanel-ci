@@ -72,7 +72,7 @@ async def process_dlr_queue():
                 with get_db() as conn:
                     from auth import generate_id
                     conn.execute(
-                        """INSERT INTO firewall_events (id, event_type, severity, detail)
+                        """INSERT INTO security_events (id, event_type, severity, detail)
                            VALUES (?, 'DLR_RECEIVED', 'info', ?)""",
                         (generate_id(), f"MsgID: {msg_id}, Status: {status}")
                     )

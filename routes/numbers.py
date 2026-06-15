@@ -31,6 +31,7 @@ async def list_numbers(
     rangeName: str = Query(None),
     assignedTo: str = Query(None),
     available: str = Query(None),
+    is_test: Optional[int] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=500),
     p=Depends(get_current_user)
@@ -45,6 +46,7 @@ async def list_numbers(
         params.extend([p["username"], p["id"]])
 
     if status: conds.append("status = ?"); params.append(status)
+    if is_test is not None: conds.append("is_test = ?"); params.append(is_test)
     if search: conds.append("(number LIKE ? OR country_name LIKE ?)"); params.extend([f"%{search}%"] * 2)
 
     where = " AND ".join(conds) if conds else "1=1"
@@ -85,6 +87,12 @@ async def revoke_number(item_id: str, p=Depends(get_current_user)):
     with get_db() as conn:
         conn.execute("UPDATE numbers SET assigned_to=NULL, assigned_at=NULL WHERE id=?", (item_id,))
     return {"message": "Revoked"}
+
+@router.post("/{item_id}/set-test")
+async def set_test_number(item_id: str, is_test: int = Query(1), p=Depends(require_role(["admin", "manager"]))):
+    with get_db() as conn:
+        conn.execute("UPDATE numbers SET is_test = ? WHERE id = ?", (is_test, item_id))
+    return {"message": "Updated"}
 
 @router.delete("/{item_id}")
 async def delete_number(item_id: str, p=Depends(require_role(["admin"]))):

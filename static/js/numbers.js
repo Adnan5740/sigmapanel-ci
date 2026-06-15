@@ -13,8 +13,16 @@ const numbers = {
                 </div>
                 <div class="table-wrapper">
                     <table class="fly-table">
-                        <thead><tr><th>Number</th><th>Range</th><th>App</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody>${res.data.map(n => `<tr><td><code>${n.number}</code></td><td>${n.range_name}</td><td>${n.service || '-'}</td><td><span class="badge ${n.status === 'active' ? 'badge-success' : 'badge-danger'}">${n.status}</span></td><td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td></tr>`).join('') || '<tr><td colspan="5">No numbers assigned</td></tr>'}</tbody>
+                        <thead><tr><th>Number</th><th>Range</th><th>App</th><th>Test</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>${res.data.map(n => `
+                            <tr>
+                                <td><code>${n.number}</code></td>
+                                <td>${n.range_name}</td>
+                                <td>${n.service || '-'}</td>
+                                <td><input type="checkbox" ${n.is_test ? 'checked' : ''} onchange="window.numbers.toggleTest('${n.id}', this.checked)"></td>
+                                <td><span class="badge ${n.status === 'active' ? 'badge-success' : 'badge-danger'}">${n.status}</span></td>
+                                <td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td>
+                            </tr>`).join('') || '<tr><td colspan="6">No numbers assigned</td></tr>'}</tbody>
                     </table>
                 </div>
             </div>`;
@@ -26,6 +34,13 @@ const numbers = {
             try { await window.api.call(`/api/numbers/${id}/revoke`, { method: 'POST' }); window.ui.showToast('Number revoked', 'success'); this.renderMyNumbers(document.getElementById('page-content')); }
             catch (e) { window.ui.showToast(e.message, 'error'); }
         }
+    },
+
+    async toggleTest(id, isTest) {
+        try {
+            await window.api.call(`/api/numbers/${id}/set-test?is_test=${isTest ? 1 : 0}`, { method: 'POST' });
+            window.ui.showToast('Updated test status', 'success');
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
     },
 
     async export(format) {

@@ -51,5 +51,5 @@ async def delivery_logs(p=Depends(require_role(["admin", "manager"]))):
 @router.get("/failed")
 async def failed_sms(p=Depends(require_role(["admin", "manager"]))):
     with get_db() as conn:
-        rows = conn.execute("SELECT * FROM firewall_events WHERE event_type='SMS_FAILED' ORDER BY created_at DESC LIMIT 100").fetchall()
+        rows = conn.execute("SELECT * FROM security_events WHERE event_type='SMS_FAILED' ORDER BY created_at DESC LIMIT 100").fetchall()
     return {"data": [dict(r) for r in rows]}

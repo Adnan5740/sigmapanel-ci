@@ -38,6 +38,9 @@ def _migrate(conn):
     ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
     if "failed_login_attempts" not in ucols: conn.execute("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER DEFAULT 0")
     if "locked_until" not in ucols: conn.execute("ALTER TABLE users ADD COLUMN locked_until TEXT")
+    # Numbers table migrations
+    ncols = {r[1] for r in conn.execute("PRAGMA table_info(numbers)")}
+    if "is_test" not in ncols: conn.execute("ALTER TABLE numbers ADD COLUMN is_test INTEGER DEFAULT 0")
     # Registration_requests table migrations for extra fields
     rcols = {r[1] for r in conn.execute("PRAGMA table_info(registration_requests)")}
     if "password" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN password TEXT")
@@ -113,6 +116,7 @@ CREATE TABLE IF NOT EXISTS numbers (
     profit_margin REAL DEFAULT 50,
     total_sms INTEGER DEFAULT 0,
     last_sms_at TEXT,
+    is_test INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -189,6 +193,29 @@ CREATE TABLE IF NOT EXISTS smpp_server_logs (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id TEXT PRIMARY KEY,
+    actor_id TEXT,
+    actor_username TEXT,
+    action TEXT,
+    entity_type TEXT,
+    entity_id TEXT,
+    detail TEXT,
+    ip_address TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS allocations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    range_id TEXT,
+    range_name TEXT,
+    quantity INTEGER,
+    status TEXT DEFAULT 'active',
+    expires_at TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS smpp_failed_packets (
     id TEXT PRIMARY KEY,
     ip_address TEXT,
@@ -232,6 +259,13 @@ CREATE TABLE IF NOT EXISTS security_events (
     severity TEXT,
     action_taken TEXT,
     detail TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS blacklisted_apps (
+    id TEXT PRIMARY KEY,
+    app_name TEXT NOT NULL,
+    pattern TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
