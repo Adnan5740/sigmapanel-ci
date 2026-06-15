@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger("sms_processor")
 
-def process_incoming_sms(payload: dict):
+def process_incoming_sms(payload: dict, auth_user: dict = None):
     """Core logic to process incoming SMS and save to DB with limit enforcement"""
     number = payload.get('to') or payload.get('number')
     sender = payload.get('from') or payload.get('sender') or ""
@@ -31,6 +31,12 @@ def process_incoming_sms(payload: dict):
         # 1. Resolve Number & Range
         num_row = conn.execute("SELECT * FROM numbers WHERE number = ?", (normalized_number,)).fetchone()
         
+        # Security Check: If authenticated user is not admin/manager, verify ownership of the number
+        if auth_user and auth_user['role'] not in ['admin', 'manager']:
+            if num_row and num_row['assigned_to'] and num_row['assigned_to'] != auth_user['username']:
+                # The number is assigned to someone else
+                return {'success': False, 'error': 'Unauthorized for this number'}
+
         range_id = num_row['range_id'] if num_row else None
         range_name = num_row['range_name'] if num_row else None
         assigned_to = num_row['assigned_to'] if num_row else None
