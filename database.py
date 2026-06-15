@@ -27,12 +27,24 @@ def init_db():
         _seed(conn)
 
 def _migrate(conn):
-    # Ensure columns exist in case table was created with older schema
+    # Ensure columns exist in case tables were created with older schema
+    # Ranges table migrations
     cols = {r[1] for r in conn.execute("PRAGMA table_info(ranges)")}
     if "daily_otp_limit" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN daily_otp_limit INTEGER DEFAULT 0")
     if "otp_limit_enabled" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN otp_limit_enabled INTEGER DEFAULT 0")
     if "otp_count_today" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN otp_count_today INTEGER DEFAULT 0")
     if "otp_count_date" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN otp_count_date TEXT")
+    # Users table migrations for login lockout
+    ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
+    if "failed_login_attempts" not in ucols: conn.execute("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER DEFAULT 0")
+    if "locked_until" not in ucols: conn.execute("ALTER TABLE users ADD COLUMN locked_until TEXT")
+    # Registration_requests table migrations for extra fields
+    rcols = {r[1] for r in conn.execute("PRAGMA table_info(registration_requests)")}
+    if "password" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN password TEXT")
+    if "full_name" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN full_name TEXT")
+    if "phone" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN phone TEXT")
+    if "country" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN country TEXT")
+    if "profession" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN profession TEXT")
 
 def _seed(conn):
     from auth import hash_password
@@ -67,7 +79,9 @@ CREATE TABLE IF NOT EXISTS users (
     api_token TEXT UNIQUE,
     last_login TEXT,
     created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    updated_at TEXT DEFAULT (datetime('now')),
+    failed_login_attempts INTEGER DEFAULT 0,
+    locked_until TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ranges (
