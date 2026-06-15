@@ -38,8 +38,8 @@ const auth = {
                 <div class="auth-cover">
                     <div class="auth-cover-content">
                         <div style="font-size:52px;margin-bottom:16px">📡</div>
-                        <h1 style="color:white;font-size:26px;font-weight:900;letter-spacing:-0.03em;margin-bottom:8px">Sigma SMS</h1>
-                        <p style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.7">Your trusted A2P & P2P<br>IPRN number provider</p>
+                        <h1 style="color:white;font-size:26px;font-weight:900;letter-spacing:-0.03em;margin-bottom:10px">Sigma SMS</h1>
+                        <p style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:500">Trusted A2P & P2P IPRN SMS Partner</p>
                     </div>
                 </div>
                 <div class="auth-form">
@@ -121,12 +121,12 @@ const auth = {
     renderSignup() {
         document.getElementById('app').innerHTML = `
         <div class="auth-page">
-            <div class="auth-card" style="max-width:960px">
-                <div class="auth-cover" style="width:38%">
+            <div class="auth-card" style="max-width:960px;min-height:600px">
+                <div class="auth-cover" style="width:280px;flex-shrink:0;min-height:600px">
                     <div class="auth-cover-content">
-                        <div style="font-size:48px;margin-bottom:16px">📡</div>
-                        <h1 style="color:white;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin-bottom:8px">Sigma SMS</h1>
-                        <p style="color:rgba(255,255,255,0.6);font-size:12px;margin-bottom:28px">Join our platform in 2 easy steps</p>
+                        <div style="font-size:44px;margin-bottom:12px">📡</div>
+                        <h1 style="color:white;font-size:20px;font-weight:900;letter-spacing:-0.02em;margin-bottom:8px">Sigma SMS</h1>
+                        <p style="color:rgba(255,255,255,0.75);font-size:12px;margin-bottom:28px">Trusted A2P & P2P IPRN SMS Partner</p>
                         <div style="display:flex;flex-direction:column;gap:12px">
                             <div id="step-ind-1" class="signup-step-ind signup-step-ind--active">
                                 <span class="step-num">1</span>
