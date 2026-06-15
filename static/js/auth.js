@@ -39,13 +39,7 @@ const auth = {
                     <div class="auth-cover-content">
                         <div style="font-size:52px;margin-bottom:16px">📡</div>
                         <h1 style="color:white;font-size:26px;font-weight:900;letter-spacing:-0.03em;margin-bottom:8px">Sigma SMS</h1>
-                        <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.6">Premium SMS OTP<br>Infrastructure Platform</p>
-                        <div style="margin-top:32px;display:flex;flex-direction:column;gap:10px">
-                            ${['Real-time OTP delivery','Global number ranges','Full API access','Multi-role management'].map(f=>`
-                            <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px">
-                                <span style="color:#a78bfa;flex-shrink:0">${ICONS.check}</span>${f}
-                            </div>`).join('')}
-                        </div>
+                        <p style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.7">Your trusted A2P & P2P<br>IPRN number provider</p>
                     </div>
                 </div>
                 <div class="auth-form">
