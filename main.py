@@ -27,6 +27,7 @@ from routes.api_management import router as api_management_router
 from routes.notifications import router as notifications_router
 from routes.smpp_interconnect import router as smpp_interconnect_router
 from routes.security import router as security_router
+from routes.profile_notifications import router as profile_notifications_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("main")
@@ -93,6 +94,7 @@ app.include_router(api_management_router)
 app.include_router(notifications_router)
 app.include_router(smpp_interconnect_router)
 app.include_router(security_router)
+app.include_router(profile_notifications_router)
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 

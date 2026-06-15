@@ -1,0 +1,179 @@
+"""Profile and notifications routes"""
+from fastapi import APIRouter, Request, Depends, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+from database import get_db
+from routes.deps import get_current_user
+from datetime import datetime
+from auth import hash_password, verify_password, generate_id
+
+router = APIRouter()
+
+class UpdateProfile(BaseModel):
+    fullName: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    country: Optional[str] = None
+
+class ChangePassword(BaseModel):
+    currentPassword: str
+    newPassword: str
+
+class CreateNews(BaseModel):
+    subject: str
+    message: str
+
+class CreateTicket(BaseModel):
+    subject: str
+    message: str
+
+class ReplyTicket(BaseModel):
+    message: str
+
+# Profile Routes
+@router.get("/api/users/me")
+async def get_current_user_profile(p=Depends(get_current_user)):
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE id=?", (p['id'],)).fetchone()
+        if not user:
+            raise HTTPException(404, "User not found")
+        return dict(user)
+
+@router.patch("/api/users/me")
+async def update_profile(body: UpdateProfile, p=Depends(get_current_user)):
+    updates = []
+    params = []
+    if body.fullName:
+        updates.append("full_name=?")
+        params.append(body.fullName)
+    if body.email:
+        updates.append("email=?")
+        params.append(body.email)
+    if body.phone:
+        updates.append("phone=?")
+        params.append(body.phone)
+    if body.country:
+        updates.append("country=?")
+        params.append(body.country)
+    
+    if updates:
+        params.append(p['id'])
+        with get_db() as conn:
+            conn.execute(f"UPDATE users SET {', '.join(updates)} WHERE id=?", params)
+    return {"message": "Profile updated"}
+
+@router.post("/api/users/me/password")
+async def change_password(body: ChangePassword, p=Depends(get_current_user)):
+    with get_db() as conn:
+        user = conn.execute("SELECT password FROM users WHERE id=?", (p['id'],)).fetchone()
+        if not user or not verify_password(body.currentPassword, user['password']):
+            raise HTTPException(400, "Current password is incorrect")
+        new_hash = hash_password(body.newPassword)
+        conn.execute("UPDATE users SET password=? WHERE id=?", (new_hash, p['id']))
+    return {"message": "Password changed successfully"}
+
+# Notifications Routes
+@router.get("/api/notifications/news")
+async def get_news(p=Depends(get_current_user)):
+    with get_db() as conn:
+        # Create table if not exists
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS news (
+                id TEXT PRIMARY KEY,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_by TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        rows = conn.execute("SELECT * FROM news ORDER BY created_at DESC LIMIT 50").fetchall()
+        return {"data": [dict(r) for r in rows]}
+
+@router.post("/api/notifications/news")
+async def create_news(body: CreateNews, p=Depends(get_current_user)):
+    if p['role'] not in ['admin', 'manager']:
+        raise HTTPException(403, "Only admin/manager can post news")
+    with get_db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS news (
+                id TEXT PRIMARY KEY,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_by TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        news_id = generate_id()
+        conn.execute("INSERT INTO news (id, subject, message, created_by) VALUES (?,?,?,?)",
+                     (news_id, body.subject, body.message, p['username']))
+    return {"message": "News posted", "id": news_id}
+
+@router.get("/api/notifications/support")
+async def get_tickets(p=Depends(get_current_user)):
+    with get_db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS support_tickets (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                status TEXT DEFAULT 'open',
+                reply TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        if p['role'] in ['admin', 'manager']:
+            rows = conn.execute("SELECT * FROM support_tickets ORDER BY created_at DESC").fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM support_tickets WHERE user_id=? ORDER BY created_at DESC", (p['id'],)).fetchall()
+        return {"data": [dict(r) for r in rows]}
+
+@router.post("/api/notifications/support")
+async def create_ticket(body: CreateTicket, p=Depends(get_current_user)):
+    with get_db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS support_tickets (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                status TEXT DEFAULT 'open',
+                reply TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        ticket_id = generate_id()
+        conn.execute("INSERT INTO support_tickets (id, user_id, username, subject, message) VALUES (?,?,?,?,?)",
+                     (ticket_id, p['id'], p['username'], body.subject, body.message))
+    return {"message": "Ticket created", "id": ticket_id}
+
+@router.get("/api/notifications/support/{ticket_id}")
+async def get_ticket(ticket_id: str, p=Depends(get_current_user)):
+    with get_db() as conn:
+        ticket = conn.execute("SELECT * FROM support_tickets WHERE id=?", (ticket_id,)).fetchone()
+        if not ticket:
+            raise HTTPException(404, "Ticket not found")
+        if p['role'] not in ['admin', 'manager'] and ticket['user_id'] != p['id']:
+            raise HTTPException(403, "Access denied")
+        return dict(ticket)
+
+@router.post("/api/notifications/support/{ticket_id}/reply")
+async def reply_ticket(ticket_id: str, body: ReplyTicket, p=Depends(get_current_user)):
+    if p['role'] not in ['admin', 'manager']:
+        raise HTTPException(403, "Only admin/manager can reply")
+    with get_db() as conn:
+        conn.execute("UPDATE support_tickets SET reply=?, status='closed', updated_at=datetime('now') WHERE id=?",
+                     (body.message, ticket_id))
+    return {"message": "Reply sent"}
+
+@router.post("/api/notifications/support/{ticket_id}/close")
+async def close_ticket(ticket_id: str, p=Depends(get_current_user)):
+    if p['role'] not in ['admin', 'manager']:
+        raise HTTPException(403, "Only admin/manager can close tickets")
+    with get_db() as conn:
+        conn.execute("UPDATE support_tickets SET status='closed', updated_at=datetime('now') WHERE id=?", (ticket_id,))
+    return {"message": "Ticket closed"}

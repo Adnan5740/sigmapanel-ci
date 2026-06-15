@@ -50,16 +50,30 @@ const ranges = {
             <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
             <div style="padding:14px;background:rgba(99,102,241,0.08);border-radius:8px;margin-bottom:16px">
                 <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px">📋 Optional: Add Numbers Now</div>
-                <div style="font-size:12px;color:var(--text-secondary)">You can add test numbers and assignable numbers after creating the range, or upload them now.</div>
+                <div style="font-size:12px;color:var(--text-secondary)">You can add test numbers and IPRN numbers after creating the range, or add them now via text input or file upload.</div>
             </div>
             <div class="form-group">
-                <label class="fly-label">Test Numbers (optional, one per line)</label>
-                <textarea id="rn-test-nums" class="fly-input" rows="4" placeholder="+12025550100\n+12025550101\nThese numbers will be marked as TEST" style="font-family:monospace;font-size:12px"></textarea>
+                <label class="fly-label">Test Numbers (optional)</label>
+                <div style="display:flex;gap:10px;margin-bottom:8px">
+                    <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('test-file').click()">
+                        ${ICONS.upload} Upload File
+                    </button>
+                    <input type="file" id="test-file" accept=".txt,.csv" style="display:none" onchange="window.ranges.loadFile(this, 'rn-test-nums')">
+                    <span style="font-size:11px;color:var(--text-secondary);align-self:center">Supports .txt or .csv files</span>
+                </div>
+                <textarea id="rn-test-nums" class="fly-input" rows="4" placeholder="+12025550100&#10;+12025550101&#10;+12025550102" style="font-family:monospace;font-size:12px"></textarea>
                 <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">💡 Test numbers will appear in the Test Panel</div>
             </div>
             <div class="form-group">
-                <label class="fly-label">Assignable Numbers (optional, one per line)</label>
-                <textarea id="rn-assign-nums" class="fly-input" rows="6" placeholder="+12025550200\n+12025550201\nThese numbers can be assigned to users" style="font-family:monospace;font-size:12px"></textarea>
+                <label class="fly-label">IPRN / Assignable Numbers (optional)</label>
+                <div style="display:flex;gap:10px;margin-bottom:8px">
+                    <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('assign-file').click()">
+                        ${ICONS.upload} Upload File
+                    </button>
+                    <input type="file" id="assign-file" accept=".txt,.csv" style="display:none" onchange="window.ranges.loadFile(this, 'rn-assign-nums')">
+                    <span style="font-size:11px;color:var(--text-secondary);align-self:center">Supports .txt or .csv files</span>
+                </div>
+                <textarea id="rn-assign-nums" class="fly-input" rows="6" placeholder="+12025550200&#10;+12025550201&#10;+12025550202" style="font-family:monospace;font-size:12px"></textarea>
                 <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">💡 These numbers will be available for allocation to resellers</div>
             </div>
         `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" onclick="window.ranges.save()">Create Range</button>', 'large');
@@ -199,6 +213,20 @@ const ranges = {
             window.ui.showToast('Range deleted', 'info');
             this.renderRanges(document.getElementById('page-content'));
         } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
+    loadFile(input, targetId) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target.result;
+            const numbers = content.split(/\r?\n/).filter(line => line.trim()).join('\n');
+            document.getElementById(targetId).value = numbers;
+            window.ui.showToast(`Loaded ${numbers.split('\n').length} numbers from file`, 'success');
+        };
+        reader.readAsText(file);
+        input.value = ''; // Reset input
     }
 };
 window.ranges = ranges;
