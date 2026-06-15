@@ -4,7 +4,7 @@ const numbers = {
         try {
             const res = await window.api.call('/api/numbers?limit=50');
             container.innerHTML = `
-            <div class="card">
+            <div class="card slide-up">
                 <div class="card-header">
                     <div class="card-title">My Virtual Numbers</div>
                     <div class="card-header-actions" style="display:flex; gap:8px">
@@ -14,7 +14,7 @@ const numbers = {
                 <div class="table-wrapper">
                     <table class="fly-table">
                         <thead><tr><th>Number</th><th>Range</th><th>App</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody>${res.data.map(n => `<tr><td><code>${n.number}</code></td><td>${n.range_name}</td><td>${n.service || '-'}</td><td><span class="badge ${n.status === 'active' ? 'badge-success' : 'badge-danger'}">${n.status}</span></td><td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td></tr>`).join('') || '<tr><td colspan="5">No numbers assigned</td></tr>'}</tbody>
+                        <tbody>${res.data.map(n => `<tr><td><code>${n.number}</code> <button class="copy-btn-inline" onclick="window.ui.copyToClipboard('${n.number}')" aria-label="Copy number">${ICONS.copy}</button></td><td>${n.range_name}</td><td>${n.service || '-'}</td><td><span class="badge ${n.status === 'active' ? 'badge-success' : 'badge-danger'}">${n.status}</span></td><td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td></tr>`).join('') || '<tr><td colspan="5">No numbers assigned</td></tr>'}</tbody>
                     </table>
                 </div>
             </div>`;
@@ -38,7 +38,7 @@ const numbers = {
         try {
             const res = await window.api.call('/api/ranges?status=active');
             container.innerHTML = `
-            <div class="card">
+            <div class="card slide-up">
                 <div class="card-header"><div class="card-title">Self-Allocation Marketplace</div></div>
                 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; padding:20px">
                     ${res.data.map(r => `
@@ -76,7 +76,7 @@ const numbers = {
         try {
             const [users, ranges] = await Promise.all([window.api.call('/api/users?limit=100'), window.api.call('/api/ranges')]);
             container.innerHTML = `
-            <div class="card">
+            <div class="card slide-up">
                 <div class="card-header"><div class="card-title">Bulk Infrastructure Allocation</div></div>
                 <div class="card-body">
                     <div class="form-group"><label>Target User</label><select id="ba-user" class="fly-input">${users.data.map(u => `<option value="${u.id}">${u.username} (${u.role})</option>`).join('')}</select></div>
@@ -97,7 +97,7 @@ const numbers = {
     },
 
     async renderLiveAccess(container) {
-        container.innerHTML = `<div class="card"><div class="card-header"><div class="card-title">Real-Time Traffic Stream</div></div><div class="table-wrapper"><table class="fly-table"><thead><tr><th>Time</th><th>Target</th><th>App</th><th>Msg</th></tr></thead><tbody id="la-body"></tbody></table></div></div>`;
+        container.innerHTML = `<div class="card slide-up"><div class="card-header"><div class="card-title">Real-Time Traffic Stream</div></div><div class="table-wrapper"><table class="fly-table"><thead><tr><th>Time</th><th>Target</th><th>App</th><th>Msg</th></tr></thead><tbody id="la-body"></tbody></table></div></div>`;
         this.startLiveAccess();
     },
 
@@ -108,7 +108,7 @@ const numbers = {
             if (!body) { this.stopLiveAccess(); return; }
             try {
                 const res = await window.api.call('/api/sms?limit=10');
-                body.innerHTML = res.data.map(s => `<tr><td>${window.ui.formatDate(s.received_at)}</td><td><code>${s.number}</code></td><td>${s.service}</td><td class="message-text">${s.message}</td></tr>`).join('') || '<tr><td colspan="4">No traffic</td></tr>';
+                body.innerHTML = res.data.map(s => `<tr><td>${window.ui.formatDate(s.received_at)}</td><td><code>${s.number}</code> <button class="copy-btn-inline" onclick="window.ui.copyToClipboard('${s.number}')" aria-label="Copy number">${ICONS.copy}</button></td><td>${s.service}</td><td class="message-text">${s.message}</td></tr>`).join('') || '<tr><td colspan="4">No traffic</td></tr>';
             } catch (e) {}
         }, 5000);
     },
@@ -129,7 +129,7 @@ const numbers = {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
             const res = await window.api.call('/api/numbers-ext/blacklist');
-            container.innerHTML = `<div class="card"><div class="card-header"><div class="card-title">Global App Blacklist</div><button class="fly-btn fly-btn-sm" onclick="window.numbers.showAddBl()">Add App</button></div><div class="table-wrapper"><table class="fly-table"><thead><tr><th>App</th><th>Pattern</th><th>Action</th></tr></thead><tbody>${res.data.map(b => `<tr><td>${b.app_name}</td><td><code>${b.pattern}</code></td><td><button class="action-btn delete" onclick="window.numbers.delBl('${b.id}')">${ICONS.trash}</button></td></tr>`).join('') || '<tr><td colspan="3">No rules</td></tr>'}</tbody></table></div></div>`;
+            container.innerHTML = `<div class="card"><div class="card-header"><div class="card-title">Global App Blacklist</div><button class="fly-btn fly-btn-sm" onclick="window.numbers.showAddBl()">Add App</button></div><div class="table-wrapper"><table class="fly-table"><thead><tr><th>App</th><th>Pattern</th><th>Action</th></tr></thead><tbody>${res.data.map(b => `<tr><td>${b.app_name}</td><td><code>${b.pattern}</code></td><td><button class="action-btn delete" onclick="window.numbers.delBl('${b.id}')" aria-label="Delete rule">${ICONS.trash}</button></td></tr>`).join('') || '<tr><td colspan="3">No rules</td></tr>'}</tbody></table></div></div>`;
         } catch (e) {}
     },
 

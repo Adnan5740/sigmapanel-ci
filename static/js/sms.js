@@ -5,7 +5,7 @@ const sms = {
             const data = await window.api.call('/api/sms?limit=20');
             const rows = data.data || [];
             container.innerHTML = `
-            <div class="card">
+            <div class="card slide-up">
                 <div class="card-header"><div class="card-title">My Received SMS Messages</div></div>
                 <div class="filter-bar">
                     <input type="text" class="search-input" id="sms-search" placeholder="Search message content or sender..." style="flex:2">
@@ -19,9 +19,9 @@ const sms = {
                             ${rows.map(s => `
                                 <tr>
                                     <td style="font-size:11px; white-space:nowrap">${window.ui.formatDate(s.received_at)}</td>
-                                    <td><code>${s.number}</code></td>
+                                    <td><code>${s.number}</code> <button class="copy-btn-inline" onclick="window.ui.copyToClipboard('${s.number}')" aria-label="Copy number">${ICONS.copy}</button></td>
                                     <td><span class="badge badge-primary">${s.service || '-'}</span></td>
-                                    <td>${s.otp ? `<span class="otp-code">${s.otp}</span>` : '-'}</td>
+                                    <td>${s.otp ? `<button class="otp-copy-btn" onclick="window.ui.copyToClipboard('${s.otp}')" aria-label="Copy OTP"><span class="otp-code">${s.otp}</span></button>` : '-'}</td>
                                     <td class="message-text" title="${window.ui.escapeHtml(s.message)}">${window.ui.escapeHtml(s.message)}</td>
                                     <td><span class="badge badge-secondary">${s.is_alphanumeric_cli ? 'Alpha' : 'Numeric'}</span></td>
                                 </tr>
@@ -100,7 +100,7 @@ const sms = {
 
     async renderLiveOtpFeed(container) {
         container.innerHTML = `
-        <div class="card">
+        <div class="card slide-up">
             <div class="card-header">
                 <div class="card-title">Real-Time OTP Infrastructure Feed</div>
                 <div class="badge badge-success">REAL-TIME POLLING</div>
@@ -133,9 +133,9 @@ const sms = {
                     body.innerHTML = data.data.map(s => `
                         <tr>
                             <td style="font-size:11px">${window.ui.formatDate(s.received_at)}</td>
-                            <td><code>${s.number}</code></td>
+                            <td><code>${s.number}</code> <button class="copy-btn-inline" onclick="window.ui.copyToClipboard('${s.number}')" aria-label="Copy number">${ICONS.copy}</button></td>
                             <td><span class="badge badge-primary">${s.service || '-'}</span></td>
-                            <td>${s.otp ? `<span class="otp-code">${s.otp}</span>` : '-'}</td>
+                            <td>${s.otp ? `<button class="otp-copy-btn" onclick="window.ui.copyToClipboard('${s.otp}')" aria-label="Copy OTP"><span class="otp-code">${s.otp}</span></button>` : '-'}</td>
                             <td class="message-text">${window.ui.escapeHtml(s.message)}</td>
                         </tr>
                     `).join('');
@@ -154,7 +154,7 @@ const sms = {
 
     async renderAnalytics(container) {
         container.innerHTML = `
-        <div class="card">
+        <div class="card slide-up">
             <div class="card-header"><div class="card-title">SMS Traffic Analytics</div></div>
             <div class="card-body" style="padding:24px">
                 <div class="stats-grid">
@@ -199,7 +199,7 @@ const sms = {
 
     async renderSearchSms(container) {
         container.innerHTML = `
-        <div class="card">
+        <div class="card slide-up">
             <div class="card-header"><div class="card-title">Advanced SMS Search</div></div>
             <div class="card-body" style="padding:24px">
                 <div class="form-row">
@@ -232,7 +232,7 @@ const sms = {
                 <tr>
                     <td>${window.ui.formatDate(s.received_at)}</td>
                     <td>${s.sender || s.number}</td>
-                    <td>${s.number}</td>
+                    <td><code>${s.number}</code> <button class="copy-btn-inline" onclick="window.ui.copyToClipboard('${s.number}')" aria-label="Copy number">${ICONS.copy}</button></td>
                     <td>${s.message}</td>
                 </tr>
             `).join('') || '<tr><td colspan="4">No results found</td></tr>';
@@ -245,7 +245,7 @@ const sms = {
             const data = await window.api.call('/api/sms/delivery-logs');
             const rows = data.data || [];
             container.innerHTML = `
-            <div class="card">
+            <div class="card slide-up">
                 <div class="card-header"><div class="card-title">Delivery Receipts & DLR Logs</div></div>
                 <div class="table-wrapper">
                     <table class="fly-table">
@@ -254,9 +254,9 @@ const sms = {
                             ${rows.map(s => `
                                 <tr>
                                     <td style="font-size:11px">${window.ui.formatDate(s.received_at)}</td>
-                                    <td><code>${s.number}</code></td>
+                                    <td><code>${s.number}</code> <button class="copy-btn-inline" onclick="window.ui.copyToClipboard('${s.number}')" aria-label="Copy number">${ICONS.copy}</button></td>
                                     <td><span class="badge badge-secondary">${s.service || '-'}</span></td>
-                                    <td><strong>${s.otp || '-'}</strong></td>
+                                    <td>${s.otp ? `<button class="otp-copy-btn" onclick="window.ui.copyToClipboard('${s.otp}')" aria-label="Copy OTP"><span class="otp-code">${s.otp}</span></button>` : '<strong>-</strong>'}</td>
                                     <td><span class="badge badge-success">DELIVERED</span></td>
                                 </tr>
                             `).join('')}
@@ -270,7 +270,7 @@ const sms = {
 
     async renderFailedSms(container) {
         container.innerHTML = `
-        <div class="card">
+        <div class="card slide-up">
             <div class="card-header"><div class="card-title">Failed SMS & Error Logs</div></div>
             <div class="table-wrapper">
                 <table class="fly-table">

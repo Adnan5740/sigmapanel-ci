@@ -35,8 +35,21 @@ body {
     --danger: #ef4444;
     --success: #10b981;
     --warning: #f59e0b;
-    --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.fade-in { animation: fadeIn 0.4s ease-out; }
+.slide-up { animation: slideUp 0.4s ease-out; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+button, a, .card, .sidebar-nav-item { transition: var(--transition); }
 
 /* ========== AUTH PAGE ========== */
 .auth-page {
@@ -879,13 +892,54 @@ body {
 
 /* ========== OTP HIGHLIGHT ========== */
 .otp-code {
-    background: rgba(115, 93, 255, 0.1);
-    color: #735DFF;
+    background: var(--primary-light);
+    color: var(--primary);
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-weight: 700;
     font-family: monospace;
     font-size: 14px;
+    cursor: pointer;
+}
+
+.otp-copy-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.otp-copy-btn:hover .otp-code {
+    background: rgba(99, 102, 241, 0.2);
+    transform: scale(1.05);
+}
+
+.otp-copy-btn:active .otp-code {
+    transform: scale(0.95);
+}
+
+.copy-btn-inline {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    border-radius: var(--radius-sm);
+}
+
+.copy-btn-inline:hover {
+    opacity: 1;
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.copy-btn-inline:active {
+    transform: scale(0.9);
 }
 
 /* ========== MOBILE ========== */

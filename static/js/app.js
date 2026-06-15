@@ -207,14 +207,14 @@ function renderDashboardShell() {
             }).join('');
 
         document.getElementById('app').innerHTML = `
-        <div class="dashboard-layout">
+        <div class="dashboard-layout fade-in">
             <button class="mobile-menu-btn" id="mobile-menu-btn">${ICONS.menu}</button>
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <aside class="sidebar" id="sidebar">
-                <div class="sidebar-logo"><div class="sidebar-logo-icon">${ICONS.send}</div><div><h1>SIGMAPANEL</h1><p>Telecom Infrastructure</p></div></div>
+                <div class="sidebar-logo"><div class="sidebar-logo-icon">${ICONS.send}</div><div><h1 style="letter-spacing:1px">SIGMAPANEL</h1><p style="opacity:0.6">v3 Infrastructure</p></div></div>
                 <nav class="sidebar-nav">${sidebarNav}</nav>
                 <div class="sidebar-user">
-                    <div class="sidebar-user-info"><div class="sidebar-user-avatar">${(user.username || 'U').charAt(0).toUpperCase()}</div><div><div class="sidebar-user-name">${user.fullName || user.username}</div><div class="sidebar-user-role">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
+                    <div class="sidebar-user-info"><div class="sidebar-user-avatar" style="border: 2px solid rgba(255,255,255,0.1)">${(user.username || 'U').charAt(0).toUpperCase()}</div><div><div class="sidebar-user-name">${user.fullName || user.username}</div><div class="sidebar-user-role">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
                     <button class="sidebar-logout" id="logout-btn">${ICONS.logout} Logout</button>
                 </div>
             </aside>
@@ -255,6 +255,14 @@ function renderDashboardShell() {
     const currentNav = user.role === 'test_user' ? TEST_NAV : NAV_STRUCTURE;
     const currentItem = currentNav.flatMap(g => g.items).find(i => i.key === window.router.currentPage);
     if (currentItem) document.getElementById('page-title').textContent = currentItem.label;
+
+    // Add slide-up effect to main content area
+    const contentArea = document.getElementById('page-content');
+    if (contentArea) {
+        contentArea.classList.remove('slide-up');
+        void contentArea.offsetWidth; // Trigger reflow
+        contentArea.classList.add('slide-up');
+    }
   } catch (err) { console.error('Shell error:', err); }
 }
 

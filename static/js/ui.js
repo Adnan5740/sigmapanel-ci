@@ -63,9 +63,9 @@ const ui = {
         if (!root) { root = document.createElement('div'); root.id = 'modal-root'; document.body.appendChild(root); }
         const maxWidth = size === 'small' ? '400px' : size === 'large' ? '800px' : '500px';
         root.innerHTML = `
-        <div class="modal-overlay" id="modal-overlay-bg">
-            <div class="modal" style="max-width:${maxWidth}">
-                <div class="modal-header"><div class="modal-title">${title}</div><button class="modal-close" id="modal-close-btn">${ICONS.x}</button></div>
+        <div class="modal-overlay fade-in" id="modal-overlay-bg">
+            <div class="modal slide-up" style="max-width:${maxWidth}">
+                <div class="modal-header"><div class="modal-title">${title}</div><button class="modal-close" id="modal-close-btn" aria-label="Close modal">${ICONS.x}</button></div>
                 <div class="modal-body">${bodyHtml}</div>
                 ${footerHtml ? `<div class="modal-footer">${footerHtml}</div>` : ''}
             </div>
@@ -115,6 +115,7 @@ const ICONS = {
     profit: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
     api: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
     chevronDown: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
+    copy: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
 };
 
 window.ui = ui;
