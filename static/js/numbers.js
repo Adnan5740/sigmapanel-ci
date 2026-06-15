@@ -23,7 +23,9 @@ const numbers = {
                     </table>
                 </div>
             </div>`;
-        } catch (e) { container.innerHTML = '<p>Error loading numbers</p>'; }
+        } catch (e) { 
+            container.innerHTML = `<div class="empty-state"><h3>Error Loading Numbers</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderMyNumbers(document.getElementById('page-content'))">Retry</button></div>`; 
+        }
     },
 
     showExportModal() {
@@ -111,7 +113,7 @@ const numbers = {
                     `).join('')}
                 </div>
             </div>`;
-        } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p></div>`; }
+        } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderSelfAllocation(document.getElementById('page-content'))">Retry</button></div>`; }
     },
 
     showSelfAllocModal(range, available, rate) {
@@ -191,7 +193,7 @@ const numbers = {
                     <button class="fly-btn" style="width:100%;margin-top:20px" onclick="window.numbers.doBulkAlloc()">Step 4: Execute Bulk Allocation</button>
                 </div>
             </div>`;
-        } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p></div>`; }
+        } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderBulkAllocation(document.getElementById('page-content'))">Retry</button></div>`; }
     },
 
     updateBulkRanges() {

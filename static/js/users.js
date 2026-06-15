@@ -57,19 +57,52 @@ const users = {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
             const res = await window.api.call('/api/users/registration-requests');
+            const requests = res.data || [];
             container.innerHTML = `
             <div class="card">
-                <div class="card-header"><div class="card-title">Registration Approval Queue</div></div>
-                <div class="table-wrapper">
-                    <table class="fly-table">
-                        <thead><tr><th>User</th><th>Email</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            ${res.data.map(r => `<tr><td><strong>${r.username}</strong></td><td>${r.email}</td><td><button class="action-btn" onclick="window.users.approveReg('${r.id}')">Approve</button> <button class="action-btn delete" onclick="window.users.rejectReg('${r.id}')">Reject</button></td></tr>`).join('') || '<tr><td colspan="3">Queue empty</td></tr>'}
-                        </tbody>
-                    </table>
+                <div class="card-header"><div class="card-title">Registration Approval Queue (${requests.length} pending)</div></div>
+                <div style="display:grid;gap:16px;padding:20px">
+                    ${requests.map(r => `
+                        <div style="border:1px solid var(--border);border-radius:12px;padding:20px;background:white">
+                            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px">
+                                <div>
+                                    <h3 style="margin:0 0 8px 0;font-size:18px">${r.username}</h3>
+                                    <span class="badge badge-warning">Pending Approval</span>
+                                </div>
+                                <div style="display:flex;gap:8px">
+                                    <button class="fly-btn fly-btn-sm" onclick="window.users.approveReg('${r.id}')">✓ Approve</button>
+                                    <button class="fly-btn fly-btn-sm fly-btn-danger" onclick="window.users.rejectReg('${r.id}')">✗ Reject</button>
+                                </div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                                <div><strong>Email:</strong> ${r.email || 'N/A'}</div>
+                                <div><strong>Full Name:</strong> ${r.full_name || 'N/A'}</div>
+                                <div><strong>Phone:</strong> ${r.phone || 'N/A'}</div>
+                                <div><strong>Country:</strong> ${r.country || 'N/A'}</div>
+                                <div><strong>Account Type:</strong> ${r.profession || 'N/A'}</div>
+                                <div><strong>Teams ID:</strong> ${r.teams_id || 'N/A'}</div>
+                                <div><strong>Payment Method:</strong> ${r.payment_method || 'N/A'}</div>
+                                <div><strong>Payment ID:</strong> ${r.binance_uid || r.usdt_address || 'N/A'}</div>
+                            </div>
+                            ${r.proof_filename ? `
+                                <div style="margin-top:12px">
+                                    <strong>Proof Document:</strong>
+                                    <a href="/api/auth/proof/${r.proof_filename}" target="_blank" class="fly-btn fly-btn-sm fly-btn-secondary" style="margin-left:8px">
+                                        ${ICONS.download} View Proof
+                                    </a>
+                                </div>
+                            ` : ''}
+                            <div style="margin-top:12px;font-size:11px;color:var(--text-secondary)">
+                                Requested: ${window.ui.formatDate(r.created_at)}
+                            </div>
+                        </div>
+                    `).join('')}
+                    ${requests.length === 0 ? '<div class="empty-state"><h3>No Pending Requests</h3><p>All registration requests have been processed</p></div>' : ''}
                 </div>
             </div>`;
-        } catch (e) { container.innerHTML = '<p>Error loading queue</p>'; }
+        } catch (e) { 
+            container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p></div>`; 
+        }
     },
 
     async approveReg(id) {
