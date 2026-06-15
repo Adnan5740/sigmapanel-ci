@@ -116,6 +116,79 @@ const settings = {
         } catch (e) {}
     },
 
-    async renderWebhookConfig(container) { this.renderDocumentation(container); }
+    async renderWebhookConfig(container) {
+        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+        let token = '—';
+        try {
+            const res = await window.api.call('/api/auth/token');
+            token = res.token || res.api_token || '—';
+        } catch (e) { /* token fetch optional */ }
+
+        const origin = window.location.origin;
+        container.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:20px">
+        <div class="card">
+            <div class="card-header"><div class="card-title">🔑 User API Token (Webhook Auth)</div></div>
+            <div class="card-body" style="padding:20px">
+                <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px">
+                    This token authenticates <strong>your requests</strong> to the API. Use it as a Bearer token or query parameter when requesting SMS data, numbers, and auth-related actions.
+                </p>
+                <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+                    <code id="wh-token" style="font-size:13px; word-break:break-all; flex:1">${window.ui.escapeHtml(token)}</code>
+                    <button class="fly-btn fly-btn-sm" onclick="window.ui.copyToClipboard(document.getElementById('wh-token').textContent)">${ICONS.key} Copy Token</button>
+                </div>
+                <div style="margin-top:12px; padding:12px; background:rgba(99,102,241,0.05); border-radius:8px; font-size:12px; color:var(--text-secondary)">
+                    <strong>Usage:</strong> <code>Authorization: Bearer &lt;your-token&gt;</code> or <code>?token=&lt;your-token&gt;</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div class="card-title">📡 Carrier SMS Receive Webhook</div></div>
+            <div class="card-body" style="padding:20px">
+                <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px">
+                    This endpoint receives <strong>incoming SMS messages from your carrier/provider</strong>. Configure your carrier to POST or GET to this URL when a message is delivered.
+                    <br><br>
+                    <strong>⚠️ This is only for carrier-to-platform delivery — not for user API requests.</strong>
+                </p>
+
+                <div style="margin-bottom:16px">
+                    <label style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px">Webhook Endpoint</label>
+                    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+                        <code style="font-size:13px; flex:1">${origin}/api/webhook/receive</code>
+                        <button class="fly-btn fly-btn-sm" onclick="window.ui.copyToClipboard('${origin}/api/webhook/receive')">${ICONS.send} Copy URL</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px">
+                    <label style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px">Supported Methods</label>
+                    <div style="display:flex; gap:8px"><span class="badge badge-success">POST</span><span class="badge badge-secondary">GET</span></div>
+                </div>
+
+                <div style="margin-bottom:16px">
+                    <label style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px">Expected Parameters</label>
+                    <table class="fly-table" style="border:1px solid var(--border); border-radius:8px; overflow:hidden">
+                        <thead><tr><th>Parameter</th><th>Description</th><th>Required</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>to</code></td><td>Destination number</td><td><span class="badge badge-danger">Required</span></td></tr>
+                            <tr><td><code>from</code></td><td>Sender ID or number</td><td><span class="badge badge-danger">Required</span></td></tr>
+                            <tr><td><code>msg</code></td><td>SMS message body</td><td><span class="badge badge-danger">Required</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-bottom:16px">
+                    <label style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px">Successful Response</label>
+                    <div style="background:#0f172a; color:#a78bfa; border-radius:8px; padding:16px; font-family:monospace; font-size:13px">
+                        {<br>
+                        &nbsp;&nbsp;"status": "ok",<br>
+                        &nbsp;&nbsp;"message": "processed"<br>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    }
 };
 window.settings = settings;

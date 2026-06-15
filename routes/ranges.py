@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Request, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from database import get_db
 from auth import generate_id
 from routes.deps import get_current_user, require_role
@@ -17,6 +17,11 @@ class RangeCreate(BaseModel):
     profitMargin: Optional[float] = 50.0
     daily_otp_limit: Optional[int] = 0
     otp_limit_enabled: Optional[int] = 0
+
+class RangeNumbersAdd(BaseModel):
+    numbers: List[str]
+    countryName: Optional[str] = None
+    rate: Optional[float] = None
 
 @router.get("")
 async def list_ranges(status: str = Query(None), search: str = Query(None), p=Depends(get_current_user)):
@@ -46,4 +51,35 @@ async def create_range(body: RangeCreate, p=Depends(require_role(["admin", "mana
 async def delete_range(rid: str, p=Depends(require_role(["admin"]))):
     with get_db() as conn:
         conn.execute("DELETE FROM ranges WHERE id=?", (rid,))
+    return {"message": "Deleted"}
+
+@router.post("/{rid}/numbers")
+async def add_numbers_to_range(rid: str, body: RangeNumbersAdd, p=Depends(require_role(["admin", "manager"]))):
+    with get_db() as conn:
+        rng = conn.execute("SELECT * FROM ranges WHERE id=?", (rid,)).fetchone()
+        if not rng:
+            raise HTTPException(404, "Range not found")
+        rng = dict(rng)
+        country = body.countryName or rng.get("country_name")
+        rate = body.rate if body.rate is not None else rng.get("rate")
+        profit_margin = rng.get("profit_margin")
+        range_name = rng.get("name")
+        for num in body.numbers:
+            nid = generate_id()
+            conn.execute(
+                "INSERT INTO numbers (id, number, country_name, range_id, range_name, status, rate, profit_margin) VALUES (?,?,?,?,?,?,?,?)",
+                (nid, num, country, rid, range_name, "active", rate, profit_margin)
+            )
+    return {"message": f"{len(body.numbers)} number(s) added", "added": len(body.numbers)}
+
+@router.get("/{rid}/numbers")
+async def list_range_numbers(rid: str, p=Depends(get_current_user)):
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM numbers WHERE range_id = ? ORDER BY created_at DESC", (rid,)).fetchall()
+    return {"data": [dict(r) for r in rows]}
+
+@router.delete("/{rid}/numbers/{nid}")
+async def delete_range_number(rid: str, nid: str, p=Depends(require_role(["admin", "manager"]))):
+    with get_db() as conn:
+        conn.execute("DELETE FROM numbers WHERE id=? AND range_id=?", (nid, rid))
     return {"message": "Deleted"}

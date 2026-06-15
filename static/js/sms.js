@@ -1,8 +1,8 @@
 const sms = {
-    async renderMySms(container) {
+    async renderMySms(container, page = 1) {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
-            const data = await window.api.call('/api/sms?limit=20');
+            const data = await window.api.call('/api/sms?limit=20&page=' + page);
             const rows = data.data || [];
             container.innerHTML = `
             <div class="card">
@@ -30,7 +30,7 @@ const sms = {
                         </tbody>
                     </table>
                 </div>
-                ${window.ui.renderPagination(data.pagination, (p) => this.loadMySmsPage(p))}
+                ${window.ui.renderPagination(data.pagination, (p) => this.renderMySms(container, p))}
             </div>`;
         } catch (err) {
             container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${err.message}</p></div>`;
@@ -74,30 +74,12 @@ const sms = {
     },
 
     renderProfitChart(stats) {
-        setTimeout(() => {
+        window.loadChart().then(() => {
             const ctx = document.getElementById('profit-distribution-chart')?.getContext('2d');
             if (!ctx) return;
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Current Month'],
-                    datasets: [{
-                        label: 'Net Profit ($)',
-                        data: [stats.monthProfit],
-                        backgroundColor: '#735DFF',
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }, 100);
+            new Chart(ctx, { type: 'bar', data: { labels: ['Current Month'], datasets: [{ label: 'Net Profit ($)', data: [stats.monthProfit], backgroundColor: '#735DFF', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+        });
     },
-
     async renderLiveOtpFeed(container) {
         container.innerHTML = `
         <div class="card">
@@ -177,22 +159,16 @@ const sms = {
             document.getElementById('stat-latency').textContent = '0.4s';
             document.getElementById('stat-volume').textContent = stats.todaySms;
 
+            await window.loadChart();
             const ctx = document.getElementById('traffic-analytics-chart')?.getContext('2d');
             if (!ctx) return;
             new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Monthly Infrastructure Volume',
-                        data: [stats.monthSms * 0.5, stats.monthSms * 0.7, stats.monthSms * 0.9, stats.monthSms * 0.8, stats.monthSms * 0.95, stats.monthSms],
-                        borderColor: '#735DFF',
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: 'rgba(115, 93, 255, 0.1)'
-                    }]
+                    datasets: [{ label: 'Monthly Volume', data: [stats.monthSms * 0.5, stats.monthSms * 0.7, stats.monthSms * 0.9, stats.monthSms * 0.8, stats.monthSms * 0.95, stats.monthSms], borderColor: '#735DFF', tension: 0.4, fill: true, backgroundColor: 'rgba(115,93,255,0.1)' }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { display: false } } }
             });
         } catch (e) { console.error('Analytics load failed', e); }
     },
@@ -226,7 +202,8 @@ const sms = {
         const body = document.getElementById('search-results-body');
 
         try {
-            const data = await window.api.call(\`/api/sms?number=${to}&search=${msg}\`);
+            const params = '/api/sms?number=' + to + '&search=' + msg + (from ? '&sender=' + encodeURIComponent(from) : '');
+            const data = await window.api.call(params);
             area.style.display = 'block';
             body.innerHTML = data.data.map(s => `
                 <tr>
@@ -269,16 +246,31 @@ const sms = {
     },
 
     async renderFailedSms(container) {
-        container.innerHTML = `
-        <div class="card">
-            <div class="card-header"><div class="card-title">Failed SMS & Error Logs</div></div>
-            <div class="table-wrapper">
-                <table class="fly-table">
-                    <thead><tr><th>Time</th><th>Recipient</th><th>Provider</th><th>Error Reason</th></tr></thead>
-                    <tbody><tr class="empty-row"><td colspan="4">No failures logged in the last 24 hours</td></tr></tbody>
-                </table>
-            </div>
-        </div>`;
+        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+        try {
+            const data = await window.api.call('/api/sms/failed');
+            const rows = data.data || [];
+            container.innerHTML = `
+            <div class="card">
+                <div class="card-header"><div class="card-title">Failed SMS & Error Logs</div></div>
+                <div class="table-wrapper">
+                    <table class="fly-table">
+                        <thead><tr><th>Time</th><th>Event Type</th><th>Details</th><th>IP</th></tr></thead>
+                        <tbody>
+                            ${rows.map(s => `
+                                <tr>
+                                    <td style="font-size:11px">${window.ui.formatDate(s.created_at)}</td>
+                                    <td><span class="badge badge-danger">${s.event_type || 'SMS_FAILED'}</span></td>
+                                    <td class="message-text">${window.ui.escapeHtml(s.details || s.message || '-')}</td>
+                                    <td><code>${s.ip_address || '-'}</code></td>
+                                </tr>
+                            `).join('')}
+                            ${rows.length === 0 ? '<tr class="empty-row"><td colspan="4">No failures logged</td></tr>' : ''}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p></div>`; }
     }
 };
 

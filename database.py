@@ -27,24 +27,27 @@ def init_db():
         _seed(conn)
 
 def _migrate(conn):
-    # Ensure columns exist in case tables were created with older schema
-    # Ranges table migrations
-    cols = {r[1] for r in conn.execute("PRAGMA table_info(ranges)")}
-    if "daily_otp_limit" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN daily_otp_limit INTEGER DEFAULT 0")
-    if "otp_limit_enabled" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN otp_limit_enabled INTEGER DEFAULT 0")
-    if "otp_count_today" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN otp_count_today INTEGER DEFAULT 0")
-    if "otp_count_date" not in cols: conn.execute("ALTER TABLE ranges ADD COLUMN otp_count_date TEXT")
-    # Users table migrations for login lockout
-    ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
-    if "failed_login_attempts" not in ucols: conn.execute("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER DEFAULT 0")
-    if "locked_until" not in ucols: conn.execute("ALTER TABLE users ADD COLUMN locked_until TEXT")
-    # Registration_requests table migrations for extra fields
-    rcols = {r[1] for r in conn.execute("PRAGMA table_info(registration_requests)")}
-    if "password" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN password TEXT")
-    if "full_name" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN full_name TEXT")
-    if "phone" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN phone TEXT")
-    if "country" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN country TEXT")
-    if "profession" not in rcols: conn.execute("ALTER TABLE registration_requests ADD COLUMN profession TEXT")
+    def add_col(table, col, typedef):
+        try:
+            cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+            if col not in cols:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}")
+        except Exception: pass
+
+    add_col("ranges", "daily_otp_limit", "INTEGER DEFAULT 0")
+    add_col("ranges", "otp_limit_enabled", "INTEGER DEFAULT 0")
+    add_col("ranges", "otp_count_today", "INTEGER DEFAULT 0")
+    add_col("ranges", "otp_count_date", "TEXT")
+    add_col("users", "failed_login_attempts", "INTEGER DEFAULT 0")
+    add_col("users", "locked_until", "TEXT")
+    add_col("users", "api_token", "TEXT")
+    add_col("registration_requests", "password", "TEXT")
+    add_col("registration_requests", "full_name", "TEXT")
+    add_col("registration_requests", "phone", "TEXT")
+    add_col("registration_requests", "teams_id", "TEXT")
+    add_col("registration_requests", "country", "TEXT")
+    add_col("registration_requests", "profession", "TEXT")
+    add_col("registration_requests", "proof_filename", "TEXT")
 
 def _seed(conn):
     from auth import hash_password
@@ -264,9 +267,61 @@ CREATE TABLE IF NOT EXISTS registration_requests (
     id TEXT PRIMARY KEY,
     username TEXT NOT NULL,
     email TEXT,
+    password TEXT,
+    full_name TEXT,
+    phone TEXT,
+    teams_id TEXT,
+    country TEXT,
+    profession TEXT,
     payment_method TEXT,
     payment_detail TEXT,
+    proof_filename TEXT,
     status TEXT DEFAULT 'pending',
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS blacklisted_apps (
+    id TEXT PRIMARY KEY,
+    app_name TEXT NOT NULL,
+    pattern TEXT,
+    created_by TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id TEXT PRIMARY KEY,
+    actor_id TEXT,
+    actor_username TEXT,
+    action TEXT NOT NULL,
+    resource TEXT,
+    resource_id TEXT,
+    detail TEXT,
+    ip_address TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS allocations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    range_name TEXT,
+    number_id TEXT,
+    status TEXT DEFAULT 'active',
+    expires_at TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS payment_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    amount REAL NOT NULL,
+    method TEXT NOT NULL,
+    wallet_address TEXT,
+    note TEXT,
+    status TEXT DEFAULT 'pending',
+    rejection_reason TEXT,
+    reviewed_by TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
 """

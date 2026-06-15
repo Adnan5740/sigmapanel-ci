@@ -22,7 +22,7 @@ async def webhook_receive(request: Request):
              return JSONResponse(status_code=400, content={"error": "Empty payload"})
 
         result = process_incoming_sms(payload)
-        return JSONResponse(content={"status": "ok", "result": "processed"})
+        return JSONResponse(content={"status": "ok", "message": "processed"})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})

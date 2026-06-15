@@ -18,12 +18,14 @@ class SignupRequest(BaseModel):
     email: str
     password: str
     fullName: Optional[str] = None
-    phone: Optional[str] = None
+    phone: Optional[str] = None          # WhatsApp number
+    teamsId: Optional[str] = None        # Microsoft Teams ID
     country: Optional[str] = None
-    profession: Optional[str] = None
-    paymentMethod: Optional[str] = None
+    profession: Optional[str] = None     # alone | team_owner | developer
+    paymentMethod: Optional[str] = None  # binance | usdt_bep20
     binanceUid: Optional[str] = None
     usdtAddress: Optional[str] = None
+    proofFilename: Optional[str] = None  # uploaded proof file name
 
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
@@ -57,19 +59,17 @@ async def signup(request: Request, body: SignupRequest):
                 raise HTTPException(status_code=400, detail="Email already exists")
 
             rid = generate_id()
-            # We don't store password in registration_requests yet, usually it's better to store a hash if we do.
-            # But the table schema doesn't have password. We'll store it in a notes field or just wait for activation.
-            # Actually, let's just create the user in 'pending' status but in the users table for simplicity,
-            # OR update the registration_requests table.
-            # Re-reading prompt: "signup request submitted -> admin/manager approval -> account activation".
-
             pay_detail = body.binanceUid or body.usdtAddress or "N/A"
 
             conn.execute(
-                """INSERT INTO registration_requests (id, username, email, password, full_name, phone, country, profession, payment_method, payment_detail, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')""",
-                (rid, body.username.strip().lower(), body.email.strip().lower() if body.email else None,
-                 hash_password(body.password), body.fullName, body.phone, body.country, body.profession, body.paymentMethod, pay_detail)
+                """INSERT INTO registration_requests
+                   (id, username, email, password, full_name, phone, teams_id, country, profession,
+                    payment_method, payment_detail, proof_filename, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')""",
+                (rid, body.username.strip().lower(),
+                 body.email.strip().lower() if body.email else None,
+                 hash_password(body.password), body.fullName, body.phone, body.teamsId,
+                 body.country, body.profession, body.paymentMethod, pay_detail, body.proofFilename)
             )
 
             return {"message": "Registration request submitted. Please wait for administrator approval."}
@@ -165,6 +165,56 @@ async def login(request: Request, body: LoginRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+import secrets
+import os
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@router.post("/upload-proof")
+async def upload_proof(request: Request):
+    """Accept multipart proof file during signup and return a stored filename."""
+    from fastapi import UploadFile, File, Form
+    import shutil, mimetypes
+    ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
+    MAX_SIZE = 5 * 1024 * 1024  # 5 MB
+    form = await request.form()
+    file: UploadFile = form.get("file")
+    if not file:
+        raise HTTPException(400, "No file provided")
+    ct = file.content_type or ""
+    if ct not in ALLOWED:
+        raise HTTPException(400, "Only JPG/PNG/WEBP/GIF/PDF allowed")
+    data = await file.read()
+    if len(data) > MAX_SIZE:
+        raise HTTPException(400, "File too large (max 5 MB)")
+    ext = mimetypes.guess_extension(ct) or ".bin"
+    fname = secrets.token_hex(16) + ext
+    path = os.path.join(UPLOAD_DIR, fname)
+    with open(path, "wb") as f:
+        f.write(data)
+    return {"filename": fname, "url": f"/static/uploads/{fname}"}
+
+@router.get("/token")
+async def get_api_token(request: Request):
+    """Returns the user's API/webhook token. Used by webhook config page."""
+    auth_header = request.headers.get('Authorization')
+    token = extract_token(auth_header)
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    with get_db() as conn:
+        user = conn.execute("SELECT api_token FROM users WHERE id=?", (payload['userId'],)).fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        api_token = user['api_token']
+        if not api_token:
+            api_token = "sig_" + secrets.token_urlsafe(32)
+            conn.execute("UPDATE users SET api_token=? WHERE id=?", (api_token, payload['userId']))
+    return {"token": api_token}
 
 @router.get("/me")
 async def get_me(request: Request):

@@ -29,9 +29,10 @@ const NAV_STRUCTURE = [
             { key: 'sms-ranges', label: 'SMS Ranges', icon: ICONS.layers, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'search-access', label: 'Search Access', icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'live-access', label: 'Live Access', icon: ICONS.eye, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'upload-numbers', label: 'Upload Numbers', icon: ICONS.plus, roles: ['admin', 'manager'] },
+            { key: 'upload-numbers', label: 'Upload Numbers', icon: ICONS.upload, roles: ['admin', 'manager'] },
             { key: 'blacklist-management', label: 'Blacklist Management', icon: ICONS.ban, roles: ['admin', 'manager'] },
-            { key: 'bulk-tools', label: 'Revoke Numbers', icon: ICONS.x, roles: ['admin', 'manager'] },
+            { key: 'bulk-tools', label: 'Revoke Numbers', icon: ICONS.transfer, roles: ['admin', 'manager'] },
+            { key: 'test-numbers-admin', label: 'Test Numbers', icon: ICONS.terminal, roles: ['admin', 'manager'] },
         ]
     },
     {
@@ -83,11 +84,11 @@ const NAV_STRUCTURE = [
         group: 'API GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'api-playground', label: 'API Playground', icon: ICONS.api, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'api-playground', label: 'API Playground', icon: ICONS.terminal, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'api-tokens', label: 'API Tokens', icon: ICONS.key, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'documentation', label: 'Documentation', icon: ICONS.report, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'live-test', label: 'Live Test', icon: ICONS.send, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'webhook-config', label: 'Webhook Config', icon: ICONS.settings, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'webhook-config', label: 'Webhook Config', icon: ICONS.webhook, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
     {
@@ -95,9 +96,9 @@ const NAV_STRUCTURE = [
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
             { key: 'general-settings', label: 'General Settings', icon: ICONS.settings, roles: ['admin', 'manager'] },
-            { key: 'security-settings', label: 'Security', icon: ICONS.shield, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'smpp-settings', label: 'SMPP Settings', icon: ICONS.server, roles: ['admin'] },
-            { key: 'backup-restore', label: 'Backup & Restore', icon: ICONS.shield, roles: ['admin'] },
+            { key: 'security-settings', label: 'Security', icon: ICONS.lock, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'smpp-settings', label: 'SMPP Settings', icon: ICONS.smpp, roles: ['admin'] },
+            { key: 'backup-restore', label: 'Backup & Restore', icon: ICONS.backup, roles: ['admin'] },
         ]
     }
 ];
@@ -160,7 +161,8 @@ function init() {
     window.router.addRoute('backup-restore', (c) => window.settings.renderBackupRestore(c));
 
     // Test Panel
-    window.router.addRoute('test-numbers', (c) => window.testPanel.renderTestNumbers(c));
+    window.router.addRoute('test-numbers', (c) => window.numbers.renderTestNumbers(c));
+    window.router.addRoute('test-numbers-admin', (c) => window.numbers.renderTestNumbers(c));
     window.router.addRoute('test-reports', (c) => window.testPanel.renderTestReports(c));
     window.router.addRoute('test-live-feed', (c) => window.testPanel.renderLiveFeed(c));
     window.router.addRoute('test-traffic-stats', (c) => window.testPanel.renderTrafficStats(c));

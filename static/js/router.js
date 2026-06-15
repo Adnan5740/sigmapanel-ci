@@ -28,8 +28,15 @@ const router = {
         if (typeof window.renderDashboardShell === 'function') {
             window.renderDashboardShell();
         } else {
-            // If shell isn't ready, we might be in the middle of initialization
             console.warn('renderDashboardShell not yet available');
+        }
+
+        // Re-trigger page animation on each navigation
+        const content = document.getElementById('page-content');
+        if (content) {
+            content.style.animation = 'none';
+            content.offsetHeight; // reflow
+            content.style.animation = '';
         }
     },
 

@@ -23,7 +23,7 @@ const numbers = {
 
     async revoke(id) {
         if (confirm('Revoke this number?')) {
-            try { await window.api.call(`/api/numbers/${id}/revoke`, { method: 'POST' }); window.ui.showToast('Number revoked', 'success'); this.renderMyNumbers(document.getElementById('page-content')); }
+            try { await window.api.call(`/api/numbers/${id}/revoke`, { method: 'POST' }); window.api.invalidate('/api/numbers'); window.ui.showToast('Number revoked', 'success'); this.renderMyNumbers(document.getElementById('page-content')); }
             catch (e) { window.ui.showToast(e.message, 'error'); }
         }
     },
@@ -142,6 +142,116 @@ const numbers = {
             try { await window.api.call('/api/numbers-ext/bulk-revoke', { method: 'POST', body: JSON.stringify({ scope: 'global' }) }); window.ui.showToast('Infrastructure reset successful', 'success'); }
             catch (e) { window.ui.showToast(e.message, 'error'); }
         }
+    },
+
+    async renderTestNumbers(container) {
+        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+        try {
+            const res = await window.api.call('/api/numbers/test');
+            container.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Test Numbers</div>
+                    <button class="fly-btn fly-btn-sm" onclick="window.numbers.showAddTest()">${ICONS.plus} Add Test Number</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="fly-table">
+                        <thead><tr><th>Number</th><th>Country</th><th>Range</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            ${(res.data || []).map(n => `
+                                <tr>
+                                    <td><code>${window.ui.escapeHtml(n.number)}</code></td>
+                                    <td>${window.ui.escapeHtml(n.country_name || '-')}</td>
+                                    <td>${window.ui.escapeHtml(n.range_name || '-')}</td>
+                                    <td>${n.service ? `<span class="badge badge-primary">${window.ui.escapeHtml(n.service)}</span>` : '-'}</td>
+                                    <td><span class="badge badge-warning">TEST</span></td>
+                                    <td><button class="action-btn delete" onclick="window.numbers.deleteTestNumber('${n.id}')">${ICONS.trash}</button></td>
+                                </tr>`).join('') || '<tr class="empty-row"><td colspan="6">No test numbers added yet</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p></div>`; }
+    },
+
+    showAddTest() {
+        // Load ranges first for the dropdown
+        window.api.call('/api/ranges').then(rangesRes => {
+            const rangeOptions = (rangesRes.data || []).map(r => `<option value="${r.id}" data-name="${window.ui.escapeHtml(r.name)}">${window.ui.escapeHtml(r.name)}</option>`).join('');
+            window.ui.showModal('Add Test Number', `
+                <div class="form-group"><label>Phone Number *</label><input type="text" id="tn-number" class="fly-input" placeholder="+12025550100"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Country</label><input type="text" id="tn-country" class="fly-input" placeholder="United States"></div>
+                    <div class="form-group"><label>Service / App</label><input type="text" id="tn-service" class="fly-input" placeholder="Google, WhatsApp..."></div>
+                </div>
+                <div class="form-group"><label>Range (optional)</label><select id="tn-range" class="fly-input"><option value="">-- No Range --</option>${rangeOptions}</select></div>
+            `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" onclick="window.numbers.doAddTest()">Add Test Number</button>');
+        }).catch(() => {
+            window.ui.showModal('Add Test Number', `
+                <div class="form-group"><label>Phone Number *</label><input type="text" id="tn-number" class="fly-input" placeholder="+12025550100"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Country</label><input type="text" id="tn-country" class="fly-input" placeholder="United States"></div>
+                    <div class="form-group"><label>Service / App</label><input type="text" id="tn-service" class="fly-input" placeholder="Google, WhatsApp..."></div>
+                </div>
+            `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" onclick="window.numbers.doAddTest()">Add Test Number</button>');
+        });
+    },
+
+    async doAddTest() {
+        const number = document.getElementById('tn-number')?.value.trim();
+        if (!number) { window.ui.showToast('Phone number is required', 'error'); return; }
+        const rangeEl = document.getElementById('tn-range');
+        const rangeId = rangeEl?.value || null;
+        const rangeName = rangeId ? rangeEl.options[rangeEl.selectedIndex]?.dataset.name : null;
+        const payload = {
+            number,
+            countryName: document.getElementById('tn-country')?.value.trim() || 'Unknown',
+            service: document.getElementById('tn-service')?.value.trim() || null,
+            rangeId: rangeId || null,
+            rangeName: rangeName || null
+        };
+        try {
+            await window.api.call('/api/numbers/test', { method: 'POST', body: JSON.stringify(payload) });
+            window.api.invalidate('/api/numbers');
+            window.ui.showToast('Test number added', 'success');
+            window.ui.closeModal();
+            this.renderTestNumbers(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
+    async deleteTestNumber(id) {
+        if (!confirm('Delete this test number?')) return;
+        try {
+            await window.api.call('/api/numbers/' + id, { method: 'DELETE' });
+            window.api.invalidate('/api/numbers');
+            window.ui.showToast('Test number deleted', 'info');
+            this.renderTestNumbers(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
+    showAddBl() {
+        window.ui.showModal('Add to Blacklist', `
+            <div class="form-group"><label>App Name</label><input type="text" id="bl-app" class="fly-input" placeholder="AppName"></div>
+            <div class="form-group"><label>Pattern</label><input type="text" id="bl-pattern" class="fly-input" placeholder="verify.*"></div>
+        `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" onclick="window.numbers.doAddBl()">Add</button>');
+    },
+
+    async doAddBl() {
+        try {
+            await window.api.call('/api/numbers-ext/blacklist', { method: 'POST', body: JSON.stringify({ appName: document.getElementById('bl-app').value, pattern: document.getElementById('bl-pattern').value }) });
+            window.ui.showToast('Added to blacklist', 'success');
+            window.ui.closeModal();
+            this.renderBlacklist(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
+    async delBl(id) {
+        if (!confirm('Remove from blacklist?')) return;
+        try {
+            await window.api.call('/api/numbers-ext/blacklist/' + id, { method: 'DELETE' });
+            window.ui.showToast('Removed', 'info');
+            this.renderBlacklist(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
     }
 };
 window.numbers = numbers;

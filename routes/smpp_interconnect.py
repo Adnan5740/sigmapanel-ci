@@ -14,6 +14,34 @@ async def list_servers(p=Depends(require_role(["admin", "manager"]))):
         rows = conn.execute("SELECT * FROM smpp_remote_servers ORDER BY priority DESC").fetchall()
     return {"data": [dict(r) for r in rows]}
 
+@router.post("/servers")
+async def create_server(body: dict, p=Depends(require_role(["admin"]))):
+    with get_db() as conn:
+        sid = generate_id()
+        conn.execute(
+            "INSERT INTO smpp_remote_servers (id, name, host, port, system_id, password, bind_type, is_active, priority) VALUES (?,?,?,?,?,?,?,?,?)",
+            (sid, body.get("name",""), body.get("host",""), int(body.get("port",2775)),
+             body.get("system_id",""), body.get("password",""), body.get("bind_type","transceiver"),
+             1, int(body.get("priority",1)))
+        )
+    return {"message": "Server added", "id": sid}
+
+@router.post("/servers/{sid}/toggle")
+async def toggle_server(sid: str, p=Depends(require_role(["admin"]))):
+    with get_db() as conn:
+        current = conn.execute("SELECT is_active FROM smpp_remote_servers WHERE id=?", (sid,)).fetchone()
+        if not current:
+            raise HTTPException(404, "Server not found")
+        new_val = 0 if current["is_active"] else 1
+        conn.execute("UPDATE smpp_remote_servers SET is_active=? WHERE id=?", (new_val, sid))
+    return {"message": "Toggled", "is_active": new_val}
+
+@router.delete("/servers/{sid}")
+async def delete_server(sid: str, p=Depends(require_role(["admin"]))):
+    with get_db() as conn:
+        conn.execute("DELETE FROM smpp_remote_servers WHERE id=?", (sid,))
+    return {"message": "Server deleted"}
+
 # --- Server (Provider Accounts) ---
 @router.get("/accounts")
 async def list_server_accounts(p=Depends(require_role(["admin", "manager"]))):
@@ -84,3 +112,25 @@ async def get_smpp_stats(p=Depends(require_role(["admin", "manager"]))):
         "failed_binds": fails,
         "throughput": "0.45 msg/s"
     }
+
+@router.get("/logs")
+async def get_smpp_logs(p=Depends(require_role(["admin", "manager"]))):
+    """General SMPP event logs — alias for server-logs, used by frontend /api/smpp-interconnect/logs."""
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM smpp_server_logs ORDER BY created_at DESC LIMIT 200").fetchall()
+    return {"data": [dict(r) for r in rows]}
+
+@router.post("/test-connection")
+async def test_smpp_connection(body: dict, p=Depends(require_role(["admin", "manager"]))):
+    """TCP probe to check if a remote SMPP server is reachable."""
+    import socket as _sock
+    host = body.get("host", "")
+    port = int(body.get("port", 2775))
+    if not host:
+        raise HTTPException(400, "host is required")
+    try:
+        s = _sock.create_connection((host, port), timeout=5)
+        s.close()
+        return {"status": "reachable", "host": host, "port": port}
+    except Exception as e:
+        return {"status": "unreachable", "host": host, "port": port, "error": str(e)}

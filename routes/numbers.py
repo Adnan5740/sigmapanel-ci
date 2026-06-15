@@ -80,6 +80,28 @@ async def list_test_numbers(rangeId: str = Query(None), p=Depends(get_current_us
                 d = dict(n); d["range_name"] = r["name"]; result.append(d)
     return {"data": result}
 
+class TestNumberCreate(BaseModel):
+    number: str
+    countryName: Optional[str] = "Unknown"
+    rangeId: Optional[str] = None
+    service: Optional[str] = None
+
+@router.get("/test")
+async def list_test_numbers_endpoint(p=Depends(get_current_user)):
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM numbers WHERE status='test' ORDER BY created_at DESC").fetchall()
+    return {"data": [dict(r) for r in rows]}
+
+@router.post("/test")
+async def create_test_number(body: TestNumberCreate, p=Depends(require_role(["admin", "manager"]))):
+    with get_db() as conn:
+        nid = generate_id()
+        conn.execute(
+            "INSERT INTO numbers (id, number, country_name, range_id, service, status) VALUES (?,?,?,?,?,?)",
+            (nid, body.number, body.countryName, body.rangeId, body.service, "test")
+        )
+    return {"message": "Test number created"}
+
 @router.post("/{item_id}/revoke")
 async def revoke_number(item_id: str, p=Depends(get_current_user)):
     with get_db() as conn:

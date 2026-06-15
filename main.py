@@ -1,12 +1,12 @@
 """SIGMAPANEL - SMS OTP Management System v3"""
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from security_middleware import FirewallMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from contextlib import asynccontextmanager
 import os
-import asyncio
 import logging
 
 from database import init_db, get_db
@@ -33,20 +33,16 @@ logger = logging.getLogger("main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     logger.info("Starting SIGMAPANEL Backend...")
     init_db()
-
-    # Independent Worker Processes are handled by entrypoint.sh
-    # We only manage the API-related resources here.
-
     yield
-
-    # Shutdown
     logger.info("Shutting down SIGMAPANEL Backend...")
     await queue_manager.close()
 
 app = FastAPI(title="SIGMAPANEL", version="3.0", lifespan=lifespan)
+
+# Gzip all responses > 1KB
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,7 +62,7 @@ async def health_check():
 @app.get("/health/redis")
 async def redis_health():
     is_up = await queue_manager.is_healthy()
-    return {"status": "up" if is_up else "down", "latency": "low" if is_up else "n/a"}
+    return {"status": "up" if is_up else "down"}
 
 @app.get("/health/database")
 async def db_health():
@@ -79,7 +75,6 @@ async def db_health():
 
 @app.get("/health/workers")
 async def workers_health():
-    # Simple check for now
     return {"status": "running", "count": 2}
 
 app.include_router(auth_router)
@@ -100,10 +95,24 @@ app.include_router(smpp_interconnect_router)
 app.include_router(security_router)
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Static files with long-lived cache for immutable assets
+_IMMUTABLE = {".js", ".css", ".woff2", ".woff", ".png", ".svg", ".ico"}
+
+@app.get("/static/{path:path}")
+async def static_files(path: str, request: Request):
+    file_path = os.path.join(static_dir, path)
+    if not os.path.isfile(file_path):
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+    ext = os.path.splitext(path)[1].lower()
+    cache = "public, max-age=31536000, immutable" if ext in _IMMUTABLE else "public, max-age=3600"
+    return FileResponse(file_path, headers={"Cache-Control": cache})
 
 @app.get("/{path:path}")
 async def spa(path: str):
     if path.startswith("api/"):
         return JSONResponse(status_code=404, content={"detail": "Endpoint not found"})
-    return FileResponse(os.path.join(static_dir, "index.html"))
+    return FileResponse(
+        os.path.join(static_dir, "index.html"),
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+    )

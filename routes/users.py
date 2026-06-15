@@ -63,7 +63,6 @@ async def list_users(search: str = Query(None), role: str = Query(None), p=Depen
     if p["role"] not in CAN_MANAGE_USERS: raise HTTPException(403)
     conds, params = [], []
 
-    # BUG 16: FIX MANAGER VISIBILITY
     if p["role"] == "manager":
         conds.append("(id = ? OR parent_id = ? OR parent_id IN (SELECT id FROM users WHERE parent_id = ?))")
         params.extend([p["id"], p["id"], p["id"]])

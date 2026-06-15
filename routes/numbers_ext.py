@@ -140,3 +140,21 @@ async def list_blacklist(p=Depends(get_current_user)):
     with get_db() as conn:
         rows = conn.execute("SELECT * FROM blacklisted_apps").fetchall()
     return {"data": [dict(r) for r in rows]}
+
+@router.post("/blacklist")
+async def add_to_blacklist(body: dict, p=Depends(require_role(["admin", "manager"]))):
+    app_name = body.get("appName", "").strip()
+    pattern  = body.get("pattern", "").strip()
+    if not app_name:
+        raise HTTPException(400, "appName is required")
+    with get_db() as conn:
+        bid = generate_id()
+        conn.execute("INSERT INTO blacklisted_apps (id, app_name, pattern, created_by) VALUES (?,?,?,?)",
+                     (bid, app_name, pattern, p["username"]))
+    return {"message": "Added to blacklist", "id": bid}
+
+@router.delete("/blacklist/{bid}")
+async def remove_from_blacklist(bid: str, p=Depends(require_role(["admin", "manager"]))):
+    with get_db() as conn:
+        conn.execute("DELETE FROM blacklisted_apps WHERE id=?", (bid,))
+    return {"message": "Removed from blacklist"}
