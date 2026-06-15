@@ -47,6 +47,22 @@ const ranges = {
                 <div class="form-group"><label class="fly-label">Country Name</label><input type="text" id="rn-cn" class="fly-input" placeholder="United States"></div>
                 <div class="form-group"><label class="fly-label">Profit Margin (%)</label><input type="number" id="rn-pm" class="fly-input" value="50" min="0"></div>
             </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="fly-label">Daily OTP Limit (0 = unlimited)</label>
+                    <input type="number" id="rn-otp-limit" class="fly-input" value="0" min="0" placeholder="e.g., 1000">
+                </div>
+                <div class="form-group">
+                    <label class="fly-label">Enable OTP Limit</label>
+                    <select id="rn-otp-enabled" class="fly-input">
+                        <option value="0">Disabled</option>
+                        <option value="1">Enabled</option>
+                    </select>
+                </div>
+            </div>
+            <div style="padding:10px;background:rgba(239,68,68,0.08);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--danger)">
+                ⚠️ If OTP limit is exceeded, payout will be set to $0 for this range
+            </div>
             <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
             <div style="padding:14px;background:rgba(99,102,241,0.08);border-radius:8px;margin-bottom:16px">
                 <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px">📋 Optional: Add Numbers Now</div>
@@ -91,7 +107,9 @@ const ranges = {
             numberPrefix: document.getElementById('rn-pre').value.trim(),
             rate: parseFloat(document.getElementById('rn-rate').value) || 0.05,
             countryName: document.getElementById('rn-cn').value.trim() || 'Global',
-            profitMargin: parseFloat(document.getElementById('rn-pm').value) || 50
+            profitMargin: parseFloat(document.getElementById('rn-pm').value) || 50,
+            dailyOtpLimit: parseInt(document.getElementById('rn-otp-limit').value) || 0,
+            otpLimitEnabled: parseInt(document.getElementById('rn-otp-enabled').value) || 0
         };
         try {
             const result = await window.api.call('/api/ranges', { method: 'POST', body: JSON.stringify(payload) });

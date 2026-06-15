@@ -53,6 +53,52 @@ const users = {
         } catch (e) { window.ui.showToast(e.message, 'error'); }
     },
 
+    showEditModal(id) {
+        window.api.call('/api/users').then(res => {
+            const u = res.data.find(x => x.id === id);
+            if (!u) { window.ui.showToast('User not found', 'error'); return; }
+            const user = window.auth.getUser();
+            const isAdmin = user.role === 'admin';
+            
+            window.ui.showModal('Edit User: ' + u.username, `
+                <div class="form-group"><label>Email</label><input type="email" id="e-email" class="fly-input" value="${u.email || ''}"></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="e-fullname" class="fly-input" value="${u.full_name || ''}"></div>
+                ${isAdmin ? `
+                    <div class="form-row">
+                        <div class="form-group"><label>Balance</label><input type="number" id="e-balance" class="fly-input" value="${u.balance || 0}" step="0.01"></div>
+                        <div class="form-group"><label>Status</label><select id="e-status" class="fly-input"><option value="active" ${u.status === 'active' ? 'selected' : ''}>Active</option><option value="suspended" ${u.status === 'suspended' ? 'selected' : ''}>Suspended</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Self Allocation Limit</label><input type="number" id="e-self-limit" class="fly-input" value="${u.self_allocation_limit || 100}" min="0"></div>
+                        <div class="form-group"><label>Enable Limit</label><select id="e-self-enabled" class="fly-input"><option value="0" ${!u.self_allocation_limit_enabled ? 'selected' : ''}>Disabled</option><option value="1" ${u.self_allocation_limit_enabled ? 'selected' : ''}>Enabled</option></select></div>
+                    </div>
+                ` : ''}
+                <div class="form-group"><label>New Password (leave empty to keep)</label><input type="password" id="e-password" class="fly-input"></div>
+            `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" onclick="window.users.saveEdit(\''+id+'\')">Save</button>');
+        });
+    },
+
+    async saveEdit(id) {
+        const payload = { email: document.getElementById('e-email').value.trim(), fullName: document.getElementById('e-fullname').value.trim() };
+        const pwd = document.getElementById('e-password').value;
+        if (pwd) payload.password = pwd;
+        
+        const user = window.auth.getUser();
+        if (user.role === 'admin') {
+            payload.balance = parseFloat(document.getElementById('e-balance').value) || 0;
+            payload.status = document.getElementById('e-status').value;
+            payload.self_allocation_limit = parseInt(document.getElementById('e-self-limit').value) || 100;
+            payload.self_allocation_limit_enabled = parseInt(document.getElementById('e-self-enabled').value) || 0;
+        }
+        
+        try {
+            await window.api.call(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+            window.ui.showToast('Updated', 'success');
+            window.ui.closeModal();
+            this.renderUsers(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
     async renderRegRequests(container) {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
