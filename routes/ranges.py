@@ -17,11 +17,18 @@ class RangeCreate(BaseModel):
     profitMargin: Optional[float] = 50.0
     daily_otp_limit: Optional[int] = 0
     otp_limit_enabled: Optional[int] = 0
+    dailyOtpLimit: Optional[int] = None
+    otpLimitEnabled: Optional[int] = None
 
 class RangeNumbersAdd(BaseModel):
     numbers: List[str]
     countryName: Optional[str] = None
     rate: Optional[float] = None
+
+class RangeTestNumbersAdd(BaseModel):
+    numbers: List[str]
+    countryName: Optional[str] = None
+    service: Optional[str] = None
 
 @router.get("")
 async def list_ranges(status: str = Query(None), search: str = Query(None), p=Depends(get_current_user)):
@@ -41,11 +48,13 @@ async def list_ranges(status: str = Query(None), search: str = Query(None), p=De
 
 @router.post("")
 async def create_range(body: RangeCreate, p=Depends(require_role(["admin", "manager"]))):
+    daily_limit = body.dailyOtpLimit if body.dailyOtpLimit is not None else body.daily_otp_limit
+    limit_enabled = body.otpLimitEnabled if body.otpLimitEnabled is not None else body.otp_limit_enabled
     with get_db() as conn:
         rid = generate_id()
         conn.execute("INSERT INTO ranges (id, name, number_prefix, country_name, rate, profit_margin, daily_otp_limit, otp_limit_enabled) VALUES (?,?,?,?,?,?,?,?)",
-                     (rid, body.name, body.numberPrefix, body.countryName, body.rate, body.profitMargin, body.daily_otp_limit, body.otp_limit_enabled))
-    return {"message": "Range created"}
+                     (rid, body.name, body.numberPrefix, body.countryName, body.rate, body.profitMargin, daily_limit, limit_enabled))
+    return {"message": "Range created", "id": rid, "range_id": rid}
 
 @router.delete("/{rid}")
 async def delete_range(rid: str, p=Depends(require_role(["admin"]))):
@@ -71,6 +80,22 @@ async def add_numbers_to_range(rid: str, body: RangeNumbersAdd, p=Depends(requir
                 (nid, num, country, rid, range_name, "active", rate, profit_margin)
             )
     return {"message": f"{len(body.numbers)} number(s) added", "added": len(body.numbers)}
+
+@router.post("/{rid}/test-numbers")
+async def add_test_numbers_to_range(rid: str, body: RangeTestNumbersAdd, p=Depends(require_role(["admin", "manager"]))):
+    with get_db() as conn:
+        rng = conn.execute("SELECT * FROM ranges WHERE id=?", (rid,)).fetchone()
+        if not rng:
+            raise HTTPException(404, "Range not found")
+        rng = dict(rng)
+        country = body.countryName or rng.get("country_name")
+        for num in body.numbers:
+            nid = generate_id()
+            conn.execute(
+                "INSERT OR IGNORE INTO numbers (id, number, country_name, range_id, range_name, service, status, rate, profit_margin) VALUES (?,?,?,?,?,?,?,?,?)",
+                (nid, num, country, rid, rng.get("name"), body.service, "test", rng.get("rate"), rng.get("profit_margin"))
+            )
+    return {"message": f"{len(body.numbers)} test number(s) added", "added": len(body.numbers)}
 
 @router.get("/{rid}/numbers")
 async def list_range_numbers(rid: str, p=Depends(get_current_user)):

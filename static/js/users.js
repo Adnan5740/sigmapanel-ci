@@ -200,9 +200,6 @@ const users = {
         } catch (e) {}
     },
 
-    async renderActivityLogs(container) { this.renderAuditLogs(container); },
-    async renderPermissions(container) { this.renderRBAC(container); },
-
     async renderRBAC(container) {
         container.innerHTML = `
         <div class="card">
@@ -219,14 +216,6 @@ const users = {
                 </table>
             </div>
         </div>`;
-    },
-
-    async renderUsersByRole(container, role) {
-        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-        try {
-            const res = await window.api.call('/api/users?role=' + role);
-            container.innerHTML = `<div class="card"><div class="card-header"><div class="card-title">${role.toUpperCase()} Accounts</div></div><div class="table-wrapper"><table class="fly-table"><thead><tr><th>User</th><th>Status</th><th>Balance</th></tr></thead><tbody>${res.data.map(u => `<tr><td><strong>${u.username}</strong></td><td>${u.status}</td><td>$${u.balance.toFixed(2)}</td></tr>`).join('') || '<tr><td colspan="3">No data</td></tr>'}</tbody></table></div></div>`;
-        } catch (e) {}
     }
 };
 window.users = users;

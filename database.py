@@ -311,17 +311,4 @@ CREATE TABLE IF NOT EXISTS allocations (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS payment_requests (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    username TEXT NOT NULL,
-    amount REAL NOT NULL,
-    method TEXT NOT NULL,
-    wallet_address TEXT,
-    note TEXT,
-    status TEXT DEFAULT 'pending',
-    rejection_reason TEXT,
-    reviewed_by TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-);
 """

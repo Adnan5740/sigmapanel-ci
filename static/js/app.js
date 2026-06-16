@@ -255,7 +255,12 @@ function renderDashboardShell() {
 
         document.addEventListener('click', (e) => {
             const navBtn = e.target.closest('.sidebar-nav-item');
-            if (navBtn) { window.router.navigateTo(navBtn.dataset.page); return; }
+            if (navBtn) {
+                window.router.navigateTo(navBtn.dataset.page);
+                document.getElementById('sidebar')?.classList.remove('open');
+                document.getElementById('sidebar-overlay')?.classList.remove('open');
+                return;
+            }
             const groupHeader = e.target.closest('.sidebar-group-header');
             if (groupHeader) {
                 const group = groupHeader.parentElement;

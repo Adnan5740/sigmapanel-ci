@@ -1,10 +1,12 @@
 """Profile and notifications routes"""
-from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional
 from database import get_db
 from routes.deps import get_current_user
 from datetime import datetime
+import os
+import secrets
 from auth import hash_password, verify_password, generate_id
 
 router = APIRouter()
@@ -71,6 +73,27 @@ async def change_password(body: ChangePassword, p=Depends(get_current_user)):
         new_hash = hash_password(body.newPassword)
         conn.execute("UPDATE users SET password=? WHERE id=?", (new_hash, p['id']))
     return {"message": "Password changed successfully"}
+
+@router.post("/api/users/me/avatar")
+async def upload_avatar(avatar: UploadFile = File(...), p=Depends(get_current_user)):
+    allowed = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
+    if avatar.content_type not in allowed:
+        raise HTTPException(400, "Unsupported avatar file type")
+    data = await avatar.read()
+    if len(data) > 5 * 1024 * 1024:
+        raise HTTPException(400, "Image size must be less than 5MB")
+    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "uploads", "avatars")
+    os.makedirs(upload_dir, exist_ok=True)
+    filename = f"{p['id']}_{secrets.token_hex(8)}{allowed[avatar.content_type]}"
+    with open(os.path.join(upload_dir, filename), "wb") as fh:
+        fh.write(data)
+    avatar_url = f"/static/uploads/avatars/{filename}"
+    with get_db() as conn:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
+        if "avatar_url" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT")
+        conn.execute("UPDATE users SET avatar_url=? WHERE id=?", (avatar_url, p['id']))
+    return {"avatar_url": avatar_url}
 
 # Notifications Routes
 @router.get("/api/notifications/news")

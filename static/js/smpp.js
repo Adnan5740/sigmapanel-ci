@@ -119,10 +119,6 @@ const smpp = {
         } catch (e) {}
     },
 
-    async renderThroughput(container) { this.renderDashboard(container); },
-    async renderProviders(container) { this.renderDashboard(container); },
-    async renderStatus(container) { this.renderServerSessions(container); },
-    async renderHttpBinds(container) { container.innerHTML = '<div class="card"><div class="card-header"><div class="card-title">HTTP Provider Binds</div></div><div class="card-body">All webhook endpoints are active.</div></div>'; },
-    async renderFailover(container) { container.innerHTML = '<div class="card"><div class="card-header"><div class="card-title">Failover Routes</div></div><div class="card-body">Infrastructure is in high-availability mode.</div></div>'; }
+    async renderThroughput(container) { this.renderDashboard(container); }
 };
 window.smpp = smpp;

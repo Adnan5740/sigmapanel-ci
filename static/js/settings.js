@@ -63,28 +63,6 @@ const settings = {
         </div>`;
     },
 
-    async renderQueueSettings(container) {
-        container.innerHTML = `
-        <div class="card">
-            <div class="card-header"><div class="card-title">Task Queue Monitoring</div></div>
-            <div class="card-body">
-                <div style="display:flex; justify-content:space-between; margin-bottom:12px"><span>Redis Status</span> <span class="badge badge-success">ACTIVE</span></div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:12px"><span>Pending Jobs</span> <span class="badge badge-secondary">0</span></div>
-            </div>
-        </div>`;
-    },
-
-    async renderNotifications(container) {
-        container.innerHTML = `
-        <div class="card">
-            <div class="card-header"><div class="card-title">Notification Channels</div></div>
-            <div class="card-body">
-                <div class="form-group"><label><input type="checkbox" checked disabled> System Email Alerts</label></div>
-                <div class="form-group"><label><input type="checkbox" disabled> Telegram Bot Notifications</label></div>
-            </div>
-        </div>`;
-    },
-
     async renderBackupRestore(container) {
         container.innerHTML = `
         <div class="card">

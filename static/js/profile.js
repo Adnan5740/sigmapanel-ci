@@ -6,7 +6,7 @@ const profile = {
             const userData = await window.api.call('/api/users/me');
             
             container.innerHTML = `
-            <div style="display:grid;grid-template-columns:300px 1fr;gap:20px">
+            <div class="profile-layout">
                 <!-- Profile Card -->
                 <div class="card">
                     <div style="padding:24px;text-align:center">
@@ -35,7 +35,7 @@ const profile = {
                 </div>
 
                 <!-- Profile Details -->
-                <div style="display:flex;flex-direction:column;gap:20px">
+                <div class="profile-details">
                     <!-- Personal Information -->
                     <div class="card">
                         <div class="card-header">
@@ -43,7 +43,7 @@ const profile = {
                             <button class="fly-btn fly-btn-sm" onclick="window.profile.editPersonalInfo()">Edit</button>
                         </div>
                         <div class="card-body" style="padding:24px">
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                            <div class="profile-info-grid">
                                 <div>
                                     <label style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em">Full Name</label>
                                     <div style="font-size:14px;font-weight:600;margin-top:4px">${userData.full_name || 'Not set'}</div>
@@ -78,14 +78,14 @@ const profile = {
                             <div class="card-title">Security Settings</div>
                         </div>
                         <div class="card-body" style="padding:24px">
-                            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:#f8fafc;border-radius:8px;margin-bottom:12px">
+                            <div class="profile-setting-row" style="margin-bottom:12px">
                                 <div>
                                     <div style="font-weight:600;margin-bottom:4px">Password</div>
                                     <div style="font-size:12px;color:var(--text-secondary)">Last changed: ${userData.password_updated || 'Never'}</div>
                                 </div>
                                 <button class="fly-btn fly-btn-sm" onclick="window.profile.changePassword()">Change Password</button>
                             </div>
-                            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:#f8fafc;border-radius:8px">
+                            <div class="profile-setting-row">
                                 <div>
                                     <div style="font-weight:600;margin-bottom:4px">Two-Factor Authentication</div>
                                     <div style="font-size:12px;color:var(--text-secondary)">Add an extra layer of security</div>

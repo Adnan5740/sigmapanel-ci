@@ -233,21 +233,6 @@ const numbers = {
         window.ui.showToast(`Allocated ${success} range(s). ${failed > 0 ? failed + ' failed.' : ''}`, success > 0 ? 'success' : 'error');
         this.renderBulkAllocation(document.getElementById('page-content'));
     },
-                    <div class="form-row">
-                        <div class="form-group"><label>Range</label><select id="ba-range" class="fly-input">${ranges.data.map(r => `<option value="${r.name}">${r.name} (${r._count.available} avail)</option>`).join('')}</select></div>
-                        <div class="form-group"><label>Quantity</label><input type="number" id="ba-qty" class="fly-input" value="10"></div>
-                    </div>
-                    <button class="fly-btn" style="width:100%" onclick="window.numbers.doBulkAlloc()">Execute Allocation</button>
-                </div>
-            </div>`;
-        } catch (e) {}
-    },
-
-    async doBulkAlloc() {
-        const payload = { userId: document.getElementById('ba-user').value, rangeName: document.getElementById('ba-range').value, quantity: parseInt(document.getElementById('ba-qty').value) };
-        try { await window.api.call('/api/numbers-ext/bulk-allocate', { method: 'POST', body: JSON.stringify(payload) }); window.ui.showToast('Bulk allocation completed', 'success'); }
-        catch (e) { window.ui.showToast(e.message, 'error'); }
-    },
 
     async renderLiveAccess(container) {
         container.innerHTML = `<div class="card"><div class="card-header"><div class="card-title">Real-Time Traffic Stream</div></div><div class="table-wrapper"><table class="fly-table"><thead><tr><th>Time</th><th>Target</th><th>App</th><th>Msg</th></tr></thead><tbody id="la-body"></tbody></table></div></div>`;
@@ -274,7 +259,8 @@ const numbers = {
 
     async doUpload() {
         const text = document.getElementById('up-text').value;
-        try { await window.api.call('/api/numbers-ext/bulk-import', { method: 'POST', body: JSON.stringify({ numbersText: text }) }); window.ui.showToast('Import successful', 'success'); document.getElementById('up-text').value = ''; }
+        if (!text.trim()) { window.ui.showToast('Please enter at least one number', 'error'); return; }
+        try { await window.api.call('/api/numbers-ext/bulk-import', { method: 'POST', body: JSON.stringify({ numbersText: text }) }); window.api.invalidate('/api/numbers'); window.ui.showToast('Import successful', 'success'); document.getElementById('up-text').value = ''; }
         catch (e) { window.ui.showToast(e.message, 'error'); }
     },
 

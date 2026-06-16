@@ -26,7 +26,7 @@ const ranges = {
                                         <button class="action-btn" title="View Numbers" onclick="window.ranges.viewNumbers('${r.id}', '${window.ui.escapeHtml(r.name).replace(/'/g, "\\'")}')">${ICONS.eye} View</button>
                                         <button class="action-btn delete" title="Delete Range" onclick="window.ranges.del('${r.id}')">${ICONS.trash}</button>
                                     </td>
-                                </tr>`) .join('') || '<tr><td colspan="7" class="empty-row"><td colspan="7">No ranges found</td></tr>'}
+                                </tr>`).join('') || '<tr class="empty-row"><td colspan="7">No ranges found</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -114,6 +114,7 @@ const ranges = {
         try {
             const result = await window.api.call('/api/ranges', { method: 'POST', body: JSON.stringify(payload) });
             const rangeId = result.id || result.range_id;
+            if (!rangeId) throw new Error('Range created but backend did not return a range ID');
             
             // Add test numbers if provided
             if (testNumsText) {
