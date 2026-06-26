@@ -1,0 +1,102 @@
+const dashboard = {
+    async render(container) {
+        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+        try {
+            const [stats, recent] = await Promise.all([
+                window.api.call('/api/dashboard/stats'),
+                window.api.call('/api/dashboard/recent-sms?limit=10'),
+            ]);
+
+            const maxChart = Math.max(...stats.weekSmsByDay.map(d => d.count), 1);
+            
+            // Build stat cards based on role and visibility
+            let statCards = `
+                <div class="stat-card stat-card--sms"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Today's SMS</div><div class="stat-card-value">${stats.todaySms}</div></div><div class="stat-icon">${ICONS.sms}</div></div></div>
+                <div class="stat-card stat-card--numbers"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Total Numbers</div><div class="stat-card-value">${stats.totalNumbers}</div><div class="stat-card-change">${stats.activeNumbers} active</div></div><div class="stat-icon">${ICONS.phone}</div></div></div>
+            `;
+            
+            // Only show admin/manager stats to appropriate roles
+            if (stats.activeProviders !== null && stats.activeProviders !== undefined) {
+                statCards += `<div class="stat-card stat-card--providers"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Active Providers</div><div class="stat-card-value">${stats.activeProviders}</div></div><div class="stat-icon">${ICONS.server}</div></div></div>`;
+            }
+            
+            statCards += `
+                <div class="stat-card stat-card--profit"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Today's Profit</div><div class="stat-card-value">$${stats.todayProfit.toFixed(2)}</div></div><div class="stat-icon">${ICONS.profit}</div></div></div>
+                <div class="stat-card stat-card--month"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Month Profit</div><div class="stat-card-value">$${stats.monthProfit.toFixed(2)}</div></div><div class="stat-icon">${ICONS.chart}</div></div></div>
+                <div class="stat-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Allocations</div><div class="stat-card-value">${stats.totalAllocations}</div></div><div class="stat-icon">${ICONS.layers}</div></div></div>
+            `;
+            
+            // Show DLRs only if not null (admin/manager/own users)
+            if (stats.totalDlrs !== null && stats.totalDlrs !== undefined) {
+                statCards += `<div class="stat-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Total DLRs</div><div class="stat-card-value">${stats.totalDlrs}</div></div><div class="stat-icon">${ICONS.report}</div></div></div>`;
+            }
+            
+            // Show users count only to users with access to user management
+            if (stats.totalUsers !== 0 || stats.role === 'admin' || stats.role === 'manager' || stats.role === 'reseller') {
+                statCards += `<div class="stat-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="stat-card-label">Total Users</div><div class="stat-card-value">${stats.totalUsers}</div></div><div class="stat-icon">${ICONS.users}</div></div></div>`;
+            }
+
+            container.innerHTML = `
+            <div class="stats-grid">
+                ${statCards}
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:24px" class="dashboard-charts">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Weekly SMS Activity</div></div>
+                    <div style="padding:16px; height:240px">
+                        <canvas id="weekly-sms-chart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Top Services Today</div></div>
+                    <div class="service-list">
+                        ${stats.todaySmsByService.length ? stats.todaySmsByService.map(s => `
+                            <div class="service-chip">${s.service || 'Unknown'} <span class="service-chip-count">${s.count}</span></div>
+                        `).join('') : '<div class="empty-state"><p>No SMS received today</p></div>'}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><div class="card-title">Recent SMS</div></div>
+                <div class="table-wrapper">
+                    <table class="fly-table">
+                        <thead><tr><th>Number</th><th>Service (Sender)</th><th>Recipient</th><th>OTP</th><th>Message</th><th>Received</th></tr></thead>
+                        <tbody>
+                            ${recent.data.length ? recent.data.map(s => `
+                                <tr>
+                                    <td><code style="font-size:12px">${s.number}</code></td>
+                                    <td>${s.service ? `<span class="badge badge-primary">${s.service}</span>` : '<span style="color:#9ca3af">N/A</span>'}</td>
+                                    <td>${s.recipient || '<span style="color:#9ca3af">-</span>'}</td>
+                                    <td>${s.otp ? `<span class="otp-code">${s.otp}</span>` : '-'}</td>
+                                    <td class="message-text" title="${window.ui.escapeHtml(s.message)}">${window.ui.escapeHtml(s.message)}</td>
+                                    <td style="font-size:12px;color:#6B7280">${window.ui.formatDate(s.received_at)}</td>
+                                </tr>
+                            `).join('') : '<tr class="empty-row"><td colspan="6">No SMS received yet</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+            this.renderChart(stats.weekSmsByDay);
+        } catch (err) {
+            container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${err.message}</p></div>`;
+        }
+    },
+
+    async renderChart(data) {
+        await window.loadChart();
+        const ctx = document.getElementById('weekly-sms-chart')?.getContext('2d');
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date.slice(5)),
+                datasets: [{ label: 'SMS Volume', data: data.map(d => d.count), borderColor: '#735DFF', backgroundColor: 'rgba(115,93,255,0.1)', fill: true, tension: 0.4, pointRadius: 3 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 400 }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+};
+
+window.dashboard = dashboard;
