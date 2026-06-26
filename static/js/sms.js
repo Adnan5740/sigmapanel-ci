@@ -362,6 +362,83 @@ const sms = {
                 </div>
             </div>`;
         } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Unable to load failed SMS</h3><p>${e.message}</p></div>`; }
+    },
+
+    async renderLiveTraffic(container, minutes = 5) {
+        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+        try {
+            const [liveData, statsData] = await Promise.all([
+                window.api.call(`/api/sms/live-traffic?minutes=${minutes}`),
+                window.api.call(`/api/sms/traffic-stats?minutes=${minutes}`)
+            ]);
+            
+            const rows = liveData.data || [];
+            const stats = statsData.data || [];
+            
+            container.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Live SMS Traffic (Admin/Manager)</div>
+                    <div class="card-tools">
+                        <select class="filter-select" style="width:120px" onchange="window.sms.renderLiveTraffic(document.getElementById('page-content'), parseInt(this.value))">
+                            <option value="1">Last 1 min</option>
+                            <option value="5" selected>Last 5 min</option>
+                            <option value="15">Last 15 min</option>
+                            <option value="30">Last 30 min</option>
+                            <option value="60">Last 1 hour</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="fly-table">
+                        <thead><tr><th>Time</th><th>User</th><th>Number</th><th>Sender</th><th>Range</th><th>Service</th><th>OTP</th><th>Payout</th><th>Message</th></tr></thead>
+                        <tbody>
+                            ${rows.map(s => {
+                                const rangeDisplay = window.ui.formatRangeTermination(s);
+                                return `
+                                <tr>
+                                    <td style="font-size:10px; white-space:nowrap">${window.ui.formatDate(s.received_at)}</td>
+                                    <td><span class="badge badge-primary">${window.ui.escapeHtml(s.username || s.assigned_to || '-')}</span></td>
+                                    <td><code style="font-size:11px">${s.number}</code></td>
+                                    <td><code style="font-size:11px">${window.ui.escapeHtml(s.sender || '-')}</code></td>
+                                    <td><span class="badge badge-info">${rangeDisplay}</span></td>
+                                    <td><span class="badge badge-secondary">${s.service || '-'}</span></td>
+                                    <td>${s.otp ? `<strong>${s.otp}</strong>` : '-'}</td>
+                                    <td>${window.ui.formatPayout(s.profit)}</td>
+                                    <td class="message-text" title="${window.ui.escapeHtml(s.message)}">${window.ui.escapeHtml(s.message)}</td>
+                                </tr>
+                            `}).join('')}
+                            ${rows.length === 0 ? '<tr class="empty-row"><td colspan="9">No SMS traffic in the last ${minutes} minutes</td></tr>' : ''}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="padding:12px; background:var(--bg-secondary); border-radius:4px; margin-top:12px">
+                    <strong>Traffic Summary (${minutes} min):</strong> ${rows.length} SMS | Total Payout: <strong>$${(rows.reduce((s,r) => s + Number(r.profit||0), 0)).toFixed(4)}</strong>
+                </div>
+            </div>
+            <div class="card" style="margin-top:16px">
+                <div class="card-header"><div class="card-title">Traffic by User</div></div>
+                <div class="table-wrapper">
+                    <table class="fly-table">
+                        <thead><tr><th>Username</th><th>SMS Count</th><th>OTP Count</th><th>Unique Numbers</th><th>Total Payout</th></tr></thead>
+                        <tbody>
+                            ${stats.map(s => `
+                                <tr>
+                                    <td><span class="badge badge-primary">${window.ui.escapeHtml(s.username || '-')}</span></td>
+                                    <td><strong>${s.sms_count}</strong></td>
+                                    <td>${s.otp_count}</td>
+                                    <td>${s.unique_numbers}</td>
+                                    <td><strong style="color:var(--success)">$${Number(s.total_payout||0).toFixed(4)}</strong></td>
+                                </tr>
+                            `).join('')}
+                            ${stats.length === 0 ? '<tr class="empty-row"><td colspan="5">No users with traffic</td></tr>' : ''}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        } catch (err) {
+            container.innerHTML = `<div class="empty-state"><h3>Error loading live traffic</h3><p>${err.message}</p></div>`;
+        }
     }
 };
 

@@ -50,6 +50,9 @@ def _ensure_indexes(conn):
         "CREATE INDEX IF NOT EXISTS idx_sms_received_at ON sms_received(received_at DESC)",
         "CREATE INDEX IF NOT EXISTS idx_sms_number ON sms_received(number)",
         "CREATE INDEX IF NOT EXISTS idx_sms_assigned_to ON sms_received(assigned_to)",
+        "CREATE INDEX IF NOT EXISTS idx_sms_username ON sms_received(username)",
+        "CREATE INDEX IF NOT EXISTS idx_sms_user_id ON sms_received(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_sms_received_at_user ON sms_received(received_at DESC, username)",
         "CREATE INDEX IF NOT EXISTS idx_numbers_assigned ON numbers(assigned_to)",
         "CREATE INDEX IF NOT EXISTS idx_numbers_range ON numbers(range_id)",
         "CREATE INDEX IF NOT EXISTS idx_numbers_status ON numbers(status)",
@@ -109,6 +112,9 @@ def _migrate(conn):
     add_col("transactions", "payment_id", "TEXT")
     add_col("payout_requests", "payment_provider_id", "TEXT")
     add_col("allocations", "revoked_at", "TEXT")
+    add_col("sms_received", "username", "TEXT")
+    add_col("sms_received", "user_id", "TEXT")
+    add_col("sms_received", "ip_address", "TEXT")
     _ensure_indexes(conn)
 
 def _seed(conn):

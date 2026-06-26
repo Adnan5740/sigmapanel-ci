@@ -108,11 +108,17 @@ def process_incoming_sms(payload: dict):
         sms_id = generate_id()
         now = datetime.utcnow().isoformat()
         
+        # Get user_id for the assigned_to username
+        user_id = None
+        if assigned_to:
+            user_row = conn.execute("SELECT id FROM users WHERE username = ?", (assigned_to,)).fetchone()
+            user_id = user_row['id'] if user_row else None
+        
         conn.execute(
-            """INSERT INTO sms_received (id, number, sender, recipient, service, otp, message, assigned_to, is_alphanumeric_cli, range_name, profit, received_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO sms_received (id, number, sender, recipient, service, otp, message, assigned_to, username, user_id, is_alphanumeric_cli, range_name, profit, received_at, ip_address)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (sms_id, normalized_number, sender, _payload_value(payload, 'recipient', 'to'), service, otp, message,
-             assigned_to, 1 if is_alpha else 0, range_name, profit, now)
+             assigned_to, assigned_to, user_id, 1 if is_alpha else 0, range_name, profit, now, payload.get('ip_address'))
         )
         
         # Update number activity

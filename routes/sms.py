@@ -123,3 +123,58 @@ async def payout_stats(p=Depends(get_current_user)):
             f"SELECT COALESCE(SUM(profit),0) FROM sms_received WHERE {cond}", params
         ).fetchone()[0]
     return {"data": [dict(r) for r in rows], "total": round(float(total), 6)}
+
+@router.get("/live-traffic")
+async def live_traffic(
+    request: Request,
+    minutes: int = Query(5, ge=1, le=60),
+    p=Depends(require_role(["admin", "manager"]))
+):
+    """Get live SMS traffic for admin/manager - last N minutes with username."""
+    import datetime
+    cutoff_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=minutes)
+    cutoff_iso = cutoff_time.isoformat()
+    
+    with get_db() as conn:
+        rows = conn.execute(f"""
+            SELECT id, number, sender, recipient, service, otp, message, 
+                   assigned_to, username, range_name, profit, received_at, ip_address
+            FROM sms_received 
+            WHERE received_at >= ? AND {PRODUCTION_SMS}
+            ORDER BY received_at DESC 
+            LIMIT 500
+        """, (cutoff_iso,)).fetchall()
+    
+    return {
+        "data": [dict(r) for r in rows],
+        "total": len(rows),
+        "timeRange": f"Last {minutes} minutes",
+        "timestamp": datetime.datetime.utcnow().isoformat()
+    }
+
+@router.get("/traffic-stats")
+async def traffic_stats(
+    minutes: int = Query(5, ge=1, le=60),
+    p=Depends(require_role(["admin", "manager"]))
+):
+    """Get traffic statistics by user for admin/manager."""
+    import datetime
+    cutoff_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=minutes)
+    cutoff_iso = cutoff_time.isoformat()
+    
+    with get_db() as conn:
+        rows = conn.execute(f"""
+            SELECT username, COUNT(*) as sms_count, COALESCE(SUM(profit), 0) as total_payout,
+                   COUNT(CASE WHEN otp IS NOT NULL THEN 1 END) as otp_count,
+                   COUNT(DISTINCT number) as unique_numbers
+            FROM sms_received 
+            WHERE received_at >= ? AND {PRODUCTION_SMS}
+            GROUP BY username
+            ORDER BY sms_count DESC
+        """, (cutoff_iso,)).fetchall()
+    
+    return {
+        "data": [dict(r) for r in rows],
+        "total": sum(r['sms_count'] for r in rows),
+        "timeRange": f"Last {minutes} minutes"
+    }
