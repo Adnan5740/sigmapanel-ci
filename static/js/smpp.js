@@ -78,12 +78,11 @@ const smpp = {
                 <div class="form-group"><label>IP Whitelist (optional, comma separated)</label><input type="text" id="a-ips" class="fly-input" placeholder="0.0.0.0"></div>
             </div>
         `, '<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button><button class="fly-btn" id="save-btn" onclick="window.smpp.saveAccountType()">Save Account</button>');
-        document.getElementById('provider-form').style.display = 'block';
-        document.getElementById('account-form').style.display = 'none';
-        window.smpp.currentTab = 'account';
+        window.smpp.currentTab = 'provider';
+        window.smpp.switchTab('provider');
     },
     
-    currentTab: 'account',
+    currentTab: 'provider',
     
     switchTab(tab) {
         window.smpp.currentTab = tab;
@@ -145,7 +144,7 @@ const smpp = {
         } catch (e) {
             window.ui.showToast(e.message, 'error');
         }
-    }
+    },
 
     async saveAccount() {
         const payload = { system_id: document.getElementById('a-sid').value, password: document.getElementById('a-pass').value, company: document.getElementById('a-comp').value, throughput_limit: parseInt(document.getElementById('a-lim').value), ip_whitelist: document.getElementById('a-ips').value };
