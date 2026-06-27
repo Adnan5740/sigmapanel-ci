@@ -249,7 +249,7 @@ function renderDashboardShell() {
                 <div class="sidebar-group ${isCollapsed ? 'collapsed' : ''}" data-group="${group.group}">
                     <div class="sidebar-group-header"><span>${group.group}</span><span class="group-toggle">${isCollapsed ? ICONS.plus : ICONS.chevronDown}</span></div>
                     <div class="sidebar-group-items">
-                        ${items.map(item => `<button class="sidebar-nav-item ${window.router.currentPage === item.key ? 'active' : ''}" data-page="${item.key}">${item.icon} ${item.label}</button>`).join('')}
+                        ${items.map(item => `<button class="sidebar-nav-item ${window.router.currentPage === item.key ? 'active' : ''}" data-page="${item.key}"><span class="nav-icon">${item.icon}</span> ${item.label}</button>`).join('')}
                     </div>
                 </div>`;
             }).join('');
