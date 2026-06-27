@@ -58,8 +58,12 @@ def process_incoming_sms(payload: dict):
 
     # Business Logic: Service Detection & OTP Extraction
     is_alpha = (sender and not sender.replace('+', '').isdigit())
-    # Use both from/sender AND Cli fields for service detection
-    service = detect_service(from_field=from_field or sender, service_field=_payload_value(payload, 'service', 'app'), message=message, cli_field=cli or from_field)
+    # Prefer the alphabetic/named value between cli and from_field as the
+    # service hint — providers often put the service name in Cli (e.g.
+    # "AmericanExpress") while from/sender is a numeric address.
+    def _is_named(v): return bool(v) and not str(v).lstrip('+').isdigit()
+    service_hint = cli if _is_named(cli) and not _is_named(from_field) else (from_field or cli)
+    service = detect_service(from_field=service_hint, service_field=_payload_value(payload, 'service', 'app'), message=message, cli_field=cli or from_field)
     otp = extract_otp(message)
     
     with get_db() as conn:
