@@ -169,6 +169,90 @@ const numbers = {
         } catch (e) { window.ui.showToast(e.message, 'error'); }
     },
 
+    async renderRateCard(container) {
+        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+        try {
+            const [rangesRes, ratesRes] = await Promise.all([
+                window.api.call('/api/ranges?status=active'),
+                window.api.call('/api/settings/payout-rates').catch(() => ({ weekly: 0.85, monthly: 0.75 }))
+            ]);
+            const ranges = rangesRes.data || [];
+            const multiplier = { weekly: Number(ratesRes.weekly || 0.85), monthly: Number(ratesRes.monthly || 0.75) };
+
+            const totalNumbers = ranges.reduce((s, r) => s + (r._count?.numbers || 0), 0);
+            const totalAvail   = ranges.reduce((s, r) => s + (r._count?.available || 0), 0);
+            const totalAlloc   = totalNumbers - totalAvail;
+
+            container.innerHTML = `
+            <div class="stats-grid" style="margin-bottom:20px">
+                <div class="stat-card"><div class="stat-card-label">Total Ranges</div><div class="stat-card-value">${ranges.length}</div></div>
+                <div class="stat-card"><div class="stat-card-label">Total Numbers</div><div class="stat-card-value">${totalNumbers.toLocaleString()}</div></div>
+                <div class="stat-card"><div class="stat-card-label">Allocated</div><div class="stat-card-value" style="color:var(--primary)">${totalAlloc.toLocaleString()}</div></div>
+                <div class="stat-card"><div class="stat-card-label">Available</div><div class="stat-card-value" style="color:var(--success)">${totalAvail.toLocaleString()}</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">${ICONS.profit} SMS Rate Card</div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <span class="badge badge-info">Weekly ×${multiplier.weekly.toFixed(2)}</span>
+                        <span class="badge badge-success">Monthly ×${multiplier.monthly.toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="fly-table">
+                        <thead><tr>
+                            <th>Range</th>
+                            <th>Country</th>
+                            <th>Per SMS</th>
+                            <th>Weekly Payout</th>
+                            <th>Monthly Payout</th>
+                            <th>Daily OTP Limit</th>
+                            <th>Total Nums</th>
+                            <th>Allocated</th>
+                            <th>Remaining</th>
+                            <th>Usage</th>
+                        </tr></thead>
+                        <tbody>
+                        ${ranges.length ? ranges.map(r => {
+                            const base    = Number(r.rate || 0);
+                            const weekly  = Number(r.weekly_rate  || base * multiplier.weekly);
+                            const monthly = Number(r.monthly_rate || base * multiplier.monthly);
+                            const total   = r._count?.numbers  || 0;
+                            const avail   = r._count?.available || 0;
+                            const alloc   = total - avail;
+                            const pct     = total ? Math.round(alloc / total * 100) : 0;
+                            const otpLim  = r.otp_limit_enabled && r.daily_otp_limit > 0
+                                ? `${(r.otp_count_today||0).toLocaleString()} / ${Number(r.daily_otp_limit).toLocaleString()}`
+                                : '<span style="color:var(--text-secondary)">Unlimited</span>';
+                            return `<tr>
+                                <td><strong>${window.ui.escapeHtml(r.name)}</strong>${r.provider_name?`<div style="font-size:10px;color:var(--text-secondary)">${window.ui.escapeHtml(r.provider_name)}</div>`:''}  </td>
+                                <td>${window.ui.escapeHtml(r.country_name||'—')}</td>
+                                <td><code>$${base.toFixed(4)}</code></td>
+                                <td><span class="badge badge-info">$${weekly.toFixed(4)}</span></td>
+                                <td><span class="badge badge-success">$${monthly.toFixed(4)}</span></td>
+                                <td>${otpLim}</td>
+                                <td>${total.toLocaleString()}</td>
+                                <td style="color:var(--primary);font-weight:600">${alloc.toLocaleString()}</td>
+                                <td style="color:var(--success);font-weight:600">${avail.toLocaleString()}</td>
+                                <td style="min-width:100px">
+                                    <div style="display:flex;align-items:center;gap:6px">
+                                        <div style="flex:1;height:6px;background:#e2e8f0;border-radius:10px;overflow:hidden">
+                                            <div style="height:100%;width:${pct}%;background:${pct>80?'var(--danger)':pct>50?'#f59e0b':'var(--primary)'};border-radius:10px"></div>
+                                        </div>
+                                        <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap">${pct}%</span>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        }).join('') : '<tr class="empty-row"><td colspan="10">No active ranges found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        } catch (e) {
+            container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderRateCard(document.getElementById('page-content'))">Retry</button></div>`;
+        }
+    },
+
     showExportModal() {
         window.api.call('/api/ranges').then(ranges => {
             const rangeOptions = (ranges.data || []).map(r => `<option value="${window.ui.escapeHtml(r.name)}">${window.ui.escapeHtml(r.name)}</option>`).join('');

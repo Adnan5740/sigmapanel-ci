@@ -29,6 +29,7 @@ const NAV_STRUCTURE = [
             { key: 'bulk-allocation', label: 'Bulk Allocation', icon: ICONS.plus, roles: ['admin', 'manager'] },
             { key: 'allocation-history', label: 'Allocation History', icon: ICONS.report, roles: ['admin', 'manager'] },
             { key: 'sms-ranges', label: 'SMS Ranges', icon: ICONS.layers, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'sms-rate-card', label: 'SMS Rate Card', icon: ICONS.profit, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'search-access', label: 'Search Access', icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'live-access', label: 'Live Access', icon: ICONS.eye, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'upload-numbers', label: 'Upload Numbers', icon: ICONS.upload, roles: ['admin', 'manager'] },
@@ -143,6 +144,7 @@ function init() {
     window.router.addRoute('bulk-allocation', (c) => window.numbers.renderBulkAllocation(c));
     window.router.addRoute('allocation-history', (c) => window.numbers.renderAllocationHistory(c));
     window.router.addRoute('sms-ranges', (c) => window.ranges.renderRanges(c));
+    window.router.addRoute('sms-rate-card', (c) => window.numbers.renderRateCard(c));
     window.router.addRoute('search-access', (c) => window.searchAccess.render(c));
     window.router.addRoute('live-access', (c) => window.numbers.renderLiveAccess(c));
     window.router.addRoute('upload-numbers', (c) => window.numbers.renderUpload(c));
