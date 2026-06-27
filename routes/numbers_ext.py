@@ -39,9 +39,11 @@ class BulkImport(BaseModel):
     profitMargin: Optional[float] = 50.0
 
 class BulkRevokeRequest(BaseModel):
-    scope: str  # global | user | range
+    scope: Optional[str] = None  # global | user | range
     userId: Optional[str] = None
     rangeName: Optional[str] = None
+    numberIds: Optional[list] = None  # explicit list of number IDs (from checkbox selection)
+    action: Optional[str] = "revoke"  # revoke | return — both unassign the number
 
 class BulkAllocateRequest(BaseModel):
     userId: str
@@ -285,7 +287,33 @@ async def allocate_numbers(body: AllocateNumbers, request: Request, p=Depends(ge
 async def bulk_revoke(body: BulkRevokeRequest, request: Request, p=Depends(require_role(["admin", "manager", "reseller"]))):
     with get_db() as conn:
         affected = 0
-        detail = body.scope
+        detail = body.scope or "ids"
+
+        # Direct ID-based revoke (from checkbox selection in UI)
+        if body.numberIds:
+            placeholders = ",".join("?" * len(body.numberIds))
+            if p["role"] == "reseller":
+                # Resellers can only revoke numbers assigned to them or their clients
+                cur = conn.execute(
+                    f"UPDATE numbers SET assigned_to=NULL, assigned_at=NULL WHERE id IN ({placeholders}) AND assigned_to IN (SELECT username FROM users WHERE id=? OR parent_id=?)",
+                    [*body.numberIds, p["id"], p["id"]]
+                )
+            else:
+                cur = conn.execute(
+                    f"UPDATE numbers SET assigned_to=NULL, assigned_at=NULL WHERE id IN ({placeholders})",
+                    body.numberIds
+                )
+            affected = cur.rowcount
+            conn.execute(
+                f"UPDATE allocations SET status='revoked' WHERE number_id IN ({placeholders})",
+                body.numberIds
+            )
+            detail = f"ids={len(body.numberIds)}"
+            log_audit(conn, p, "numbers_bulk_revoked", "numbers", None, f"{detail}; affected={affected}", request)
+            return {"message": "Revoked", "affected": affected}
+
+        if not body.scope:
+            raise HTTPException(400, "scope or numberIds is required")
         if body.scope == "global":
             if p["role"] != "admin":
                 raise HTTPException(403, "Only admins can revoke all numbers globally")

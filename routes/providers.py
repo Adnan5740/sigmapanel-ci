@@ -86,8 +86,12 @@ async def update_provider(request: Request, pid: str, body: ProviderUpdate, p=De
 @router.get("/logs")
 async def provider_logs(request: Request, p=Depends(require_role(["admin", "manager"]))):
     with get_db() as conn:
-        # Retrieve logs from smpp_server_logs and security_events (if any webhook logs exist)
-        rows = conn.execute("SELECT created_at, system_id as provider, event_type, detail FROM smpp_server_logs ORDER BY created_at DESC LIMIT 100").fetchall()
+        rows = conn.execute("""
+            SELECT created_at, actor_username as provider, action as event_type, detail
+            FROM audit_logs
+            WHERE resource = 'provider' OR action LIKE '%provider%'
+            ORDER BY created_at DESC LIMIT 100
+        """).fetchall()
     return {"data": [dict(r) for r in rows]}
 
 @router.get("/throughput")

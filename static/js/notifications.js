@@ -99,37 +99,60 @@ const notifications = {
     },
 
     async viewTicket(id) {
-        window.ui.showModal('Ticket', '<div class="loading-spinner"><div class="spinner"></div></div>', '', 'large');
+        window.ui.showModal('Support Ticket', '<div class="loading-spinner"><div class="spinner"></div></div>', '', 'large');
         try {
             const ticket = await window.api.call('/api/notifications/support/' + id);
             const user = window.auth.getUser();
             const isAdmin = ['admin', 'manager'].includes(user.role);
+            const isOpen = ticket.status === 'open';
             const body = document.querySelector('.modal-body');
             if (!body) return;
             body.innerHTML = `
-                <div style="margin-bottom:16px">
-                    <h3 style="margin:0 0 8px 0">${window.ui.escapeHtml(ticket.subject)}</h3>
-                    <div style="padding:12px;background:#f8fafc;border-radius:8px;white-space:pre-wrap">${window.ui.escapeHtml(ticket.message)}</div>
+                <div style="margin-bottom:16px;padding:14px;background:#f8fafc;border-radius:8px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <h3 style="margin:0;font-size:15px">${window.ui.escapeHtml(ticket.subject)}</h3>
+                        <span class="badge badge-${ticket.status==='open'?'warning':'secondary'}">${ticket.status.toUpperCase()}</span>
+                    </div>
+                    <div style="white-space:pre-wrap;font-size:13px;color:var(--text-secondary)">${window.ui.escapeHtml(ticket.message)}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:8px">by ${window.ui.escapeHtml(ticket.username)} · ${window.ui.formatDate(ticket.created_at)}</div>
                 </div>
-                ${ticket.reply ? `<div style="margin-bottom:16px"><h4 style="margin:0 0 8px 0">Reply</h4><div style="padding:12px;background:rgba(5,150,105,0.08);border-radius:8px;white-space:pre-wrap">${window.ui.escapeHtml(ticket.reply)}</div><div style="font-size:11px;color:var(--text-secondary);margin-top:6px">${window.ui.escapeHtml(ticket.reply_by || '')} ${ticket.updated_at ? ' · ' + window.ui.formatDate(ticket.updated_at) : ''}</div></div>` : ''}
-                ${isAdmin && ticket.status === 'open' ? `
-                <div class="form-group"><label>Reply</label><textarea id="ticket-reply" class="fly-input" rows="4"></textarea></div>
-                <div style="display:flex;gap:10px">
-                    <button class="fly-btn" onclick="window.notifications.replyTicket('${id}')">Reply & Close</button>
-                    <button class="fly-btn fly-btn-secondary" onclick="window.notifications.closeTicket('${id}')">Close</button>
+
+                ${ticket.reply ? `
+                <div style="margin-bottom:16px;padding:14px;background:rgba(5,150,105,.06);border-left:3px solid var(--success);border-radius:8px">
+                    <div style="font-size:12px;font-weight:700;color:var(--success);margin-bottom:6px">REPLY</div>
+                    <div style="white-space:pre-wrap;font-size:13px">${window.ui.escapeHtml(ticket.reply)}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:6px">by ${window.ui.escapeHtml(ticket.reply_by||'')} · ${window.ui.formatDate(ticket.updated_at)}</div>
                 </div>` : ''}
+
+                ${isAdmin && isOpen ? `
+                <div class="form-group" style="margin-top:16px">
+                    <label>Reply *</label>
+                    <textarea id="ticket-reply" class="fly-input" rows="4" placeholder="Write your reply here..."></textarea>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:4px">
+                    <button class="fly-btn" onclick="window.notifications.replyTicket('${id}')">Send Reply</button>
+                    ${ticket.reply ? `<button class="fly-btn fly-btn-danger" onclick="window.notifications.closeTicket('${id}')">Close Ticket</button>` : ''}
+                </div>
+                ` : ''}
+
+                ${!isAdmin && isOpen && ticket.reply ? `
+                <div style="margin-top:12px">
+                    <button class="fly-btn fly-btn-secondary" onclick="window.notifications.closeTicket('${id}')">Mark as Resolved</button>
+                </div>` : ''}
+
+                ${!isOpen ? `<div style="margin-top:12px;padding:10px;background:#f1f5f9;border-radius:8px;text-align:center;font-size:13px;color:var(--text-secondary)">This ticket is closed.</div>` : ''}
             `;
         } catch (e) { const body = document.querySelector('.modal-body'); if (body) body.innerHTML = `<p>${e.message}</p>`; }
     },
 
     async replyTicket(id) {
-        const reply = document.getElementById('ticket-reply').value.trim();
-        if (!reply) { window.ui.showToast('Reply required', 'error'); return; }
+        const reply = document.getElementById('ticket-reply')?.value.trim();
+        if (!reply) { window.ui.showToast('Write a reply first', 'error'); return; }
         try {
             await window.api.call(`/api/notifications/support/${id}/reply`, { method: 'POST', body: JSON.stringify({ message: reply }) });
             window.ui.showToast('Reply sent', 'success');
-            window.ui.closeModal();
-            this.renderSupport(document.getElementById('page-content'));
+            // Reload modal with updated ticket (now shows Close button)
+            this.viewTicket(id);
         } catch (e) { window.ui.showToast(e.message, 'error'); }
     },
 
