@@ -9,7 +9,7 @@ const notifications = {
             container.innerHTML = `
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">📢 News & Announcements</div>
+                    <div class="card-title">${ICONS.bell} News &amp; Announcements</div>
                     ${isAdmin ? `<button class="fly-btn fly-btn-sm" onclick="window.notifications.showAddNews()">+ Post News</button>` : ''}
                 </div>
                 <div style="padding:20px;display:flex;flex-direction:column;gap:14px">

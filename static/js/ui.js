@@ -110,13 +110,13 @@ const ui = {
         const dlBtn = download
             ? `<div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;flex-wrap:wrap">
                  <button class="fly-btn fly-btn-secondary success-dl-btn" onclick="window.ui._successDownload('${download.url.replace('format=txt','format=csv')}','numbers.csv')">
-                   <span style="font-size:16px">📊</span> CSV
+                   ${ICONS.chart} CSV
                  </button>
                  <button class="fly-btn fly-btn-secondary success-dl-btn" onclick="window.ui._successDownload('${download.url.replace('format=txt','format=xlsx')}','numbers.xlsx')">
-                   <span style="font-size:16px">📗</span> Excel
+                   ${ICONS.report} Excel
                  </button>
                  <button class="fly-btn fly-btn-secondary success-dl-btn" onclick="window.ui._successDownload('${download.url}','numbers.txt')">
-                   <span style="font-size:16px">📝</span> TXT
+                   ${ICONS.edit} TXT
                  </button>
                </div>`
             : '';

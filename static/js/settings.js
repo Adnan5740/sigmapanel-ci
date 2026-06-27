@@ -161,7 +161,7 @@ const settings = {
         container.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:20px">
         <div class="card">
-            <div class="card-header"><div class="card-title">🔑 User API Token (Webhook Auth)</div></div>
+            <div class="card-header"><div class="card-title">${ICONS.key} User API Token (Webhook Auth)</div></div>
             <div class="card-body" style="padding:20px">
                 <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px">
                     This token authenticates <strong>your requests</strong> to the API. Use it as a Bearer token or query parameter when requesting SMS data, numbers, and auth-related actions.
@@ -177,12 +177,12 @@ const settings = {
         </div>
 
         <div class="card">
-            <div class="card-header"><div class="card-title">📡 Carrier SMS Receive Webhook</div></div>
+            <div class="card-header"><div class="card-title">${ICONS.smpp} Carrier SMS Receive Webhook</div></div>
             <div class="card-body" style="padding:20px">
                 <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px">
                     This endpoint receives <strong>incoming SMS messages from your carrier/provider</strong>. Configure your carrier to POST or GET to this URL when a message is delivered.
                     <br><br>
-                    <strong>⚠️ This is only for carrier-to-platform delivery — not for user API requests.</strong>
+                    <strong style="display:inline-flex;align-items:center;gap:5px">${ICONS.alertCircle} This is only for carrier-to-platform delivery — not for user API requests.</strong>
                 </p>
 
                 <div style="margin-bottom:16px">

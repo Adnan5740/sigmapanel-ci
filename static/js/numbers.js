@@ -11,15 +11,15 @@ const numbers = {
                         <div class="input-wrapper" style="width:200px">
                             <input type="text" id="search-mynumbers" class="search-input" placeholder="Search numbers...">
                         </div>
-                        <button class="fly-btn fly-btn-sm" onclick="window.numbers.showExportModal()">${ICONS.download || '↓'} Export</button>
+                        <button class="fly-btn fly-btn-sm" onclick="window.numbers.showExportModal()">${ICONS.download} Export</button>
                     </div>
                 </div>
                 <div id="bulk-action-bar" style="display:none;padding:10px 18px;background:rgba(115,93,255,.07);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                     <span id="bulk-count" style="font-size:13px;font-weight:600;color:var(--primary)">0 selected</span>
-                    <button class="fly-btn fly-btn-sm" onclick="window.numbers.bulkReturn()">↩ Return Selected</button>
-                    <button class="fly-btn fly-btn-sm fly-btn-danger" onclick="window.numbers.bulkRevoke()">✕ Revoke Selected</button>
-                    <button class="fly-btn fly-btn-sm" style="background:linear-gradient(135deg,#10b981,#059669)" onclick="window.numbers.bulkReturnAndAllocate()">↩➕ Return &amp; Allocate</button>
-                    <button class="fly-btn fly-btn-sm" style="background:linear-gradient(135deg,#3b82f6,#2563eb)" onclick="window.numbers.bulkAllocate()">👤 Allocate Selected</button>
+                    <button class="fly-btn fly-btn-sm" onclick="window.numbers.bulkReturn()">${ICONS.backup} Return Selected</button>
+                    <button class="fly-btn fly-btn-sm fly-btn-danger" onclick="window.numbers.bulkRevoke()">${ICONS.x} Revoke Selected</button>
+                    <button class="fly-btn fly-btn-sm" style="background:linear-gradient(135deg,#10b981,#059669)" onclick="window.numbers.bulkReturnAndAllocate()">${ICONS.transfer} Return &amp; Allocate</button>
+                    <button class="fly-btn fly-btn-sm" style="background:linear-gradient(135deg,#3b82f6,#2563eb)" onclick="window.numbers.bulkAllocate()">${ICONS.users} Allocate Selected</button>
                     <button class="fly-btn fly-btn-sm secondary" onclick="window.numbers.clearSelection()">Clear</button>
                 </div>
                 <div class="table-wrapper">
@@ -146,7 +146,7 @@ const numbers = {
                 <option value="weekly">Weekly</option>
             </select></div>
         `, `<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button>
-            <button class="fly-btn" onclick="window.numbers.doAllocateSelected(${JSON.stringify(ids)})">✓ Allocate</button>`);
+            <button class="fly-btn" onclick="window.numbers.doAllocateSelected(${JSON.stringify(ids)})">${ICONS.check} Allocate</button>`);
     },
 
     async doAllocateSelected(ids = []) {
@@ -261,20 +261,20 @@ const numbers = {
                     <label class="fly-label">Export Format *</label>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                         <label class="pay-method-card pay-method-card--active" onclick="document.getElementById('export-format').value='csv';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
-                            <div style="font-size:28px;margin-bottom:6px">📊</div>
+                            <div style="font-size:28px;margin-bottom:6px">${ICONS.chart}</div>
                             <div style="font-weight:700;font-size:13px">CSV</div>
                         </label>
                         <label class="pay-method-card" onclick="document.getElementById('export-format').value='xlsx';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
-                            <div style="font-size:28px;margin-bottom:6px">📗</div>
+                            <div style="font-size:28px;margin-bottom:6px">${ICONS.report}</div>
                             <div style="font-weight:700;font-size:13px">Excel</div>
                         </label>
                         <label class="pay-method-card" onclick="document.getElementById('export-format').value='pdf';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
-                            <div style="font-size:28px;margin-bottom:6px">📄</div>
+                            <div style="font-size:28px;margin-bottom:6px">${ICONS.copy}</div>
                             <div style="font-weight:700;font-size:13px">PDF</div>
                         </label>
 
                         <label class="pay-method-card" onclick="document.getElementById('export-format').value='txt';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
-                            <div style="font-size:28px;margin-bottom:6px">📝</div>
+                            <div style="font-size:28px;margin-bottom:6px">${ICONS.edit}</div>
                             <div style="font-weight:700;font-size:13px">TXT</div>
                         </label>
                     </div>
@@ -349,7 +349,7 @@ const numbers = {
                     <div style="height:6px;background:#e2e8f0;border-radius:10px;overflow:hidden">
                         <div style="height:100%;width:${Math.min(100,Math.round(used/limit*100))}%;background:${used>=limit?'var(--danger)':'var(--primary)'};border-radius:10px;transition:width .5s ease"></div>
                     </div>
-                    ${remaining === 0 ? '<div style="margin-top:8px;color:var(--danger);font-size:12px;font-weight:600">⚠ Self allocation limit is over. For more numbers, contact support.</div>' : ''}
+                    ${remaining === 0 ? `<div style="margin-top:8px;color:var(--danger);font-size:12px;font-weight:600">${ICONS.alertCircle} Self allocation limit reached. Contact support for more numbers.</div>` : ''}
                 </div>` : '';
 
             container.innerHTML = `
@@ -397,12 +397,12 @@ const numbers = {
                 <label>Payment Term *</label>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
                     <label class="pay-method-card" id="term-weekly" onclick="document.getElementById('al-term').value='weekly';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
-                        <div style="font-size:24px;margin-bottom:6px">📅</div>
+                        <div style="margin-bottom:6px">${ICONS.report}</div>
                         <div style="font-weight:700;font-size:13px">Weekly</div>
                         <div style="font-size:11px;color:var(--text-secondary)">$${weeklyRate}/SMS</div>
                     </label>
                     <label class="pay-method-card pay-method-card--active" id="term-monthly" onclick="document.getElementById('al-term').value='monthly';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
-                        <div style="font-size:24px;margin-bottom:6px">📆</div>
+                        <div style="margin-bottom:6px">${ICONS.profit}</div>
                         <div style="font-weight:700;font-size:13px">Monthly</div>
                         <div style="font-size:11px;color:var(--text-secondary)">$${monthlyRate}/SMS (Best)</div>
                     </label>

@@ -414,10 +414,10 @@ const users = {
                 <table class="fly-table">
                     <thead><tr><th>Feature</th><th>Admin</th><th>Manager</th><th>Reseller</th><th>Client</th></tr></thead>
                     <tbody>
-                        <tr><td>Add Providers</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                        <tr><td>Bulk Allocate</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
-                        <tr><td>Self Allocation</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
-                        <tr><td>View All SMS</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+                        <tr><td>Add Providers</td><td>${ICONS.check}</td><td>${ICONS.x}</td><td>${ICONS.x}</td><td>${ICONS.x}</td></tr>
+                        <tr><td>Bulk Allocate</td><td>${ICONS.check}</td><td>${ICONS.check}</td><td>${ICONS.x}</td><td>${ICONS.x}</td></tr>
+                        <tr><td>Self Allocation</td><td>${ICONS.x}</td><td>${ICONS.x}</td><td>${ICONS.check}</td><td>${ICONS.check}</td></tr>
+                        <tr><td>View All SMS</td><td>${ICONS.check}</td><td>${ICONS.check}</td><td>${ICONS.x}</td><td>${ICONS.x}</td></tr>
                     </tbody>
                 </table>
             </div>

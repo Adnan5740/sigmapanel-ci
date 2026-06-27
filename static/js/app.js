@@ -251,7 +251,7 @@ function renderDashboardShell() {
                 <div class="sidebar-group ${isCollapsed ? 'collapsed' : ''}" data-group="${group.group}">
                     <div class="sidebar-group-header"><span>${group.group}</span><span class="group-toggle">${isCollapsed ? ICONS.plus : ICONS.chevronDown}</span></div>
                     <div class="sidebar-group-items">
-                        ${items.map(item => `<button class="sidebar-nav-item ${window.router.currentPage === item.key ? 'active' : ''}" data-page="${item.key}"><span class="nav-icon">${item.icon}</span> ${item.label}</button>`).join('')}
+                        ${items.map(item => `<button class="sidebar-nav-item ${window.router.currentPage === item.key ? 'active' : ''}" data-page="${item.key}"><span class="nav-icon">${item.icon}</span> ${item.label}${item.key === 'live-otp-feed' ? '<span class="sms-live-badge" id="sms-live-badge" style="display:none;margin-left:auto;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;animation:badgePop .3s ease"></span>' : ''}</button>`).join('')}
                     </div>
                 </div>`;
             }).join('');
@@ -315,6 +315,28 @@ function renderDashboardShell() {
 
     const content = document.getElementById('page-content');
     window.router.resolvePage(content);
+
+    // Live SMS badge — polls every 15s, shows unread count on Live OTP Feed nav item
+    let _lastSmsCount = null;
+    async function _pollSmsBadge() {
+        try {
+            const res = await window.api.call('/api/dashboard/stats');
+            const count = res.sms_today ?? res.smsToday ?? 0;
+            const badge = document.getElementById('sms-live-badge');
+            if (!badge) return;
+            if (_lastSmsCount === null) { _lastSmsCount = count; }
+            const newOnes = Math.max(0, count - _lastSmsCount);
+            if (newOnes > 0 && window.router.currentPage !== 'live-otp-feed') {
+                badge.textContent = newOnes > 99 ? '99+' : newOnes;
+                badge.style.display = 'inline-flex';
+            } else if (window.router.currentPage === 'live-otp-feed') {
+                _lastSmsCount = count;
+                badge.style.display = 'none';
+            }
+        } catch (_) {}
+    }
+    _pollSmsBadge();
+    setInterval(_pollSmsBadge, 15000);
 
     const currentNav = user.role === 'test_user' ? TEST_NAV : NAV_STRUCTURE;
     const currentItem = currentNav.flatMap(g => g.items).find(i => i.key === window.router.currentPage);

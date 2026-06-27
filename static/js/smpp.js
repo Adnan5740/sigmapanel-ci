@@ -55,8 +55,8 @@ const smpp = {
     showAddAccount() {
         window.ui.showModal('SMPP Setup', `
             <div style="display:flex;gap:10px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:10px">
-                <button id="tab-provider" class="fly-btn fly-btn-sm" onclick="window.smpp.switchTab('provider')" style="font-weight:600;border-bottom:3px solid var(--primary)">📡 Provider Connection</button>
-                <button id="tab-account" class="fly-btn fly-btn-sm" onclick="window.smpp.switchTab('account')" style="border-bottom:3px solid transparent;color:var(--text-secondary)">👤 Account Setup</button>
+                <button id="tab-provider" class="fly-btn fly-btn-sm" onclick="window.smpp.switchTab('provider')" style="font-weight:600;border-bottom:3px solid var(--primary)">${ICONS.smpp} Provider Connection</button>
+                <button id="tab-account" class="fly-btn fly-btn-sm" onclick="window.smpp.switchTab('account')" style="border-bottom:3px solid transparent;color:var(--text-secondary)">${ICONS.user} Account Setup</button>
             </div>
             
             <div id="provider-form" style="display:none">
@@ -99,7 +99,7 @@ const smpp = {
             tabAccount.style.borderBottomColor = 'transparent';
             tabAccount.style.color = 'var(--text-secondary)';
             const btn = document.getElementById('save-btn');
-            if (btn) btn.textContent = '📡 Save Connection';
+            if (btn) btn.innerHTML = `${ICONS.smpp} Save Connection`;
         } else {
             providerForm.style.display = 'none';
             accountForm.style.display = 'block';
@@ -108,7 +108,7 @@ const smpp = {
             tabAccount.style.borderBottomColor = 'var(--primary)';
             tabAccount.style.color = '#000';
             const btn = document.getElementById('save-btn');
-            if (btn) btn.textContent = '👤 Save Account';
+            if (btn) btn.innerHTML = `${ICONS.user} Save Account`;
         }
     },
     
