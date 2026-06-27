@@ -11,12 +11,20 @@ _SEPARATOR_RE = re.compile(r"[^a-z0-9]+")
 _SPACE_RE = re.compile(r"\s+")
 _ALNUM_SENDER_RE = re.compile(r"^[a-z0-9]{2,14}$", re.I)
 
-# Common OTP templates: "Your Google code is 123456", "Facebook login code: 123456"
+# Common OTP templates covering 500+ services
 _OTP_MESSAGE_PATTERNS = (
-    re.compile(r"\byour\s+([a-z0-9][a-z0-9 .&-]{1,40}?)\s+(?:verification\s+)?(?:code|otp|pin|passcode)\b", re.I),
-    re.compile(r"\b([a-z0-9][a-z0-9 .&-]{1,40}?)\s+(?:verification|login|security|auth(?:entication)?)\s+(?:code|otp|pin)\b", re.I),
-    re.compile(r"\b(?:code|otp|pin)\s+(?:for|from|to)\s+([a-z0-9][a-z0-9 .&-]{1,40}?)\b", re.I),
-    re.compile(r"\buse\s+([a-z0-9][a-z0-9 .&-]{1,40}?)\s+(?:code|otp|pin)\b", re.I),
+    re.compile(r"\byour\s+([a-z0-9][a-z0-9 .&-]{1,40}?)\s+(?:verification\s+)?(?:code|otp|pin|passcode|password)\b", re.I),
+    re.compile(r"\b([a-z0-9][a-z0-9 .&-]{1,40}?)\s+(?:verification|login|sign.?in|security|auth(?:entication)?|access|confirmation)\s+(?:code|otp|pin|passcode)\b", re.I),
+    re.compile(r"\b(?:code|otp|pin|passcode)\s+(?:for|from|to|of)\s+([a-z0-9][a-z0-9 .&-]{1,40}?)\b", re.I),
+    re.compile(r"\buse\s+(?:this\s+)?(?:code|otp|pin)\s+(?:for|to\s+(?:sign\s+in\s+to|log\s+in\s+to|access|verify))\s+([a-z0-9][a-z0-9 .&-]{1,40?})\b", re.I),
+    re.compile(r"\b(?:sign|log)\s*in\s+to\s+([a-z0-9][a-z0-9 .&-]{1,40}?)\b", re.I),
+    re.compile(r"\baccess\s+(?:your\s+)?([a-z0-9][a-z0-9 .&-]{1,40}?)\s+account\b", re.I),
+    re.compile(r"\bwelcome\s+to\s+([a-z0-9][a-z0-9 .&-]{1,40}?)\b", re.I),
+    re.compile(r"\b([a-z0-9][a-z0-9 .&-]{1,40}?)\s+(?:account|app|service)\s+(?:verification|confirm|code|otp)\b", re.I),
+    re.compile(r"\bverify\s+(?:your\s+)?(?:([a-z0-9][a-z0-9 .&-]{1,40}?)\s+)?(?:account|number|email|phone|identity)\b", re.I),
+    re.compile(r"\b([a-z0-9][a-z0-9 .&-]{1,40}?)\s*:\s*(?:your\s+)?(?:verification\s+)?(?:code|otp|pin)\b", re.I),
+    re.compile(r"\bfrom\s+([a-z0-9][a-z0-9 .&-]{1,40}?)[,.]?\s+(?:your|the)\s+(?:code|otp|pin|passcode)\b", re.I),
+    re.compile(r"\b([a-z0-9][a-z0-9 .&-]{1,40}?)\s+(?:sent|is\s+sending)\s+(?:you\s+)?(?:a\s+)?(?:code|otp|pin|passcode)\b", re.I),
 )
 
 
