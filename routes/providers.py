@@ -106,6 +106,8 @@ async def provider_throughput(request: Request, p=Depends(require_role(["admin",
 async def provider_connection_status(p=Depends(require_role(["admin", "manager"]))):
     """Summarize configured HTTP/SMPP provider health from real config and recent logs."""
     import socket
+    import struct
+    import httpx
     data = []
     with get_db() as conn:
         providers = conn.execute("SELECT * FROM providers ORDER BY created_at DESC").fetchall()
@@ -114,20 +116,51 @@ async def provider_connection_status(p=Depends(require_role(["admin", "manager"]
             status = "inactive" if item.get("status") != "active" else "configured"
             detail = "Provider is configured"
             if item.get("type") == "http":
-                status = "ready" if item.get("api_url") else "missing_config"
-                detail = item.get("api_url") or "HTTP API URL is missing"
+                url = item.get("api_url") or ""
+                if not url:
+                    status = "missing_config"
+                    detail = "HTTP API URL is missing"
+                else:
+                    try:
+                        async with httpx.AsyncClient(timeout=5.0) as client:
+                            r = await client.request(
+                                item.get("api_method") or "POST", url,
+                                headers={"Authorization": f"Bearer {item.get('api_token') or ''}"} if item.get("api_token") else {}
+                            )
+                        if r.status_code < 500:
+                            status = "reachable"
+                            detail = f"HTTP {r.status_code} from {url}"
+                        else:
+                            status = "error"
+                            detail = f"HTTP {r.status_code} from {url}"
+                    except Exception as exc:
+                        status = "unreachable"
+                        detail = str(exc)
             elif item.get("type") == "smpp":
                 host = item.get("smpp_host")
                 port = int(item.get("smpp_port") or 2775)
+                system_id = (item.get("smpp_system_id") or "").encode()
+                password = (item.get("smpp_password") or "").encode()
                 if not host:
                     status = "missing_config"
                     detail = "SMPP host is missing"
                 else:
                     try:
-                        sock = socket.create_connection((host, port), timeout=2)
+                        # Send bind_transceiver, read back bind response
+                        sock = socket.create_connection((host, port), timeout=5)
+                        body = system_id + b'\x00' + password + b'\x00' + b'\x00\x34\x01\x01\x00'
+                        header = struct.pack('!IIII', 16 + len(body), 0x00000009, 0, 1)
+                        sock.sendall(header + body)
+                        sock.settimeout(5)
+                        resp = sock.recv(16)
+                        _, cmd_id, cmd_status, _ = struct.unpack('!IIII', resp)
                         sock.close()
-                        status = "reachable"
-                        detail = f"TCP reachable at {host}:{port}"
+                        if cmd_id == 0x80000009 and cmd_status == 0:
+                            status = "bound"
+                            detail = f"SMPP bind_transceiver OK at {host}:{port}"
+                        else:
+                            status = "bind_failed"
+                            detail = f"SMPP bind rejected (status=0x{cmd_status:08X})"
                     except Exception as exc:
                         status = "unreachable"
                         detail = str(exc)

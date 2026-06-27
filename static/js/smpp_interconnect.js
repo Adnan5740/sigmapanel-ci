@@ -203,7 +203,8 @@ const smppInterconnect = {
             enquire_link_interval: parseInt(document.getElementById('rs-interval').value),
             dlr_enabled: document.getElementById('rs-dlr').checked ? 1 : 0,
             priority: parseInt(document.getElementById('rs-priority').value),
-            allowed_ips: document.getElementById('rs-ips').value
+            allowed_ips: document.getElementById('rs-ips').value,
+            connection_type: 'provider_connection'
         };
         try {
             await window.api.call('/api/smpp-interconnect/servers', { method: 'POST', body: JSON.stringify(payload) });

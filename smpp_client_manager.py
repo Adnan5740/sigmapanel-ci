@@ -115,23 +115,53 @@ class RemoteSMPPSession:
                     await self.send_pdu(0x80000015, 0, seq, b'')
 
                 if cmd_id == 0x00000005: # DELIVER_SM (MO or DLR)
-                    # Simple ack first
                     await self.send_pdu(0x80000005, 0, seq, b'\x00')
-
-                    # Logic for parsing DLR/MO would go here, similar to smpp_server.py
-                    logger.info(f"Received DELIVER_SM from {self.config['name']}")
-                    from queue_manager import queue_manager
-                    await queue_manager.push("sms_queue", {
-                        "type": "mo_sms",
-                        "remote_server": self.config['name'],
-                        "timestamp": datetime.utcnow().isoformat()
-                    })
+                    await self._process_deliver_sm(body)
 
         except Exception as e:
             logger.error(f"Connection lost for {self.config['name']}: {e}")
             self.connected = False
             self.bound = False
             self.update_status('disconnected', str(e))
+
+    async def _process_deliver_sm(self, body: bytes):
+        try:
+            offset = 0
+            while body[offset] != 0: offset += 1  # service_type
+            offset += 1
+            src_ton, src_npi = body[offset], body[offset + 1]
+            offset += 2
+            src_start = offset
+            while body[offset] != 0: offset += 1
+            src_addr = body[src_start:offset].decode('utf-8', 'ignore')
+            offset += 1
+            dst_ton, dst_npi = body[offset], body[offset + 1]
+            offset += 2
+            dst_start = offset
+            while body[offset] != 0: offset += 1
+            dst_addr = body[dst_start:offset].decode('utf-8', 'ignore')
+            offset += 1
+            esm_class = body[offset]
+            offset += 5  # esm_class, proto, priority, schedule_dt\0, validity\0
+            reg_delivery, replace_if, data_coding, default_msg_id, sm_len = body[offset:offset + 5]
+            offset += 5
+            raw_msg = body[offset:offset + sm_len]
+            message = raw_msg.decode('utf-16-be', 'ignore') if data_coding == 8 else raw_msg.decode('latin-1', 'ignore')
+
+            is_dlr = bool(esm_class & 0x04)
+            if is_dlr:
+                from queue_manager import queue_manager
+                await queue_manager.push("dlr_queue", {"raw": message, "system_id": self.config['name']})
+                logger.info(f"DLR from {self.config['name']}: {message[:80]}")
+            else:
+                from sms_processor import process_incoming_sms
+                result = process_incoming_sms({
+                    "to": dst_addr, "from": src_addr, "msg": message,
+                    "source": f"SMPP:{self.config['name']}"
+                })
+                logger.info(f"DELIVER_SM from {self.config['name']}: {src_addr}->{dst_addr} result={result.get('success')}")
+        except Exception as e:
+            logger.error(f"DELIVER_SM parse error from {self.config['name']}: {e}")
 
     def update_status(self, status: str, error: str = ""):
         with get_db() as conn:

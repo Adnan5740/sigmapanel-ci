@@ -98,6 +98,8 @@ const smpp = {
             tabProvider.style.color = '#000';
             tabAccount.style.borderBottomColor = 'transparent';
             tabAccount.style.color = 'var(--text-secondary)';
+            const btn = document.getElementById('save-btn');
+            if (btn) btn.textContent = '📡 Save Connection';
         } else {
             providerForm.style.display = 'none';
             accountForm.style.display = 'block';
@@ -105,6 +107,8 @@ const smpp = {
             tabProvider.style.color = 'var(--text-secondary)';
             tabAccount.style.borderBottomColor = 'var(--primary)';
             tabAccount.style.color = '#000';
+            const btn = document.getElementById('save-btn');
+            if (btn) btn.textContent = '👤 Save Account';
         }
     },
     

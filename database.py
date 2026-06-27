@@ -109,6 +109,19 @@ def _migrate(conn):
     add_col("smpp_remote_servers", "last_connected", "TEXT")
     add_col("smpp_remote_servers", "last_disconnected", "TEXT")
     add_col("smpp_remote_servers", "last_error", "TEXT")
+    # providers table — add all columns added in full schema
+    add_col("providers", "api_token", "TEXT")
+    add_col("providers", "api_method", "TEXT DEFAULT 'POST'")
+    add_col("providers", "field_from", "TEXT DEFAULT 'from'")
+    add_col("providers", "field_uuid", "TEXT DEFAULT 'uuid'")
+    add_col("providers", "smpp_system_type", "TEXT DEFAULT ''")
+    add_col("providers", "smpp_service_type", "TEXT")
+    add_col("providers", "smpp_source_ton", "INTEGER DEFAULT 1")
+    add_col("providers", "smpp_source_npi", "INTEGER DEFAULT 1")
+    add_col("providers", "smpp_dest_ton", "INTEGER DEFAULT 1")
+    add_col("providers", "smpp_dest_npi", "INTEGER DEFAULT 1")
+    add_col("providers", "smpp_data_coding", "INTEGER DEFAULT 0")
+    add_col("providers", "notes", "TEXT")
     add_col("transactions", "payment_id", "TEXT")
     add_col("payout_requests", "payment_provider_id", "TEXT")
     add_col("allocations", "revoked_at", "TEXT")
@@ -279,12 +292,24 @@ CREATE TABLE IF NOT EXISTS providers (
     type TEXT DEFAULT 'http',
     status TEXT DEFAULT 'active',
     api_url TEXT,
+    api_token TEXT,
+    api_method TEXT DEFAULT 'POST',
     field_to TEXT DEFAULT 'to',
+    field_from TEXT DEFAULT 'from',
     field_msg TEXT DEFAULT 'msg',
+    field_uuid TEXT DEFAULT 'uuid',
     smpp_host TEXT,
     smpp_port INTEGER DEFAULT 2775,
     smpp_system_id TEXT,
     smpp_password TEXT,
+    smpp_system_type TEXT DEFAULT '',
+    smpp_service_type TEXT,
+    smpp_source_ton INTEGER DEFAULT 1,
+    smpp_source_npi INTEGER DEFAULT 1,
+    smpp_dest_ton INTEGER DEFAULT 1,
+    smpp_dest_npi INTEGER DEFAULT 1,
+    smpp_data_coding INTEGER DEFAULT 0,
+    notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
