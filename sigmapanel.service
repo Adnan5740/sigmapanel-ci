@@ -1,17 +1,21 @@
 [Unit]
-Description=SIGMAPANEL API Service
+Description=SIGMAPANEL SMS Management Platform
 After=network.target redis-server.service
+Wants=redis-server.service
 
 [Service]
 User=www-data
 Group=www-data
 WorkingDirectory=/var/www/sigmapanel
-Environment="PATH=/var/www/sigmapanel/venv/bin"
+Environment="PATH=/var/www/sigmapanel/venv/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="DATABASE_URL=data/sigmapanel.db"
-Environment="REDIS_URL=redis://localhost:6379/0"
+Environment="REDIS_URL=redis://127.0.0.1:6379/0"
+Environment="PORT=8000"
 ExecStart=/var/www/sigmapanel/entrypoint.sh
 Restart=always
 RestartSec=5
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

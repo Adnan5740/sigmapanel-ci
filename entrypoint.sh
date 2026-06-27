@@ -1,13 +1,17 @@
 #!/bin/bash
+set -e
+
+# Ensure data directory exists
+mkdir -p data
 
 # Start SMPP Server in background
-python smpp_server.py &
+python3 smpp_server.py &
 
 # Start Worker in background
-python worker.py &
+python3 worker.py &
 
-# Start SMPP Interconnection Manager
-python smpp_client_manager.py &
+# Start SMPP Client Manager (outbound provider connections)
+python3 smpp_client_manager.py &
 
-# Start FastAPI application
-uvicorn main:app --host 0.0.0.0 --port 8000
+# Start FastAPI application (foreground — keeps container alive)
+exec uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}"

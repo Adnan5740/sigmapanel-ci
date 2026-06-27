@@ -147,12 +147,17 @@ const settings = {
     async renderWebhookConfig(container) {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         let token = '—';
+        let webhookUrl = window.location.origin + '/api/webhook/receive';
+        let serverIp = null;
         try {
-            const res = await window.api.call('/api/auth/token');
-            token = res.token || res.api_token || '—';
-        } catch (e) { /* token fetch optional */ }
-
-        const origin = window.location.origin;
+            const [tokenRes, infoRes] = await Promise.all([
+                window.api.call('/api/auth/token').catch(() => ({})),
+                window.api.call('/api/settings/webhook-info').catch(() => ({}))
+            ]);
+            token = tokenRes.token || tokenRes.api_token || '—';
+            if (infoRes.webhookUrl) webhookUrl = infoRes.webhookUrl;
+            if (infoRes.serverIp) serverIp = infoRes.serverIp;
+        } catch (e) { /* optional */ }
         container.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:20px">
         <div class="card">
@@ -183,8 +188,8 @@ const settings = {
                 <div style="margin-bottom:16px">
                     <label style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px">Webhook Endpoint</label>
                     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
-                        <code style="font-size:13px; flex:1">${origin}/api/webhook/receive</code>
-                        <button class="fly-btn fly-btn-sm" onclick="window.ui.copyToClipboard('${origin}/api/webhook/receive')">${ICONS.send} Copy URL</button>
+                        <code style="font-size:13px; flex:1">${webhookUrl}</code>
+                        <button class="fly-btn fly-btn-sm" onclick="window.ui.copyToClipboard('${webhookUrl}')">${ICONS.send} Copy URL</button>
                     </div>
                 </div>
 
