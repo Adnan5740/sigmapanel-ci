@@ -14,17 +14,29 @@ const numbers = {
                         <button class="fly-btn fly-btn-sm" onclick="window.numbers.showExportModal()">${ICONS.download || '↓'} Export</button>
                     </div>
                 </div>
+                <div id="bulk-action-bar" style="display:none;padding:10px 18px;background:rgba(115,93,255,.07);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <span id="bulk-count" style="font-size:13px;font-weight:600;color:var(--primary)">0 selected</span>
+                    <button class="fly-btn fly-btn-sm" onclick="window.numbers.bulkReturn()">↩ Return Selected</button>
+                    <button class="fly-btn fly-btn-sm fly-btn-danger" onclick="window.numbers.bulkRevoke()">✕ Revoke Selected</button>
+                    <button class="fly-btn fly-btn-sm" style="background:linear-gradient(135deg,#10b981,#059669)" onclick="window.numbers.bulkReturnAndAllocate()">↩➕ Return &amp; Allocate</button>
+                    <button class="fly-btn fly-btn-sm" style="background:linear-gradient(135deg,#3b82f6,#2563eb)" onclick="window.numbers.bulkAllocate()">👤 Allocate Selected</button>
+                    <button class="fly-btn fly-btn-sm secondary" onclick="window.numbers.clearSelection()">Clear</button>
+                </div>
                 <div class="table-wrapper">
                     <table class="fly-table">
-                        <thead><tr><th>Number</th><th>Range</th><th>App</th><th>Status</th><th>Payout Rate</th><th>Actions</th></tr></thead>
+                        <thead><tr>
+                            <th style="width:36px"><input type="checkbox" id="select-all-numbers" onchange="window.numbers.toggleSelectAll(this.checked)" style="cursor:pointer;width:16px;height:16px;accent-color:var(--primary)"></th>
+                            <th>Number</th><th>Range</th><th>App</th><th>Status</th><th>Payout Rate</th><th>Actions</th>
+                        </tr></thead>
                         <tbody id="mynumbers-tbody">${(res.data||[]).map(n => `<tr>
+                            <td><input type="checkbox" class="num-cb" data-id="${n.id}" data-range="${window.ui.escapeHtml(n.range_name||'')}" onchange="window.numbers.onCheckboxChange()" style="cursor:pointer;width:16px;height:16px;accent-color:var(--primary)"></td>
                             <td><code>${window.ui.escapeHtml(n.number)}</code></td>
                             <td><span class="badge badge-info">${window.ui.escapeHtml(n.range_name||'-')}</span></td>
                             <td>${window.ui.escapeHtml(n.service||'-')}</td>
                             <td><span class="badge ${n.status==='active'?'badge-success':'badge-danger'}">${n.status==='active'?'IPRN':window.ui.escapeHtml(n.status)}</span></td>
                             <td>$${Number(n.rate||0).toFixed(4)}</td>
                             <td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td>
-                        </tr>`).join('')||'<tr class="empty-row"><td colspan="6">No numbers assigned</td></tr>'}</tbody>
+                        </tr>`).join('')||'<tr class="empty-row"><td colspan="7">No numbers assigned</td></tr>'}</tbody>
                     </table>
                 </div>
                 ${window.ui.renderPagination(res.pagination, (p) => this.renderMyNumbers(container, p))}
@@ -33,6 +45,128 @@ const numbers = {
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Error Loading Numbers</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderMyNumbers(document.getElementById('page-content'))">Retry</button></div>`;
         }
+    },
+
+    _getSelectedIds() {
+        return [...document.querySelectorAll('.num-cb:checked')].map(cb => cb.dataset.id);
+    },
+
+    _getSelectedRanges() {
+        return [...new Set([...document.querySelectorAll('.num-cb:checked')].map(cb => cb.dataset.range).filter(Boolean))];
+    },
+
+    onCheckboxChange() {
+        const ids = this._getSelectedIds();
+        const bar = document.getElementById('bulk-action-bar');
+        const countEl = document.getElementById('bulk-count');
+        const allCb = document.getElementById('select-all-numbers');
+        if (bar) bar.style.display = ids.length ? 'flex' : 'none';
+        if (countEl) countEl.textContent = `${ids.length} selected`;
+        if (allCb) {
+            const total = document.querySelectorAll('.num-cb').length;
+            allCb.indeterminate = ids.length > 0 && ids.length < total;
+            allCb.checked = ids.length === total;
+        }
+    },
+
+    toggleSelectAll(checked) {
+        document.querySelectorAll('.num-cb').forEach(cb => { cb.checked = checked; });
+        this.onCheckboxChange();
+    },
+
+    clearSelection() {
+        document.querySelectorAll('.num-cb').forEach(cb => { cb.checked = false; });
+        const allCb = document.getElementById('select-all-numbers');
+        if (allCb) { allCb.checked = false; allCb.indeterminate = false; }
+        this.onCheckboxChange();
+    },
+
+    async bulkRevoke() {
+        const ids = this._getSelectedIds();
+        if (!ids.length) return;
+        if (!confirm(`Revoke ${ids.length} number(s)?`)) return;
+        try {
+            await window.api.call('/api/numbers-ext/bulk-revoke', { method: 'POST', body: JSON.stringify({ numberIds: ids }) });
+            window.ui.showToast(`${ids.length} number(s) revoked`, 'success');
+            this.renderMyNumbers(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
+    async bulkReturn() {
+        const ids = this._getSelectedIds();
+        if (!ids.length) return;
+        if (!confirm(`Return ${ids.length} number(s) to pool?`)) return;
+        try {
+            await window.api.call('/api/numbers-ext/bulk-revoke', { method: 'POST', body: JSON.stringify({ numberIds: ids, action: 'return' }) });
+            window.ui.showToast(`${ids.length} number(s) returned`, 'success');
+            this.renderMyNumbers(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
+    async bulkReturnAndAllocate() {
+        const ids = this._getSelectedIds();
+        if (!ids.length) return;
+        if (!confirm(`Return ${ids.length} number(s) then open allocation?`)) return;
+        try {
+            await window.api.call('/api/numbers-ext/bulk-revoke', { method: 'POST', body: JSON.stringify({ numberIds: ids, action: 'return' }) });
+            window.ui.showToast(`${ids.length} returned — opening allocation`, 'success');
+            this.showBulkAllocateModal(ids.length);
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
+    },
+
+    async bulkAllocate() {
+        const ids = this._getSelectedIds();
+        if (!ids.length) return;
+        this.showBulkAllocateModal(ids.length, ids);
+    },
+
+    async showBulkAllocateModal(count, ids = []) {
+        let users = [], ranges = [];
+        try {
+            [{ data: users }, { data: ranges }] = await Promise.all([
+                window.api.call('/api/users?limit=200'),
+                window.api.call('/api/ranges?status=active')
+            ]);
+        } catch (e) {}
+        const user = window.auth.getUser() || {};
+        const isAdmin = ['admin','manager'].includes(user.role);
+        window.ui.showModal('Allocate Numbers', `
+            ${ids.length ? `<p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Allocating <strong>${ids.length}</strong> selected number(s).</p>` : `<p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Allocating <strong>${count}</strong> number(s) from pool.</p>`}
+            ${isAdmin ? `<div class="form-group"><label>Assign To User *</label><select id="ba-user" class="fly-input">
+                <option value="">— Select user —</option>
+                ${users.map(u => `<option value="${u.id}">${window.ui.escapeHtml(u.username)} (${u.role})</option>`).join('')}
+            </select></div>` : ''}
+            <div class="form-group"><label>Range *</label><select id="ba-range" class="fly-input">
+                <option value="">— Select range —</option>
+                ${ranges.map(r => `<option value="${window.ui.escapeHtml(r.name)}">${window.ui.escapeHtml(r.name)}</option>`).join('')}
+            </select></div>
+            <div class="form-group"><label>Quantity</label><input type="number" id="ba-qty" class="fly-input" value="${ids.length || 1}" min="1" ${ids.length ? 'readonly' : ''}></div>
+            <div class="form-group"><label>Payment Term</label><select id="ba-term" class="fly-input">
+                <option value="monthly">Monthly</option>
+                <option value="weekly">Weekly</option>
+            </select></div>
+        `, `<button class="fly-btn secondary" onclick="window.ui.closeModal()">Cancel</button>
+            <button class="fly-btn" onclick="window.numbers.doAllocateSelected(${JSON.stringify(ids)})">✓ Allocate</button>`);
+    },
+
+    async doAllocateSelected(ids = []) {
+        const rangeName = document.getElementById('ba-range')?.value;
+        const qty = parseInt(document.getElementById('ba-qty')?.value || '1');
+        const term = document.getElementById('ba-term')?.value || 'monthly';
+        const userId = document.getElementById('ba-user')?.value;
+        if (!rangeName) { window.ui.showToast('Select a range', 'error'); return; }
+        const user = window.auth.getUser() || {};
+        const isAdmin = ['admin','manager'].includes(user.role);
+        try {
+            const payload = isAdmin
+                ? { userId, rangeName, quantity: qty, duration: term, numberIds: ids.length ? ids : undefined }
+                : { rangeName, quantity: qty, duration: term };
+            const endpoint = isAdmin ? '/api/numbers-ext/bulk-allocate' : '/api/numbers-ext/allocate';
+            await window.api.call(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+            window.ui.showToast('Numbers allocated successfully', 'success');
+            window.ui.closeModal();
+            this.renderMyNumbers(document.getElementById('page-content'));
+        } catch (e) { window.ui.showToast(e.message, 'error'); }
     },
 
     showExportModal() {
