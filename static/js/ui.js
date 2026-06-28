@@ -49,19 +49,23 @@ const ui = {
             document.body.appendChild(container);
         }
         container.className = 'toast-container';
-        if (container.parentElement !== document.body) {
-            document.body.appendChild(container);
-        }
-        const icons = { success: ICONS.check, error: ICONS.alertCircle, info: ICONS.info };
+        if (container.parentElement !== document.body) document.body.appendChild(container);
+
+        const iconMap = { success: ICONS.check, error: ICONS.alertCircle, info: ICONS.info, warning: ICONS.alertCircle };
+        const titleMap = { success: 'Success', error: 'Error', info: 'Info', warning: 'Warning' };
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span>${message}</span>`;
+        toast.style.cssText = 'transition:opacity .3s ease,transform .3s ease;';
+        toast.innerHTML = `
+            <span class="toast-icon" style="color:var(--${type==='error'?'danger':type==='warning'?'warning':type==='success'?'success':'info'})">${iconMap[type]||iconMap.info}</span>
+            <div class="toast-body"><div class="toast-title">${titleMap[type]||'Info'}</div><div class="toast-sub">${message}</div></div>
+            <div class="toast-progress"></div>`;
         container.appendChild(toast);
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transform = 'translateX(110%)';
+            toast.style.transform = 'translateX(110%) scale(.95)';
             setTimeout(() => toast.remove(), 320);
-        }, 3200);
+        }, 4000);
     },
 
     setupTableSearch(inputId, tableBodyId) {

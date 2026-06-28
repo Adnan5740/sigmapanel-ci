@@ -19,7 +19,6 @@ class RangeCreate(BaseModel):
     countryName: Optional[str] = "Global"
     rate: Optional[float] = 0.05
     profitMargin: Optional[float] = 100.0
-    daily_otp_limit: Optional[int] = 0
     otp_limit_enabled: Optional[int] = 0
     dailyOtpLimit: Optional[int] = None
     otpLimitEnabled: Optional[int] = None
@@ -82,7 +81,7 @@ async def list_ranges(status: str = Query(None), search: str = Query(None), p=De
         d = dict(r)
         rate = float(d.get("rate") or 0)
         margin = float(d.get("profit_margin") if d.get("profit_margin") is not None else 100)
-        d["payout_rate"] = round(rate * margin / 100.0, 6)
+        d["payout_rate"] = round(rate, 6)
         d["_count"] = {"numbers": d.pop("numbers_count"), "available": d.pop("available_count")}
         if p.get("role") not in ("admin", "manager"):
             d.pop("real_range_name", None)

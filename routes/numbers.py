@@ -22,7 +22,7 @@ class NumberCreate(BaseModel):
     status: Optional[str] = "active"
     assignedTo: Optional[str] = None
     rate: Optional[float] = 0.05
-    profitMargin: Optional[float] = 50.0
+    profitMargin: Optional[float] = 100.0
 
 @router.get("")
 async def list_numbers(

@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS ranges (
     number_prefix TEXT,
     country_name TEXT,
     rate REAL DEFAULT 0.05,
-    profit_margin REAL DEFAULT 50,
+    profit_margin REAL DEFAULT 100,
     daily_otp_limit INTEGER DEFAULT 0,
     otp_limit_enabled INTEGER DEFAULT 0,
     sms_receive_limit INTEGER DEFAULT 0,
@@ -199,7 +199,7 @@ CREATE TABLE IF NOT EXISTS numbers (
     assigned_to TEXT,
     assigned_at TEXT,
     rate REAL DEFAULT 0.05,
-    profit_margin REAL DEFAULT 50,
+    profit_margin REAL DEFAULT 100,
     total_sms INTEGER DEFAULT 0,
     last_sms_at TEXT,
     created_at TEXT DEFAULT (datetime('now'))

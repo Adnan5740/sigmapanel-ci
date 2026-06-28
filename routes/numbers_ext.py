@@ -36,7 +36,7 @@ class BulkImport(BaseModel):
     rangeName: Optional[str] = None
     rangeId: Optional[str] = None
     rate: Optional[float] = 0.05
-    profitMargin: Optional[float] = 50.0
+    profitMargin: Optional[float] = 100.0
 
 class BulkRevokeRequest(BaseModel):
     scope: Optional[str] = None  # global | user | range
@@ -181,7 +181,7 @@ async def bulk_allocate(body: BulkAllocateRequest, request: Request, p=Depends(r
                 raise HTTPException(403, "Managers can allocate only to their reseller/client accounts")
         rng = conn.execute("SELECT rate, profit_margin FROM ranges WHERE name=?", (body.rangeName,)).fetchone()
         default_rate = float(rng["rate"]) if rng and rng["rate"] is not None else 0.05
-        default_margin = float(rng["profit_margin"]) if rng and rng["profit_margin"] is not None else 50.0
+        default_margin = float(rng["profit_margin"]) if rng and rng["profit_margin"] is not None else 100.0
         margin = float(body.profitMargin) if body.profitMargin is not None else default_margin
         if margin < 0:
             raise HTTPException(400, "Payout margin cannot be negative")
@@ -222,7 +222,7 @@ async def reseller_allocate(body: BulkAllocateRequest, request: Request, p=Depen
             raise HTTPException(400, "Target must be one of your client accounts")
 
         rng = conn.execute("SELECT profit_margin FROM ranges WHERE name=?", (body.rangeName,)).fetchone()
-        default_margin = float(rng["profit_margin"]) if rng and rng["profit_margin"] is not None else 50.0
+        default_margin = float(rng["profit_margin"]) if rng and rng["profit_margin"] is not None else 100.0
         margin = float(body.profitMargin) if body.profitMargin is not None else default_margin
         if margin < 0:
             raise HTTPException(400, "Payout margin cannot be negative")
