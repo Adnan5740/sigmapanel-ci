@@ -34,7 +34,7 @@ const numbers = {
                             <td><span class="badge badge-info">${window.ui.escapeHtml(n.range_name||'-')}</span></td>
                             <td>${window.ui.escapeHtml(n.service||'-')}</td>
                             <td><span class="badge ${n.status==='active'?'badge-success':'badge-danger'}">${n.status==='active'?'IPRN':window.ui.escapeHtml(n.status)}</span></td>
-                            <td>$${(Number(n.rate||0) * Number(n.profit_margin != null ? n.profit_margin : 100) / 100).toFixed(4)}</td>
+                            <td>$${Number(n.rate||0).toFixed(4)}</td>
                             <td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td>
                         </tr>`).join('')||'<tr class="empty-row"><td colspan="7">No numbers assigned</td></tr>'}</tbody>
                     </table>
@@ -176,16 +176,16 @@ const numbers = {
                 window.api.call('/api/ranges?status=active'),
                 window.api.call('/api/settings/payout-rates').catch(() => ({ weekly: 0.85, monthly: 0.75 }))
             ]);
-            const rates = rangesRes.data || [];
-            const flatRates = { weekly: Number(ratesRes.weekly || 0.04), monthly: Number(ratesRes.monthly || 0.03) };
+            const ranges = rangesRes.data || [];
+            const multiplier = { weekly: Number(ratesRes.weekly || 0.85), monthly: Number(ratesRes.monthly || 0.75) };
 
-            const totalNumbers = rates.reduce((s, r) => s + (r._count?.numbers || 0), 0);
-            const totalAvail   = rates.reduce((s, r) => s + (r._count?.available || 0), 0);
+            const totalNumbers = ranges.reduce((s, r) => s + (r._count?.numbers || 0), 0);
+            const totalAvail   = ranges.reduce((s, r) => s + (r._count?.available || 0), 0);
             const totalAlloc   = totalNumbers - totalAvail;
 
             container.innerHTML = `
             <div class="stats-grid" style="margin-bottom:20px">
-                <div class="stat-card"><div class="stat-card-label">Total Ranges</div><div class="stat-card-value">${rates.length}</div></div>
+                <div class="stat-card"><div class="stat-card-label">Total Ranges</div><div class="stat-card-value">${ranges.length}</div></div>
                 <div class="stat-card"><div class="stat-card-label">Total Numbers</div><div class="stat-card-value">${totalNumbers.toLocaleString()}</div></div>
                 <div class="stat-card"><div class="stat-card-label">Allocated</div><div class="stat-card-value" style="color:var(--primary)">${totalAlloc.toLocaleString()}</div></div>
                 <div class="stat-card"><div class="stat-card-label">Available</div><div class="stat-card-value" style="color:var(--success)">${totalAvail.toLocaleString()}</div></div>
@@ -194,11 +194,7 @@ const numbers = {
                 <div class="card-header">
                     <div class="card-title">${ICONS.profit} SMS Rate Card</div>
                     <div style="display:flex;gap:8px;align-items:center">
-                        <div class="input-wrapper" style="width:200px">
-                            <input type="text" id="search-ratecard" class="search-input" placeholder="Search ranges...">
-                        </div>
-                        <span class="badge badge-info">Weekly $${flatRates.weekly.toFixed(4)}/SMS</span>
-                        <span class="badge badge-success">Monthly $${flatRates.monthly.toFixed(4)}/SMS</span>
+                        <input type="text" id="rate-card-search" class="fly-input" placeholder="Search ranges..." style="width:180px" oninput="window.numbers.filterRateCard(this.value)">
                     </div>
                 </div>
                 <div class="table-wrapper">
@@ -215,9 +211,11 @@ const numbers = {
                             <th>Remaining</th>
                             <th>Usage</th>
                         </tr></thead>
-                        <tbody id="ratecard-tbody">
-                        ${rates.length ? rates.map(r => {
+                        <tbody id="rate-card-tbody">
+                        ${ranges.length ? ranges.map(r => {
                             const base    = Number(r.rate || 0);
+                            const weekly  = Number(r.weekly_rate  || base * multiplier.weekly);
+                            const monthly = Number(r.monthly_rate || base * multiplier.monthly);
                             const total   = r._count?.numbers  || 0;
                             const avail   = r._count?.available || 0;
                             const alloc   = total - avail;
@@ -229,8 +227,8 @@ const numbers = {
                                 <td><strong>${window.ui.escapeHtml(r.name)}</strong>${r.provider_name?`<div style="font-size:10px;color:var(--text-secondary)">${window.ui.escapeHtml(r.provider_name)}</div>`:''}  </td>
                                 <td>${window.ui.escapeHtml(r.country_name||'—')}</td>
                                 <td><code>$${base.toFixed(4)}</code></td>
-                                <td><span class="badge badge-info">$${flatRates.weekly.toFixed(4)}</span></td>
-                                <td><span class="badge badge-success">$${flatRates.monthly.toFixed(4)}</span></td>
+                                <td><span class="badge badge-info">$${weekly.toFixed(4)}</span></td>
+                                <td><span class="badge badge-success">$${monthly.toFixed(4)}</span></td>
                                 <td>${otpLim}</td>
                                 <td>${total.toLocaleString()}</td>
                                 <td style="color:var(--primary);font-weight:600">${alloc.toLocaleString()}</td>
@@ -249,7 +247,6 @@ const numbers = {
                     </table>
                 </div>
             </div>`;
-            window.ui.setupTableSearch('search-ratecard', 'ratecard-tbody');
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderRateCard(document.getElementById('page-content'))">Retry</button></div>`;
         }
@@ -359,8 +356,8 @@ const numbers = {
                 <div class="card-header">
                     <div class="card-title">Self-Allocation Marketplace</div>
                     <div style="display:flex;gap:8px;align-items:center">
-                        <span class="badge badge-info">Weekly: $${Number(rates.weekly).toFixed(4)}/SMS</span>
-                        <span class="badge badge-success">Monthly: $${Number(rates.monthly).toFixed(4)}/SMS</span>
+                        <span class="badge badge-info">Weekly: ${Number(rates.weekly).toFixed(2)}x</span>
+                        <span class="badge badge-success">Monthly: ${Number(rates.monthly).toFixed(2)}x</span>
                     </div>
                 </div>
                 ${limitBar}
@@ -378,7 +375,7 @@ const numbers = {
                             <div style="display:flex;justify-content:space-between;font-size:13px">
                                 <span>Available</span><strong style="color:var(--success)">${r._count.available}</strong>
                             </div>
-                            <button class="fly-btn" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.payout_rate ?? r.rate ?? 0)})" ${disabled ? 'disabled' : ''}>
+                            <button class="fly-btn" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.weekly_rate ?? r.rate ?? 0)}, ${Number(r.monthly_rate ?? r.rate ?? 0)})" ${disabled ? 'disabled' : ''}>
                                 ${disabled && r._count.available > 0 ? 'Limit Reached' : 'Request Numbers'}
                             </button>
                         </div>`;
@@ -389,11 +386,9 @@ const numbers = {
         } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderSelfAllocation(document.getElementById('page-content'))">Retry</button></div>`; }
     },
 
-    async showSelfAllocModal(range, available, rate) {
-        let rates = { weekly: 0.04, monthly: 0.03 };
-        try { rates = await window.api.call('/api/settings/payout-rates'); } catch (e) {}
-        const weeklyRate = Number(rates.weekly || 0).toFixed(4);
-        const monthlyRate = Number(rates.monthly || 0).toFixed(4);
+    async showSelfAllocModal(range, available, weeklyRate, monthlyRate) {
+        const wr = Number(weeklyRate || 0).toFixed(4);
+        const mr = Number(monthlyRate || weeklyRate || 0).toFixed(4);
         window.ui.showModal('Request Numbers from ' + range, `
             <div class="form-group">
                 <label>Payment Term *</label>
@@ -401,12 +396,12 @@ const numbers = {
                     <label class="pay-method-card" id="term-weekly" onclick="document.getElementById('al-term').value='weekly';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
                         <div style="margin-bottom:6px">${ICONS.report}</div>
                         <div style="font-weight:700;font-size:13px">Weekly</div>
-                        <div style="font-size:11px;color:var(--text-secondary)">$${weeklyRate}/SMS</div>
+                        <div style="font-size:11px;color:var(--text-secondary)">$${wr}/SMS</div>
                     </label>
                     <label class="pay-method-card pay-method-card--active" id="term-monthly" onclick="document.getElementById('al-term').value='monthly';document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.remove('pay-method-card--active'));this.classList.add('pay-method-card--active')">
                         <div style="margin-bottom:6px">${ICONS.profit}</div>
                         <div style="font-weight:700;font-size:13px">Monthly</div>
-                        <div style="font-size:11px;color:var(--text-secondary)">$${monthlyRate}/SMS (Best)</div>
+                        <div style="font-size:11px;color:var(--text-secondary)">$${mr}/SMS (Best)</div>
                     </label>
                 </div>
                 <input type="hidden" id="al-term" value="monthly">
@@ -448,9 +443,9 @@ const numbers = {
                         <input type="text" id="ba-range-search" class="fly-input" placeholder="Search ranges..." oninput="window.numbers.filterBulkRanges(this.value)" style="margin-bottom:10px">
                         <div id="ba-ranges" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:8px">
                             ${ranges.data.map(r => `
-                                <label data-range-name="${window.ui.escapeHtml(r.name)}" style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onchange="window.numbers.updateBulkRanges()">
-                                    <input type="checkbox" value="${window.ui.escapeHtml(r.name)}" data-avail="${r._count.available}">
-                                    <span style="flex:1;font-size:13px;font-weight:600">${window.ui.escapeHtml(r.name)}</span>
+                                <label style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+                                    <input type="checkbox" value="${r.name}" data-avail="${r._count.available}" onchange="window.numbers.updateBulkRanges()">
+                                    <span style="flex:1;font-size:13px;font-weight:600">${r.name}</span>
                                     <span class="badge badge-success" style="font-size:10px">${r._count.available}</span>
                                 </label>
                             `).join('')}
@@ -462,7 +457,7 @@ const numbers = {
                         <input type="text" id="ba-user-search" class="fly-input" placeholder="Search users..." oninput="window.numbers.filterBulkUsers(this.value)" style="margin-bottom:10px">
                         <select id="ba-user" class="fly-input">
                             <option value="">-- Select User --</option>
-                            ${users.data.map(u => `<option value="${u.id}" data-username="${window.ui.escapeHtml(u.username)}" data-role="${window.ui.escapeHtml(u.role)}">${window.ui.escapeHtml(u.username)} (${window.ui.escapeHtml(u.role)})</option>`).join('')}
+                            ${users.data.map(u => `<option value="${u.id}" data-username="${u.username}" data-role="${u.role}">${u.username} (${u.role})</option>`).join('')}
                         </select>
                     </div>
                     
@@ -479,26 +474,32 @@ const numbers = {
     },
     
     filterBulkRanges(query) {
-        const q = query.toLowerCase();
-        document.querySelectorAll('#ba-ranges label').forEach(label => {
-            const name = (label.dataset.rangeName || '').toLowerCase();
-            label.style.display = name.includes(q) ? '' : 'none';
+        const labels = document.querySelectorAll('#ba-ranges label');
+        labels.forEach(label => {
+            const rangeName = label.querySelector('span:nth-child(2)').textContent.toLowerCase();
+            if (rangeName.includes(query.toLowerCase())) {
+                label.style.display = '';
+            } else {
+                label.style.display = 'none';
+            }
         });
     },
     
-    filterBulkUsers(query) {
-        const sel = document.getElementById('ba-user');
-        if (!sel) return;
+    filterRateCard(query) {
         const q = query.toLowerCase();
-        // Re-render matching options (option.style.display not supported in all browsers)
-        const all = [...sel.options].filter(o => o.value !== '');
-        const prev = sel.value;
-        sel.innerHTML = '<option value="">-- Select User --</option>';
-        all.forEach(o => {
-            const text = ((o.dataset.username || '') + ' ' + (o.dataset.role || '')).toLowerCase();
-            if (text.includes(q)) sel.appendChild(o);
+        document.querySelectorAll('#rate-card-tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
-        sel.value = prev;
+    },
+
+    filterBulkUsers(query) {        const options = document.querySelectorAll('#ba-user option');
+        options.forEach(opt => {
+            if (opt.value === '') return; // Always show the placeholder
+            const username = (opt.dataset.username || '').toLowerCase();
+            const role = (opt.dataset.role || '').toLowerCase();
+            const searchText = (username + ' ' + role).includes(query.toLowerCase());
+            opt.style.display = searchText ? '' : 'none';
+        });
     },
 
     updateBulkRanges() {

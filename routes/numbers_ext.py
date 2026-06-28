@@ -28,7 +28,7 @@ def _get_payout_rate_settings(conn):
             return max(value, 0.0)
         except (TypeError, ValueError):
             return default
-    return {"weekly": as_rate("payout_rate_weekly", 0.04), "monthly": as_rate("payout_rate_monthly", 0.03)}
+    return {"weekly": as_rate("payout_rate_weekly", 0.85), "monthly": as_rate("payout_rate_monthly", 0.75)}
 
 class BulkImport(BaseModel):
     numbersText: str
@@ -265,8 +265,15 @@ async def allocate_numbers(body: AllocateNumbers, request: Request, p=Depends(ge
             if curr + body.quantity > user['self_allocation_limit']:
                 raise HTTPException(400, "Self allocation limit is over. For more numbers, contact support team.")
 
-        rates = _get_payout_rate_settings(conn)
-        flat_rate = rates[term]  # direct dollar amount per SMS
+        rng = conn.execute("SELECT weekly_rate, monthly_rate, rate FROM ranges WHERE name=?", (body.rangeName,)).fetchone()
+        if not rng:
+            raise HTTPException(400, "Range not found")
+        # Use the direct payout for the chosen term; fall back to rate column
+        if term == "weekly":
+            term_rate = float(rng["weekly_rate"] or rng["rate"] or 0.0)
+        else:
+            term_rate = float(rng["monthly_rate"] or rng["rate"] or 0.0)
+
         available = conn.execute(
             "SELECT id FROM numbers WHERE range_name=? AND status != 'test' AND (assigned_to IS NULL OR assigned_to='') LIMIT ?",
             (body.rangeName, body.quantity)
@@ -274,16 +281,13 @@ async def allocate_numbers(body: AllocateNumbers, request: Request, p=Depends(ge
         if len(available) < body.quantity:
             raise HTTPException(400, "Self allocation limit is over. For more numbers, contact support team.")
         for n in available:
-            conn.execute(
-                "UPDATE numbers SET assigned_to=?, assigned_at=?, rate=?, profit_margin=100 WHERE id=?",
-                (p['username'], now, flat_rate, n['id']),
-            )
+            conn.execute("UPDATE numbers SET assigned_to=?, assigned_at=?, rate=? WHERE id=?", (p['username'], now, term_rate, n['id']))
             conn.execute(
                 "INSERT INTO allocations (id,user_id,username,range_name,number_id,status,created_at) VALUES (?,?,?,?,?,'active',?)",
                 (generate_id(), p['id'], p['username'], body.rangeName, n['id'], now),
             )
         log_audit(conn, p, "numbers_self_allocated", "user", p['id'], f"Allocated {len(available)} number(s) from {body.rangeName} on {term}", request)
-    return {"allocated": len(available), "duration": term, "flatRate": flat_rate}
+    return {"allocated": len(available), "duration": term, "rate": term_rate}
 
 @router.post("/bulk-revoke")
 async def bulk_revoke(body: BulkRevokeRequest, request: Request, p=Depends(require_role(["admin", "manager", "reseller"]))):

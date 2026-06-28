@@ -19,14 +19,15 @@ const ranges = {
                 </div>
                 <div class="table-wrapper">
                     <table class="fly-table">
-                        <thead><tr><th>Name</th>${canManage ? '<th>Provider</th><th>Real Range</th>' : ''}<th>Country</th><th>Payout/SMS</th><th>Recv Limit</th><th>Numbers</th><th>Available</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Name</th>${canManage ? '<th>Provider</th><th>Real Range</th>' : ''}<th>Country</th><th>Weekly Payout</th><th>Monthly Payout</th><th>Recv Limit</th><th>Numbers</th><th>Available</th><th>Actions</th></tr></thead>
                         <tbody id="ranges-tbody">
                             ${res.data.map(r => `
                                 <tr>
                                     <td><strong>${window.ui.escapeHtml(r.name)}</strong></td>
                                     ${canManage ? `<td>${r.provider_name ? `<span class="badge badge-info">${window.ui.escapeHtml(r.provider_name)}</span>` : '-'}</td><td>${window.ui.escapeHtml(r.real_range_name || '-')}</td>` : ''}
                                     <td>${window.ui.escapeHtml(r.country_name || '-')}</td>
-                                    <td><span class="badge badge-success">$${Number(r.payout_rate ?? r.rate ?? 0).toFixed(4)}</span></td>
+                                    <td><span class="badge badge-info">$${Number(r.weekly_rate ?? r.rate ?? 0).toFixed(4)}</span></td>
+                                    <td><span class="badge badge-success">$${Number(r.monthly_rate ?? r.rate ?? 0).toFixed(4)}</span></td>
                                     <td>${r.sms_receive_limit > 0 ? `<span class="badge badge-warning">${r.sms_receive_limit}</span>` : '<span class="badge badge-secondary">∞</span>'}</td>
                                     <td><span class="badge badge-secondary">${r._count.numbers}</span></td>
                                     <td><span class="badge badge-success">${r._count.available}</span></td>
@@ -37,7 +38,7 @@ const ranges = {
                                         <button class="action-btn" title="Edit Range" onclick="window.ranges.showEdit('${r.id}')">${ICONS.edit} Edit</button>
                                         ${isAdmin ? `<button class="action-btn delete" title="Delete Range" onclick="window.ranges.del('${r.id}')">${ICONS.trash}</button>` : ''}
                                         ` : `
-                                        <button class="fly-btn fly-btn-sm" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.payout_rate ?? r.rate ?? 0)})" ${r._count.available === 0 ? 'disabled' : ''}>Request</button>
+                                        <button class="fly-btn fly-btn-sm" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.weekly_rate ?? r.rate ?? 0)}, ${Number(r.monthly_rate ?? r.rate ?? 0)})" ${r._count.available === 0 ? 'disabled' : ''}>Request</button>
                                         `}
                                     </td>
                                 </tr>`).join('') || `<tr class="empty-row"><td colspan="${canManage ? 9 : 7}">No ranges found</td></tr>`}
@@ -67,8 +68,8 @@ const ranges = {
                     <div class="form-group"><label class="fly-label">Country</label><input type="text" id="er-country" class="fly-input" value="${window.ui.escapeHtml(r.country_name || '')}"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label class="fly-label">Payout per SMS / Number</label><input type="number" id="er-rate" class="fly-input" min="0" step="0.0001" value="${Number(r.payout_rate ?? r.rate ?? 0)}"></div>
-                    <div class="form-group"><label class="fly-label">Payout Mode</label><input type="text" class="fly-input" value="Fixed per SMS" disabled></div>
+                    <div class="form-group"><label class="fly-label">Weekly Payout per SMS ($)</label><input type="number" id="er-weekly-rate" class="fly-input" min="0" step="0.0001" value="${Number(r.weekly_rate ?? r.rate ?? 0)}"></div>
+                    <div class="form-group"><label class="fly-label">Monthly Payout per SMS ($)</label><input type="number" id="er-monthly-rate" class="fly-input" min="0" step="0.0001" value="${Number(r.monthly_rate ?? r.rate ?? 0)}"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label class="fly-label">Daily OTP Limit</label><input type="number" id="er-otp-limit" class="fly-input" min="0" value="${Number(r.daily_otp_limit || 0)}"></div>
@@ -89,8 +90,8 @@ const ranges = {
             providerName: document.getElementById('er-provider').value.trim(),
             numberPrefix: document.getElementById('er-pre').value.trim(),
             countryName: document.getElementById('er-country').value.trim(),
-            rate: Number(document.getElementById('er-rate').value),
-            profitMargin: 100,
+            weeklyRate: Number(document.getElementById('er-weekly-rate').value),
+            monthlyRate: Number(document.getElementById('er-monthly-rate').value),
             dailyOtpLimit: parseInt(document.getElementById('er-otp-limit').value || '0'),
             otpLimitEnabled: parseInt(document.getElementById('er-otp-enabled').value || '0'),
             smsReceiveLimit: parseInt(document.getElementById('er-recv-limit').value || '0'),
@@ -115,11 +116,11 @@ const ranges = {
             </div>
             <div class="form-row">
                 <div class="form-group"><label class="fly-label">Number Prefix</label><input type="text" id="rn-pre" class="fly-input" placeholder="+1"></div>
-                <div class="form-group"><label class="fly-label">Payout per SMS / Number</label><input type="number" id="rn-rate" class="fly-input" value="0.05" step="0.0001" min="0"></div>
+                <div class="form-group"><label class="fly-label">Country Name</label><input type="text" id="rn-cn" class="fly-input" placeholder="United States"></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label class="fly-label">Country Name</label><input type="text" id="rn-cn" class="fly-input" placeholder="United States"></div>
-                <div class="form-group"><label class="fly-label">Payout Mode</label><input type="text" class="fly-input" value="Fixed per SMS" disabled></div>
+                <div class="form-group"><label class="fly-label">Weekly Payout per SMS ($)</label><input type="number" id="rn-weekly-rate" class="fly-input" value="0.05" step="0.0001" min="0" placeholder="e.g. 0.05"></div>
+                <div class="form-group"><label class="fly-label">Monthly Payout per SMS ($)</label><input type="number" id="rn-monthly-rate" class="fly-input" value="0.04" step="0.0001" min="0" placeholder="e.g. 0.04"></div>
             </div>
             <div class="form-row">
                 <div class="form-group">
@@ -195,9 +196,9 @@ const ranges = {
             realRangeName: document.getElementById('rn-real-name').value.trim(),
             providerName: document.getElementById('rn-provider').value.trim(),
             numberPrefix: document.getElementById('rn-pre').value.trim(),
-            rate: parseFloat(document.getElementById('rn-rate').value) || 0.05,
+            weeklyRate: parseFloat(document.getElementById('rn-weekly-rate').value) || 0.05,
+            monthlyRate: parseFloat(document.getElementById('rn-monthly-rate').value) || 0.04,
             countryName: document.getElementById('rn-cn').value.trim() || 'Global',
-            profitMargin: 100,
             dailyOtpLimit: parseInt(document.getElementById('rn-otp-limit').value) || 0,
             otpLimitEnabled: parseInt(document.getElementById('rn-otp-enabled').value) || 0,
             smsReceiveLimit: parseInt(document.getElementById('rn-recv-limit').value) || 0

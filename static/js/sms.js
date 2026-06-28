@@ -105,8 +105,6 @@ const sms = {
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-card-label">Today's Profit</div><div class="stat-card-value">$${Number(stats.todayProfit||0).toFixed(2)}</div></div>
                 <div class="stat-card"><div class="stat-card-label">Monthly Profit</div><div class="stat-card-value">$${Number(stats.monthProfit||0).toFixed(2)}</div></div>
-                <div class="stat-card"><div class="stat-card-label">Weekly Payout Rate</div><div class="stat-card-value" style="font-size:20px">$${Number(rates.weekly).toFixed(4)}</div></div>
-                <div class="stat-card"><div class="stat-card-label">Monthly Payout Rate</div><div class="stat-card-value" style="font-size:20px">$${Number(rates.monthly).toFixed(4)}</div></div>
             </div>
             <div class="card">
                 <div class="card-header">
