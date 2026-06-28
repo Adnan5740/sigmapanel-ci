@@ -28,7 +28,7 @@ def _get_payout_rate_settings(conn):
             return max(value, 0.0)
         except (TypeError, ValueError):
             return default
-    return {"weekly": as_rate("payout_rate_weekly", 0.85), "monthly": as_rate("payout_rate_monthly", 0.75)}
+    return {"weekly": as_rate("payout_rate_weekly", 0.04), "monthly": as_rate("payout_rate_monthly", 0.03)}
 
 class BulkImport(BaseModel):
     numbersText: str
@@ -266,24 +266,24 @@ async def allocate_numbers(body: AllocateNumbers, request: Request, p=Depends(ge
                 raise HTTPException(400, "Self allocation limit is over. For more numbers, contact support team.")
 
         rates = _get_payout_rate_settings(conn)
-        rate_multiplier = rates[term]
+        flat_rate = rates[term]  # direct dollar amount per SMS
         available = conn.execute(
-            "SELECT id, rate FROM numbers WHERE range_name=? AND status != 'test' AND (assigned_to IS NULL OR assigned_to='') LIMIT ?",
+            "SELECT id FROM numbers WHERE range_name=? AND status != 'test' AND (assigned_to IS NULL OR assigned_to='') LIMIT ?",
             (body.rangeName, body.quantity)
         ).fetchall()
         if len(available) < body.quantity:
             raise HTTPException(400, "Self allocation limit is over. For more numbers, contact support team.")
         for n in available:
             conn.execute(
-                "UPDATE numbers SET assigned_to=?, assigned_at=?, profit_margin=? WHERE id=?",
-                (p['username'], now, round(rate_multiplier * 100, 6), n['id']),
+                "UPDATE numbers SET assigned_to=?, assigned_at=?, rate=?, profit_margin=100 WHERE id=?",
+                (p['username'], now, flat_rate, n['id']),
             )
             conn.execute(
                 "INSERT INTO allocations (id,user_id,username,range_name,number_id,status,created_at) VALUES (?,?,?,?,?,'active',?)",
                 (generate_id(), p['id'], p['username'], body.rangeName, n['id'], now),
             )
         log_audit(conn, p, "numbers_self_allocated", "user", p['id'], f"Allocated {len(available)} number(s) from {body.rangeName} on {term}", request)
-    return {"allocated": len(available), "duration": term, "rateMultiplier": rate_multiplier}
+    return {"allocated": len(available), "duration": term, "flatRate": flat_rate}
 
 @router.post("/bulk-revoke")
 async def bulk_revoke(body: BulkRevokeRequest, request: Request, p=Depends(require_role(["admin", "manager", "reseller"]))):

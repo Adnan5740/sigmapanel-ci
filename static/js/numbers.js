@@ -176,16 +176,16 @@ const numbers = {
                 window.api.call('/api/ranges?status=active'),
                 window.api.call('/api/settings/payout-rates').catch(() => ({ weekly: 0.85, monthly: 0.75 }))
             ]);
-            const ranges = rangesRes.data || [];
-            const multiplier = { weekly: Number(ratesRes.weekly || 0.85), monthly: Number(ratesRes.monthly || 0.75) };
+            const rates = rangesRes.data || [];
+            const flatRates = { weekly: Number(ratesRes.weekly || 0.04), monthly: Number(ratesRes.monthly || 0.03) };
 
-            const totalNumbers = ranges.reduce((s, r) => s + (r._count?.numbers || 0), 0);
-            const totalAvail   = ranges.reduce((s, r) => s + (r._count?.available || 0), 0);
+            const totalNumbers = rates.reduce((s, r) => s + (r._count?.numbers || 0), 0);
+            const totalAvail   = rates.reduce((s, r) => s + (r._count?.available || 0), 0);
             const totalAlloc   = totalNumbers - totalAvail;
 
             container.innerHTML = `
             <div class="stats-grid" style="margin-bottom:20px">
-                <div class="stat-card"><div class="stat-card-label">Total Ranges</div><div class="stat-card-value">${ranges.length}</div></div>
+                <div class="stat-card"><div class="stat-card-label">Total Ranges</div><div class="stat-card-value">${rates.length}</div></div>
                 <div class="stat-card"><div class="stat-card-label">Total Numbers</div><div class="stat-card-value">${totalNumbers.toLocaleString()}</div></div>
                 <div class="stat-card"><div class="stat-card-label">Allocated</div><div class="stat-card-value" style="color:var(--primary)">${totalAlloc.toLocaleString()}</div></div>
                 <div class="stat-card"><div class="stat-card-label">Available</div><div class="stat-card-value" style="color:var(--success)">${totalAvail.toLocaleString()}</div></div>
@@ -197,8 +197,8 @@ const numbers = {
                         <div class="input-wrapper" style="width:200px">
                             <input type="text" id="search-ratecard" class="search-input" placeholder="Search ranges...">
                         </div>
-                        <span class="badge badge-info">Weekly ×${multiplier.weekly.toFixed(2)}</span>
-                        <span class="badge badge-success">Monthly ×${multiplier.monthly.toFixed(2)}</span>
+                        <span class="badge badge-info">Weekly $${flatRates.weekly.toFixed(4)}/SMS</span>
+                        <span class="badge badge-success">Monthly $${flatRates.monthly.toFixed(4)}/SMS</span>
                     </div>
                 </div>
                 <div class="table-wrapper">
@@ -216,10 +216,8 @@ const numbers = {
                             <th>Usage</th>
                         </tr></thead>
                         <tbody id="ratecard-tbody">
-                        ${ranges.length ? ranges.map(r => {
+                        ${rates.length ? rates.map(r => {
                             const base    = Number(r.rate || 0);
-                            const weekly  = Number(r.weekly_rate  || base * multiplier.weekly);
-                            const monthly = Number(r.monthly_rate || base * multiplier.monthly);
                             const total   = r._count?.numbers  || 0;
                             const avail   = r._count?.available || 0;
                             const alloc   = total - avail;
@@ -231,8 +229,8 @@ const numbers = {
                                 <td><strong>${window.ui.escapeHtml(r.name)}</strong>${r.provider_name?`<div style="font-size:10px;color:var(--text-secondary)">${window.ui.escapeHtml(r.provider_name)}</div>`:''}  </td>
                                 <td>${window.ui.escapeHtml(r.country_name||'—')}</td>
                                 <td><code>$${base.toFixed(4)}</code></td>
-                                <td><span class="badge badge-info">$${weekly.toFixed(4)}</span></td>
-                                <td><span class="badge badge-success">$${monthly.toFixed(4)}</span></td>
+                                <td><span class="badge badge-info">$${flatRates.weekly.toFixed(4)}</span></td>
+                                <td><span class="badge badge-success">$${flatRates.monthly.toFixed(4)}</span></td>
                                 <td>${otpLim}</td>
                                 <td>${total.toLocaleString()}</td>
                                 <td style="color:var(--primary);font-weight:600">${alloc.toLocaleString()}</td>
@@ -361,8 +359,8 @@ const numbers = {
                 <div class="card-header">
                     <div class="card-title">Self-Allocation Marketplace</div>
                     <div style="display:flex;gap:8px;align-items:center">
-                        <span class="badge badge-info">Weekly: ${Number(rates.weekly).toFixed(2)}x</span>
-                        <span class="badge badge-success">Monthly: ${Number(rates.monthly).toFixed(2)}x</span>
+                        <span class="badge badge-info">Weekly: $${Number(rates.weekly).toFixed(4)}/SMS</span>
+                        <span class="badge badge-success">Monthly: $${Number(rates.monthly).toFixed(4)}/SMS</span>
                     </div>
                 </div>
                 ${limitBar}
@@ -392,10 +390,10 @@ const numbers = {
     },
 
     async showSelfAllocModal(range, available, rate) {
-        let rates = { weekly: 0.85, monthly: 0.75 };
+        let rates = { weekly: 0.04, monthly: 0.03 };
         try { rates = await window.api.call('/api/settings/payout-rates'); } catch (e) {}
-        const weeklyRate = (rate * Number(rates.weekly || 0)).toFixed(3);
-        const monthlyRate = (rate * Number(rates.monthly || 0)).toFixed(3);
+        const weeklyRate = Number(rates.weekly || 0).toFixed(4);
+        const monthlyRate = Number(rates.monthly || 0).toFixed(4);
         window.ui.showModal('Request Numbers from ' + range, `
             <div class="form-group">
                 <label>Payment Term *</label>

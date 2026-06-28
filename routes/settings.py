@@ -102,7 +102,7 @@ async def webhook_info(request: Request, p=Depends(get_current_user)):
 
 @router.get("/payout-rates")
 async def get_payout_rates(p=Depends(get_current_user)):
-    keys = {"payout_rate_weekly": "0.85", "payout_rate_monthly": "0.75"}
+    keys = {"payout_rate_weekly": "0.04", "payout_rate_monthly": "0.03"}
     with get_db() as conn:
         rows = conn.execute(
             "SELECT setting_key, setting_value FROM settings WHERE user_id IS NULL AND setting_key IN ('payout_rate_weekly','payout_rate_monthly')"

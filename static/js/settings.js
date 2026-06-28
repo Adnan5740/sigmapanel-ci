@@ -21,10 +21,10 @@ const settings = {
             <div class="card-header"><div class="card-title">Payout Rate Settings</div></div>
             <div class="card-body">
                 <div class="form-row">
-                    <div class="form-group"><label>Weekly Rate Multiplier</label><input type="number" id="set-weekly-rate" class="fly-input" min="0" step="0.01" placeholder="0.85"></div>
-                    <div class="form-group"><label>Monthly Rate Multiplier</label><input type="number" id="set-monthly-rate" class="fly-input" min="0" step="0.01" placeholder="0.75"></div>
+                    <div class="form-group"><label>Weekly Payout Rate ($ per SMS)</label><input type="number" id="set-weekly-rate" class="fly-input" min="0" step="0.0001" placeholder="0.04"></div>
+                    <div class="form-group"><label>Monthly Payout Rate ($ per SMS)</label><input type="number" id="set-monthly-rate" class="fly-input" min="0" step="0.0001" placeholder="0.03"></div>
                 </div>
-                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">These multipliers are applied to range rates when users request weekly or monthly self-allocation.</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Direct payout per SMS in dollars. Users who self-allocate on weekly or monthly plans will earn exactly this amount per SMS received.</div>
                 <button class="fly-btn" onclick="window.settings.savePayoutRates()">Save Payout Rates</button>
             </div>
         </div>`;
