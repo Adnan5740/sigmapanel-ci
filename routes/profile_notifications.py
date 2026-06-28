@@ -98,17 +98,6 @@ async def upload_avatar(avatar: UploadFile = File(...), p=Depends(get_current_us
 @router.get("/api/notifications/news")
 async def get_news(p=Depends(get_current_user)):
     with get_db() as conn:
-        # Create table if not exists
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS news (
-                id TEXT PRIMARY KEY,
-                subject TEXT NOT NULL,
-                message TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                created_by_role TEXT,
-                created_at TEXT DEFAULT (datetime('now'))
-            )
-        """)
         rows = conn.execute("SELECT * FROM news ORDER BY created_at DESC LIMIT 50").fetchall()
         return {"data": [dict(r) for r in rows]}
 
@@ -117,16 +106,6 @@ async def create_news(body: CreateNews, p=Depends(get_current_user)):
     if p['role'] not in ['admin', 'manager']:
         raise HTTPException(403, "Only admin/manager can post news")
     with get_db() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS news (
-                id TEXT PRIMARY KEY,
-                subject TEXT NOT NULL,
-                message TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                created_by_role TEXT,
-                created_at TEXT DEFAULT (datetime('now'))
-            )
-        """)
         news_id = generate_id()
         conn.execute("INSERT INTO news (id, subject, message, created_by, created_by_role) VALUES (?,?,?,?,?)",
                      (news_id, body.subject, body.message, p['username'], p['role']))
@@ -136,21 +115,6 @@ async def create_news(body: CreateNews, p=Depends(get_current_user)):
 @router.get("/api/notifications/support")
 async def get_tickets(p=Depends(get_current_user)):
     with get_db() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS support_tickets (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                username TEXT NOT NULL,
-                subject TEXT NOT NULL,
-                message TEXT NOT NULL,
-                status TEXT DEFAULT 'open',
-                reply TEXT,
-                reply_by TEXT,
-                reply_by_role TEXT,
-                created_at TEXT DEFAULT (datetime('now')),
-                updated_at TEXT DEFAULT (datetime('now'))
-            )
-        """)
         if p['role'] in ['admin', 'manager']:
             rows = conn.execute("SELECT * FROM support_tickets ORDER BY created_at DESC").fetchall()
         else:
@@ -160,21 +124,6 @@ async def get_tickets(p=Depends(get_current_user)):
 @router.post("/api/notifications/support")
 async def create_ticket(body: CreateTicket, p=Depends(get_current_user)):
     with get_db() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS support_tickets (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                username TEXT NOT NULL,
-                subject TEXT NOT NULL,
-                message TEXT NOT NULL,
-                status TEXT DEFAULT 'open',
-                reply TEXT,
-                reply_by TEXT,
-                reply_by_role TEXT,
-                created_at TEXT DEFAULT (datetime('now')),
-                updated_at TEXT DEFAULT (datetime('now'))
-            )
-        """)
         ticket_id = generate_id()
         conn.execute("INSERT INTO support_tickets (id, user_id, username, subject, message) VALUES (?,?,?,?,?)",
                      (ticket_id, p['id'], p['username'], body.subject, body.message))
