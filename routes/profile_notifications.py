@@ -197,7 +197,7 @@ async def reply_ticket(ticket_id: str, body: ReplyTicket, request: Request, p=De
     with get_db() as conn:
         ticket = conn.execute("SELECT * FROM support_tickets WHERE id=?", (ticket_id,)).fetchone()
         if not ticket: raise HTTPException(404, "Ticket not found")
-        conn.execute("UPDATE support_tickets SET reply=?, reply_by=?, reply_by_role=?, status='closed', updated_at=datetime('now') WHERE id=?",
+        conn.execute("UPDATE support_tickets SET reply=?, reply_by=?, reply_by_role=?, status='open', updated_at=datetime('now') WHERE id=?",
                      (body.message, p['username'], p['role'], ticket_id))
         log_audit(conn, p, "support_ticket_replied", "support_ticket", ticket_id, ticket['subject'], request)
     return {"message": "Reply sent"}

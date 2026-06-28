@@ -131,7 +131,7 @@ const notifications = {
                 </div>
                 <div style="display:flex;gap:10px;margin-top:4px">
                     <button class="fly-btn" onclick="window.notifications.replyTicket('${id}')">Send Reply</button>
-                    ${ticket.reply ? `<button class="fly-btn fly-btn-danger" onclick="window.notifications.closeTicket('${id}')">Close Ticket</button>` : ''}
+                    <button class="fly-btn fly-btn-danger" onclick="window.notifications.closeTicket('${id}')">Close Ticket</button>
                 </div>
                 ` : ''}
 
