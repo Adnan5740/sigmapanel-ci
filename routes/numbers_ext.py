@@ -274,8 +274,10 @@ async def allocate_numbers(body: AllocateNumbers, request: Request, p=Depends(ge
         if len(available) < body.quantity:
             raise HTTPException(400, "Self allocation limit is over. For more numbers, contact support team.")
         for n in available:
-            adjusted_rate = (n['rate'] or 0.0) * rate_multiplier
-            conn.execute("UPDATE numbers SET assigned_to=?, assigned_at=?, rate=? WHERE id=?", (p['username'], now, adjusted_rate, n['id']))
+            conn.execute(
+                "UPDATE numbers SET assigned_to=?, assigned_at=?, profit_margin=? WHERE id=?",
+                (p['username'], now, round(rate_multiplier * 100, 6), n['id']),
+            )
             conn.execute(
                 "INSERT INTO allocations (id,user_id,username,range_name,number_id,status,created_at) VALUES (?,?,?,?,?,'active',?)",
                 (generate_id(), p['id'], p['username'], body.rangeName, n['id'], now),

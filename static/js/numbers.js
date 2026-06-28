@@ -34,7 +34,7 @@ const numbers = {
                             <td><span class="badge badge-info">${window.ui.escapeHtml(n.range_name||'-')}</span></td>
                             <td>${window.ui.escapeHtml(n.service||'-')}</td>
                             <td><span class="badge ${n.status==='active'?'badge-success':'badge-danger'}">${n.status==='active'?'IPRN':window.ui.escapeHtml(n.status)}</span></td>
-                            <td>$${Number(n.rate||0).toFixed(4)}</td>
+                            <td>$${(Number(n.rate||0) * Number(n.profit_margin != null ? n.profit_margin : 100) / 100).toFixed(4)}</td>
                             <td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td>
                         </tr>`).join('')||'<tr class="empty-row"><td colspan="7">No numbers assigned</td></tr>'}</tbody>
                     </table>
@@ -194,6 +194,9 @@ const numbers = {
                 <div class="card-header">
                     <div class="card-title">${ICONS.profit} SMS Rate Card</div>
                     <div style="display:flex;gap:8px;align-items:center">
+                        <div class="input-wrapper" style="width:200px">
+                            <input type="text" id="search-ratecard" class="search-input" placeholder="Search ranges...">
+                        </div>
                         <span class="badge badge-info">Weekly ×${multiplier.weekly.toFixed(2)}</span>
                         <span class="badge badge-success">Monthly ×${multiplier.monthly.toFixed(2)}</span>
                     </div>
@@ -212,7 +215,7 @@ const numbers = {
                             <th>Remaining</th>
                             <th>Usage</th>
                         </tr></thead>
-                        <tbody>
+                        <tbody id="ratecard-tbody">
                         ${ranges.length ? ranges.map(r => {
                             const base    = Number(r.rate || 0);
                             const weekly  = Number(r.weekly_rate  || base * multiplier.weekly);
@@ -248,6 +251,7 @@ const numbers = {
                     </table>
                 </div>
             </div>`;
+            window.ui.setupTableSearch('search-ratecard', 'ratecard-tbody');
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderRateCard(document.getElementById('page-content'))">Retry</button></div>`;
         }
@@ -446,9 +450,9 @@ const numbers = {
                         <input type="text" id="ba-range-search" class="fly-input" placeholder="Search ranges..." oninput="window.numbers.filterBulkRanges(this.value)" style="margin-bottom:10px">
                         <div id="ba-ranges" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:8px">
                             ${ranges.data.map(r => `
-                                <label style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s;data-range-name='${r.name}'" onchange="window.numbers.updateBulkRanges()">
-                                    <input type="checkbox" value="${r.name}" data-avail="${r._count.available}">
-                                    <span style="flex:1;font-size:13px;font-weight:600">${r.name}</span>
+                                <label data-range-name="${window.ui.escapeHtml(r.name)}" style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onchange="window.numbers.updateBulkRanges()">
+                                    <input type="checkbox" value="${window.ui.escapeHtml(r.name)}" data-avail="${r._count.available}">
+                                    <span style="flex:1;font-size:13px;font-weight:600">${window.ui.escapeHtml(r.name)}</span>
                                     <span class="badge badge-success" style="font-size:10px">${r._count.available}</span>
                                 </label>
                             `).join('')}
@@ -460,7 +464,7 @@ const numbers = {
                         <input type="text" id="ba-user-search" class="fly-input" placeholder="Search users..." oninput="window.numbers.filterBulkUsers(this.value)" style="margin-bottom:10px">
                         <select id="ba-user" class="fly-input">
                             <option value="">-- Select User --</option>
-                            ${users.data.map(u => `<option value="${u.id}" data-username="${u.username}" data-role="${u.role}">${u.username} (${u.role})</option>`).join('')}
+                            ${users.data.map(u => `<option value="${u.id}" data-username="${window.ui.escapeHtml(u.username)}" data-role="${window.ui.escapeHtml(u.role)}">${window.ui.escapeHtml(u.username)} (${window.ui.escapeHtml(u.role)})</option>`).join('')}
                         </select>
                     </div>
                     
@@ -477,26 +481,26 @@ const numbers = {
     },
     
     filterBulkRanges(query) {
-        const labels = document.querySelectorAll('#ba-ranges label');
-        labels.forEach(label => {
-            const rangeName = label.querySelector('span:nth-child(2)').textContent.toLowerCase();
-            if (rangeName.includes(query.toLowerCase())) {
-                label.style.display = '';
-            } else {
-                label.style.display = 'none';
-            }
+        const q = query.toLowerCase();
+        document.querySelectorAll('#ba-ranges label').forEach(label => {
+            const name = (label.dataset.rangeName || '').toLowerCase();
+            label.style.display = name.includes(q) ? '' : 'none';
         });
     },
     
     filterBulkUsers(query) {
-        const options = document.querySelectorAll('#ba-user option');
-        options.forEach(opt => {
-            if (opt.value === '') return; // Always show the placeholder
-            const username = (opt.dataset.username || '').toLowerCase();
-            const role = (opt.dataset.role || '').toLowerCase();
-            const searchText = (username + ' ' + role).includes(query.toLowerCase());
-            opt.style.display = searchText ? '' : 'none';
+        const sel = document.getElementById('ba-user');
+        if (!sel) return;
+        const q = query.toLowerCase();
+        // Re-render matching options (option.style.display not supported in all browsers)
+        const all = [...sel.options].filter(o => o.value !== '');
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">-- Select User --</option>';
+        all.forEach(o => {
+            const text = ((o.dataset.username || '') + ' ' + (o.dataset.role || '')).toLowerCase();
+            if (text.includes(q)) sel.appendChild(o);
         });
+        sel.value = prev;
     },
 
     updateBulkRanges() {
