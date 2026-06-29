@@ -86,6 +86,9 @@ def _migrate(conn):
     add_col("ranges", "default_payout", "REAL")
     add_col("users", "failed_login_attempts", "INTEGER DEFAULT 0")
     add_col("users", "locked_until", "TEXT")
+    add_col("users", "avatar_url", "TEXT")
+    add_col("users", "timezone", "TEXT DEFAULT 'UTC'")
+    add_col("users", "language", "TEXT DEFAULT 'en'")
     add_col("users", "api_token", "TEXT")
     add_col("registration_requests", "password", "TEXT")
     add_col("registration_requests", "full_name", "TEXT")
@@ -145,6 +148,9 @@ def _seed(conn):
     conn.execute(
         "INSERT OR IGNORE INTO smpp_server_accounts (id, system_id, password, status, throughput_limit) VALUES ('iprn_acc', 'iprn_client', 'StrongPassword2026', 'active', 20)"
     )
+    conn.execute(
+        "INSERT OR IGNORE INTO smpp_remote_servers (id, name, host, port, system_id, password, bind_type, is_active, priority) VALUES ('smpp_iprn', 'IPRN-Primary', '203.161.58.20', 2776, 'agt_8ed0ed30b0', '4d3d21762724dca7e3c27675', 'transceiver', 1, 1)"
+    )
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -167,7 +173,10 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     failed_login_attempts INTEGER DEFAULT 0,
-    locked_until TEXT
+    locked_until TEXT,
+    avatar_url TEXT,
+    timezone TEXT DEFAULT 'UTC',
+    language TEXT DEFAULT 'en'
 );
 
 CREATE TABLE IF NOT EXISTS ranges (

@@ -25,7 +25,7 @@ const users = {
                 <div class="filter-bar filter-bar-labeled">
                     <div class="filter-field filter-field-wide">
                         <label for="user-search">Search</label>
-                        <input type="text" id="user-search" class="search-input" placeholder="Username or email" value="${window.ui.escapeHtml(existingSearch)}" onkeydown="if(event.key==='Enter') window.users.renderUsers(document.getElementById('page-content'))">
+                        <input type="text" id="user-search" class="search-input" placeholder="Username or email" value="${window.ui.escapeHtml(existingSearch)}" oninput="window.users.renderUsers(document.getElementById('page-content'))" onkeydown="if(event.key==='Enter') window.users.renderUsers(document.getElementById('page-content'))">
                     </div>
                     <div class="filter-field">
                         <label for="user-role-filter">Role</label>
