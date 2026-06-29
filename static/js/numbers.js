@@ -1,15 +1,16 @@
 const numbers = {
-    async renderMyNumbers(container, page = 1) {
+    async renderMyNumbers(container, page = 1, search = '') {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
-            const res = await window.api.call(`/api/numbers?limit=50&page=${page}`);
+            const q = search ? `&search=${encodeURIComponent(search)}` : '';
+            const res = await window.api.call(`/api/numbers?limit=50&page=${page}${q}`);
             container.innerHTML = `
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">My Virtual Numbers</div>
                     <div class="card-header-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                         <div class="input-wrapper" style="width:200px">
-                            <input type="text" id="search-mynumbers" class="search-input" placeholder="Search numbers...">
+                            <input type="text" id="search-mynumbers" class="search-input" placeholder="Search numbers..." value="${window.ui.escapeHtml(search)}" oninput="window.numbers.renderMyNumbers(document.getElementById('page-content'),1,this.value)">
                         </div>
                         <button class="fly-btn fly-btn-sm" onclick="window.numbers.showExportModal()">${ICONS.download} Export</button>
                     </div>
@@ -39,9 +40,8 @@ const numbers = {
                         </tr>`).join('')||'<tr class="empty-row"><td colspan="7">No numbers assigned</td></tr>'}</tbody>
                     </table>
                 </div>
-                ${window.ui.renderPagination(res.pagination, (p) => this.renderMyNumbers(container, p))}
+                ${window.ui.renderPagination(res.pagination, (p) => this.renderMyNumbers(container, p, search))}
             </div>`;
-            window.ui.setupTableSearch('search-mynumbers', 'mynumbers-tbody');
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Error Loading Numbers</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderMyNumbers(document.getElementById('page-content'))">Retry</button></div>`;
         }
@@ -172,12 +172,10 @@ const numbers = {
     async renderRateCard(container) {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
-            const [rangesRes, ratesRes] = await Promise.all([
+            const [rangesRes] = await Promise.all([
                 window.api.call('/api/ranges?status=active'),
-                window.api.call('/api/settings/payout-rates').catch(() => ({ weekly: 0.85, monthly: 0.75 }))
             ]);
             const ranges = rangesRes.data || [];
-            const multiplier = { weekly: Number(ratesRes.weekly || 0.85), monthly: Number(ratesRes.monthly || 0.75) };
 
             const totalNumbers = ranges.reduce((s, r) => s + (r._count?.numbers || 0), 0);
             const totalAvail   = ranges.reduce((s, r) => s + (r._count?.available || 0), 0);
@@ -213,8 +211,8 @@ const numbers = {
                         <tbody id="rate-card-tbody">
                         ${ranges.length ? ranges.map(r => {
                             const base    = Number(r.rate || 0);
-                            const weekly  = Number(r.weekly_rate  || base * multiplier.weekly);
-                            const monthly = Number(r.monthly_rate || base * multiplier.monthly);
+                            const weekly  = Number(r.weekly_rate  ?? 0);
+                            const monthly = Number(r.monthly_rate ?? 0);
                             const total   = r._count?.numbers  || 0;
                             const avail   = r._count?.available || 0;
                             const alloc   = total - avail;
@@ -326,10 +324,9 @@ const numbers = {
     async renderSelfAllocation(container) {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
-            const [res, myNums, rates] = await Promise.all([
+            const [res, myNums] = await Promise.all([
                 window.api.call('/api/ranges?status=active'),
                 window.api.call('/api/numbers?limit=1'),
-                window.api.call('/api/settings/payout-rates').catch(() => ({ weekly: 0.85, monthly: 0.75 }))
             ]);
             const user = window.auth.getUser() || {};
             const limitEnabled = user.self_allocation_limit_enabled;
