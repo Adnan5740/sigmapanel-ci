@@ -110,7 +110,7 @@ const smppInterconnect = {
             body.innerHTML = res.data.map(l => `
                 <tr>
                     <td style="font-size:11px">${window.ui.formatDate(l.created_at)}</td>
-                    <td>${l.server_name || 'System'}</td>
+                    <td>${l.system_id || l.server_name || 'System'}</td>
                     <td><span class="badge badge-primary">${l.event_type}</span></td>
                     <td style="font-size:12px">${l.detail}</td>
                 </tr>

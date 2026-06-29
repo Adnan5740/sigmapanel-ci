@@ -96,7 +96,7 @@ class SMPPSession:
 
             if acc:
                 # IP Whitelist check
-                if acc['ip_whitelist'] and self.ip_address not in acc['ip_whitelist'].split(','):
+                if acc['ip_whitelist'] and self.ip_address not in [ip.strip() for ip in acc['ip_whitelist'].split(',')]:
                     logger.warning(f"Unauthorized IP {self.ip_address} for System ID {self.system_id}")
                     await self.send_pdu(command_id | 0x80000000, ESME_RBINDFAIL, seq, b'')
                     self.writer.close()
