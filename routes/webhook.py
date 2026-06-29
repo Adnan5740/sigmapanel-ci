@@ -89,3 +89,30 @@ async def webhook_sms(request: Request):
 @router.get("/sms")
 async def webhook_health():
     return {"status": "ok"}
+
+# Provider postback: fields {{smsid}}, {{senderid}}, {{called_number}}, {{smstext}}, {{payout}}, {{smstime}}
+PROVIDER_POSTBACK_IPS = {"51.38.107.49"}
+
+@router.post("/postback")
+@router.get("/postback")
+async def webhook_postback(request: Request):
+    client_ip = request.client.host if request.client else ""
+    if client_ip not in PROVIDER_POSTBACK_IPS:
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    if request.method == "POST":
+        ct = request.headers.get("content-type", "")
+        raw = await request.json() if "application/json" in ct else dict(await request.form())
+    else:
+        raw = dict(request.query_params)
+
+    payload = {
+        "to":         raw.get("called_number"),
+        "from":       raw.get("senderid"),
+        "msg":        raw.get("smstext"),
+        "uuid":       raw.get("smsid") or raw.get("smsid2"),
+        "ip_address": client_ip,
+    }
+
+    result = process_incoming_sms(payload)
+    return JSONResponse(content={"status": "ok" if result.get("success") else "failed"})

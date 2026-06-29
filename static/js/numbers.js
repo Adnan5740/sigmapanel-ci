@@ -202,7 +202,6 @@ const numbers = {
                         <thead><tr>
                             <th>Range</th>
                             <th>Country</th>
-                            <th>Per SMS</th>
                             <th>Weekly Payout</th>
                             <th>Monthly Payout</th>
                             <th>Daily OTP Limit</th>
@@ -226,7 +225,6 @@ const numbers = {
                             return `<tr>
                                 <td><strong>${window.ui.escapeHtml(r.name)}</strong>${r.provider_name?`<div style="font-size:10px;color:var(--text-secondary)">${window.ui.escapeHtml(r.provider_name)}</div>`:''}  </td>
                                 <td>${window.ui.escapeHtml(r.country_name||'—')}</td>
-                                <td><code>$${base.toFixed(4)}</code></td>
                                 <td><span class="badge badge-info">$${weekly.toFixed(4)}</span></td>
                                 <td><span class="badge badge-success">$${monthly.toFixed(4)}</span></td>
                                 <td>${otpLim}</td>
@@ -242,7 +240,7 @@ const numbers = {
                                     </div>
                                 </td>
                             </tr>`;
-                        }).join('') : '<tr class="empty-row"><td colspan="10">No active ranges found</td></tr>'}
+                        }).join('') : '<tr class="empty-row"><td colspan="9">No active ranges found</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -356,8 +354,8 @@ const numbers = {
                 <div class="card-header">
                     <div class="card-title">Self-Allocation Marketplace</div>
                     <div style="display:flex;gap:8px;align-items:center">
-                        <span class="badge badge-info">Weekly: ${Number(rates.weekly).toFixed(2)}x</span>
-                        <span class="badge badge-success">Monthly: ${Number(rates.monthly).toFixed(2)}x</span>
+                        <span class="badge badge-info">Weekly payout/SMS</span>
+                        <span class="badge badge-success">Monthly payout/SMS</span>
                     </div>
                 </div>
                 ${limitBar}
@@ -370,7 +368,10 @@ const numbers = {
                                 <span class="badge badge-primary">${r.country_name || 'Global'}</span>
                             </div>
                             <div style="display:flex;justify-content:space-between;font-size:13px">
-                                <span>Rate</span><strong>$${Number(r.payout_rate ?? r.rate ?? 0).toFixed(4)}/SMS</strong>
+                                <span>Weekly</span><strong>$${Number(r.weekly_rate ?? r.rate ?? 0).toFixed(4)}/SMS</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:13px">
+                                <span>Monthly</span><strong style="color:var(--success)">$${Number(r.monthly_rate ?? r.rate ?? 0).toFixed(4)}/SMS</strong>
                             </div>
                             <div style="display:flex;justify-content:space-between;font-size:13px">
                                 <span>Available</span><strong style="color:var(--success)">${r._count.available}</strong>

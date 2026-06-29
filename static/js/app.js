@@ -85,14 +85,25 @@ const NAV_STRUCTURE = [
         ]
     },
     {
+        group: 'HTTP PROVIDERS',
+        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
+        items: [
+            { key: 'http-overview',       label: 'Overview & Setup',    icon: ICONS.report,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'http-standard',       label: 'Standard Webhook',    icon: ICONS.webhook,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'http-postback',       label: 'Custom Postback',     icon: ICONS.transfer, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'http-field-mapping',  label: 'Field Mapping Guide', icon: ICONS.layers,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'http-test',           label: 'Test Endpoint',       icon: ICONS.terminal, roles: ['admin', 'manager'] },
+        ]
+    },
+    {
         group: 'API GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'api-playground', label: 'API Playground', icon: ICONS.terminal, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'api-tokens', label: 'API Tokens', icon: ICONS.key, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'documentation', label: 'Documentation', icon: ICONS.report, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'live-test', label: 'Live Test', icon: ICONS.send, roles: ['admin', 'manager'] },
-            { key: 'webhook-config', label: 'Webhook Config', icon: ICONS.webhook, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'api-tokens',      label: 'API Tokens',     icon: ICONS.key,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'api-playground',  label: 'API Playground', icon: ICONS.terminal, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-test',       label: 'Live Test',      icon: ICONS.send,     roles: ['admin', 'manager'] },
+            { key: 'webhook-config',  label: 'Webhook Config', icon: ICONS.webhook,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'documentation',   label: 'Documentation',  icon: ICONS.report,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
     {
@@ -180,6 +191,13 @@ function init() {
     // Requests
     window.router.addRoute('registration-requests', (c) => window.users.renderRegRequests(c));
     window.router.addRoute('payout-requests', (c) => window.payments.renderPayoutRequests(c));
+
+    // HTTP Providers
+    window.router.addRoute('http-overview',      (c) => window.settings.renderHttpOverview(c));
+    window.router.addRoute('http-standard',      (c) => window.settings.renderHttpStandard(c));
+    window.router.addRoute('http-postback',      (c) => window.settings.renderHttpPostback(c));
+    window.router.addRoute('http-field-mapping', (c) => window.settings.renderHttpFieldMapping(c));
+    window.router.addRoute('http-test',          (c) => window.settings.renderHttpTest(c));
 
     // API
     window.router.addRoute('api-playground', (c) => window.apiManagement.renderPlayground(c));

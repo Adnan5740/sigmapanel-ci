@@ -255,8 +255,7 @@ async def get_me(request: Request):
     with get_db() as conn:
         user = conn.execute(
             """SELECT id, username, email, role, status, full_name, balance, credit_limit,
-                      phone, country, timezone, language, parent_id, last_login, created_at, updated_at,
-                      avatar_url
+                      phone, country, parent_id, last_login, created_at, updated_at
                FROM users WHERE id = ?""",
             (payload['userId'],)
         ).fetchone()
@@ -267,4 +266,10 @@ async def get_me(request: Request):
         if user['status'] == 'blocked':
             raise HTTPException(status_code=403, detail="Account is blocked")
         
-        return {"user": dict(user)}
+        data = dict(user)
+        try:
+            av = conn.execute("SELECT avatar_url FROM users WHERE id=?", (payload['userId'],)).fetchone()
+            data['avatar_url'] = av['avatar_url'] if av else None
+        except Exception:
+            data['avatar_url'] = None
+        return {"user": data}

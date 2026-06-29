@@ -87,7 +87,7 @@ class RemoteSMPPSession:
                dest_addr.encode() + b'\x00' + \
                struct.pack('!BBB', 0, 0, 0) + \
                b'\x00' + b'\x00' + \
-               struct.pack('!BBB', 1, coding, len(msg_bytes)) + msg_bytes
+               struct.pack('!BBBBB', 1, 0, coding, 0, len(msg_bytes)) + msg_bytes
 
         await self.send_pdu(0x00000004, 0, self.seq, body)
         self.seq += 1
