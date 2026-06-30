@@ -7,6 +7,7 @@ set -e
 INSTALL_DIR="/var/www/sigmapanel"
 SERVICE_USER="sigmapanel"
 PORT="${PORT:-8000}"
+SMPP_PORT="${SMPP_PORT:-2775}"
 NGINX_SITE="/etc/nginx/sites-available/sigmapanel"
 NGINX_LIMITS="/etc/nginx/conf.d/sigmapanel-limits.conf"
 
@@ -209,14 +210,15 @@ nginx -t
 systemctl enable nginx --quiet
 systemctl restart nginx
 
-# ── Firewall — expose 80 + SSH only; keep FastAPI internal ─────────────────
+# ── Firewall — 80 (Nginx), 2775 (SMPP); block direct 8000 access ───────────
 log "Configuring UFW firewall..."
 if command -v ufw &>/dev/null; then
     ufw allow OpenSSH >/dev/null 2>&1 || ufw allow 22/tcp comment 'SSH' >/dev/null 2>&1 || true
     ufw allow 80/tcp comment 'SIGMAPANEL HTTP' >/dev/null 2>&1 || true
+    ufw allow "$SMPP_PORT/tcp" comment 'SMPP Server' >/dev/null 2>&1 || true
     ufw --force enable >/dev/null 2>&1 || true
     ufw deny "$PORT/tcp" >/dev/null 2>&1 || true
-    log "UFW: allowed SSH + port 80; denied public access to port $PORT"
+    log "UFW: allowed SSH, 80 (Nginx), $SMPP_PORT (SMPP); denied public access to port $PORT"
 fi
 
 # Restart if already running, otherwise start fresh
