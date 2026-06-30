@@ -298,7 +298,7 @@ const settings = {
     async renderHttpTest(container) {
         const base = window.location.origin;
         const stdUrl = base + '/api/webhook/sms';
-        const pbUrl  = base + '/api/webhook/postback';
+        const pbUrl  = base + '/api/webhook/test';
         container.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:20px">
         <div class="card">
@@ -309,7 +309,7 @@ const settings = {
                     <label class="fly-label">Endpoint</label>
                     <select id="ht-endpoint" class="fly-input">
                         <option value="${stdUrl}">Standard — /api/webhook/sms</option>
-                        <option value="${pbUrl}">Custom Postback — /api/webhook/postback</option>
+                        <option value="${pbUrl}">Standard + Postback fields — /api/webhook/test</option>
                     </select>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
