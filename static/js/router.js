@@ -3,6 +3,15 @@ const router = {
     currentPage: 'dashboard',
     currentGroup: null,
 
+    // Detect base path (e.g. '/sms' if served under /sms/)
+    _base: (function() {
+        const p = window.location.pathname;
+        // Find the deepest prefix before a known page key or root
+        const m = p.match(/^(\/[^/]+)\//) ;
+        if (m && m[1] !== '') return m[1];
+        return '';
+    })(),
+
     init() {
         window.addEventListener('popstate', () => {
             this.handleRoute();
@@ -11,17 +20,21 @@ const router = {
     },
 
     handleRoute() {
-        const path = window.location.pathname.replace(/^\//, '') || 'dashboard';
-        // Only navigate if we are already logged in or going to a public route
-        // For this SPA, most routes require login except maybe login/signup if they were separate paths
-        // But here we handle everything via renderDashboardShell
+        const base = this._base;
+        let path = window.location.pathname;
+        // Strip base prefix
+        if (base && path.startsWith(base)) {
+            path = path.slice(base.length);
+        }
+        path = path.replace(/^\//, '') || 'dashboard';
         this.navigateTo(path, false);
     },
 
     navigateTo(page, pushState = true) {
         this.currentPage = page;
         if (pushState) {
-            const url = page === 'dashboard' ? '/' : `/${page}`;
+            const base = this._base;
+            const url = base + (page === 'dashboard' ? '/' : `/${page}`);
             window.history.pushState({}, '', url);
         }
 
@@ -31,7 +44,6 @@ const router = {
             console.warn('renderDashboardShell not yet available');
         }
 
-        // Re-trigger page animation on each navigation
         const content = document.getElementById('page-content');
         if (content) {
             content.style.opacity = '0';
@@ -46,12 +58,9 @@ const router = {
 
     resolvePage(contentContainer) {
         const page = this.currentPage;
-
-        // Find if it's a known route
         if (this.routes[page]) {
             this.routes[page](contentContainer);
         } else {
-            // Default or 404
             if (this.routes['dashboard']) {
                 this.routes['dashboard'](contentContainer);
             } else {
