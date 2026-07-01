@@ -36,9 +36,9 @@ def _payload_value(payload: dict, *names: str):
 def process_incoming_sms(payload: dict):
     """Core logic to process incoming SMS and save to DB with limit enforcement."""
     number = _payload_value(payload, 'to', 'number', 'msisdn', 'recipient')
-    cli = _payload_value(payload, 'Cli', 'cli', 'CLI', 'sender_id', 'source', 'oa', 'originator')
+    cli = _payload_value(payload, 'Cli', 'cli', 'CLI', 'sender_id', 'senderid', 'source', 'oa', 'originator')
     from_field = _payload_value(payload, 'from', 'From', 'sender')
-    sender = from_field or cli or ""
+    sender = (cli if (cli and not cli.lstrip('+').isdigit()) else None) or (from_field if (from_field and not from_field.lstrip('+').isdigit()) else None) or from_field or cli or ""
     message = _payload_value(payload, 'msg', 'message', 'text', 'Message') or ""
 
     missing = []
