@@ -3,15 +3,6 @@ const router = {
     currentPage: 'dashboard',
     currentGroup: null,
 
-    // Detect base path (e.g. '/sms' if served under /sms/)
-    _base: (function() {
-        const p = window.location.pathname;
-        // Find the deepest prefix before a known page key or root
-        const m = p.match(/^(\/[^/]+)\//) ;
-        if (m && m[1] !== '') return m[1];
-        return '';
-    })(),
-
     init() {
         window.addEventListener('popstate', () => {
             this.handleRoute();
@@ -20,21 +11,14 @@ const router = {
     },
 
     handleRoute() {
-        const base = this._base;
-        let path = window.location.pathname;
-        // Strip base prefix
-        if (base && path.startsWith(base)) {
-            path = path.slice(base.length);
-        }
-        path = path.replace(/^\//, '') || 'dashboard';
+        const path = window.location.pathname.replace(/^\//, '') || 'dashboard';
         this.navigateTo(path, false);
     },
 
     navigateTo(page, pushState = true) {
         this.currentPage = page;
         if (pushState) {
-            const base = this._base;
-            const url = base + (page === 'dashboard' ? '/' : `/${page}`);
+            const url = page === 'dashboard' ? '/' : `/${page}`;
             window.history.pushState({}, '', url);
         }
 
