@@ -37,14 +37,103 @@ const auth = {
             <div class="auth-card auth-card-login">
                 <div class="auth-cover auth-cover-login">
                     <div class="auth-cover-content auth-cover-content-login">
-                        <div class="auth-brand-block">
-                            <div class="auth-brand-mark">${ICONS.send}</div>
-                            <div>
-                                <div class="auth-eyebrow">SMS Management</div>
-                                <h1>SIGMAPANEL</h1>
+                        <div class="ssp-logo-wrap">
+                            <div class="ssp-logo-svg-container">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 160" class="ssp-logo-svg" role="img" aria-label="SSP - Sigma SMS Panel">
+                                  <defs>
+                                    <filter id="glow-blue-l" x="-30%" y="-30%" width="160%" height="160%">
+                                      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+                                      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 0.78 1 0 0  0 0.64 1 0 0  0 0 0 1.3 0" result="c"/>
+                                      <feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    </filter>
+                                    <filter id="glow-white-l" x="-20%" y="-20%" width="140%" height="140%">
+                                      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+                                      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.9  0 1 0 0 0.9  0 0 1 0 1  0 0 0 0.65 0" result="c"/>
+                                      <feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    </filter>
+                                    <linearGradient id="ms1" x1="0%" y1="0%" x2="0%" y2="100%">
+                                      <stop offset="0%" stop-color="#ffffff"/><stop offset="18%" stop-color="#e2e4f8"/>
+                                      <stop offset="42%" stop-color="#ffffff"/><stop offset="62%" stop-color="#ccd0ee"/>
+                                      <stop offset="82%" stop-color="#ffffff"/><stop offset="100%" stop-color="#d0d4f0"/>
+                                    </linearGradient>
+                                    <linearGradient id="ms2" x1="0%" y1="0%" x2="0%" y2="100%">
+                                      <stop offset="0%" stop-color="#eef0ff"/><stop offset="28%" stop-color="#ffffff"/>
+                                      <stop offset="52%" stop-color="#dde0f8"/><stop offset="78%" stop-color="#ffffff"/>
+                                      <stop offset="100%" stop-color="#c8ccea"/>
+                                    </linearGradient>
+                                    <linearGradient id="gp" x1="0%" y1="0%" x2="100%" y2="100%">
+                                      <stop offset="0%" stop-color="#00C6FF"/><stop offset="52%" stop-color="#0072FF"/>
+                                      <stop offset="100%" stop-color="#00FFA3"/>
+                                    </linearGradient>
+                                    <linearGradient id="gpg" x1="0%" y1="0%" x2="100%" y2="100%">
+                                      <stop offset="0%" stop-color="#00C6FF" stop-opacity="0.55"/>
+                                      <stop offset="100%" stop-color="#00FFA3" stop-opacity="0.55"/>
+                                    </linearGradient>
+                                    <linearGradient id="spd" x1="0%" y1="0%" x2="100%" y2="0%">
+                                      <stop offset="0%" stop-color="#00FFA3" stop-opacity="0.9"/>
+                                      <stop offset="55%" stop-color="#00C6FF" stop-opacity="0.4"/>
+                                      <stop offset="100%" stop-color="#00C6FF" stop-opacity="0"/>
+                                    </linearGradient>
+                                    <linearGradient id="ibg" x1="0%" y1="0%" x2="100%" y2="100%">
+                                      <stop offset="0%" stop-color="#16163a"/><stop offset="100%" stop-color="#090922"/>
+                                    </linearGradient>
+                                    <linearGradient id="ist" x1="0%" y1="0%" x2="100%" y2="100%">
+                                      <stop offset="0%" stop-color="#00C6FF"/><stop offset="100%" stop-color="#00FFA3"/>
+                                    </linearGradient>
+                                    <linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="0%">
+                                      <stop offset="0%" stop-color="#00C6FF" stop-opacity="0.7"/>
+                                      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.45"/>
+                                      <stop offset="100%" stop-color="#00FFA3" stop-opacity="0.7"/>
+                                    </linearGradient>
+                                    <linearGradient id="sh" x1="0%" y1="0%" x2="40%" y2="100%">
+                                      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+                                      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.08"/>
+                                      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+                                    </linearGradient>
+                                  </defs>
+                                  <!-- ICON -->
+                                  <g transform="translate(10,18)">
+                                    <circle cx="32" cy="32" r="31" fill="none" stroke="url(#ist)" stroke-width="0.8" stroke-opacity="0.2" filter="url(#glow-blue-l)"/>
+                                    <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#ibg)"/>
+                                    <rect x="4" y="4" width="56" height="56" rx="14" fill="none" stroke="url(#ist)" stroke-width="1.2" stroke-opacity="0.45"/>
+                                    <rect x="5" y="5" width="54" height="10" rx="9" fill="white" fill-opacity="0.05"/>
+                                    <rect x="11" y="13" width="38" height="24" rx="6" fill="none" stroke="url(#ist)" stroke-width="1.7"/>
+                                    <path d="M19 37 L15 47 L27 40 Z" fill="url(#ist)" opacity="0.65"/>
+                                    <line x1="16" y1="21" x2="40" y2="21" stroke="white" stroke-width="1.4" stroke-opacity="0.45" stroke-linecap="round"/>
+                                    <line x1="16" y1="27" x2="36" y2="27" stroke="url(#ist)" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/>
+                                    <circle cx="41" cy="27" r="2.2" fill="#00FFA3" opacity="0.9"/>
+                                    <path d="M42 9 Q50 9 50 17" stroke="#00C6FF" stroke-width="1.3" fill="none" stroke-opacity="0.55" stroke-linecap="round"/>
+                                    <path d="M45 6 Q56 6 56 20" stroke="#00C6FF" stroke-width="1.1" fill="none" stroke-opacity="0.28" stroke-linecap="round"/>
+                                    <circle cx="42" cy="9" r="1.5" fill="#00FFA3" opacity="0.85"/>
+                                  </g>
+                                  <!-- SSP -->
+                                  <g transform="translate(82,8)">
+                                    <text x="2" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="white" fill-opacity="0.12" filter="url(#glow-white-l)" letter-spacing="-3">S</text>
+                                    <text x="2" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#ms1)" letter-spacing="-3">S</text>
+                                    <text x="2" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sh)" letter-spacing="-3">S</text>
+                                    <text x="2" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.5" letter-spacing="-3">S</text>
+                                    <text x="60" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="white" fill-opacity="0.12" filter="url(#glow-white-l)" letter-spacing="-3">S</text>
+                                    <text x="60" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#ms2)" letter-spacing="-3">S</text>
+                                    <text x="60" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sh)" letter-spacing="-3">S</text>
+                                    <text x="60" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.5" letter-spacing="-3">S</text>
+                                    <circle cx="119" cy="46" r="3.2" fill="#00C6FF" opacity="0.55" filter="url(#glow-blue-l)"/>
+                                    <circle cx="119" cy="46" r="1.6" fill="#00FFA3" opacity="0.95"/>
+                                    <rect x="222" y="60" width="46" height="2.8" rx="1.4" fill="url(#spd)"/>
+                                    <rect x="226" y="68" width="38" height="2.2" rx="1.1" fill="url(#spd)" opacity="0.7"/>
+                                    <rect x="230" y="76" width="30" height="1.6" rx="0.8" fill="url(#spd)" opacity="0.5"/>
+                                    <rect x="234" y="83" width="22" height="1.1" rx="0.55" fill="url(#spd)" opacity="0.3"/>
+                                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="#00C6FF" fill-opacity="0.16" letter-spacing="-3" transform="translate(4,3)">P</text>
+                                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="#00FFA3" fill-opacity="0.1" letter-spacing="-3" transform="translate(-3,-2)">P</text>
+                                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#gpg)" filter="url(#glow-blue-l)" letter-spacing="-3">P</text>
+                                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#gp)" letter-spacing="-3">P</text>
+                                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="none" stroke="rgba(0,198,255,0.32)" stroke-width="0.8" letter-spacing="-3">P</text>
+                                  </g>
+                                  <text x="84" y="115" font-family="Arial,Helvetica Neue,sans-serif" font-size="15.5" font-weight="700" fill="white" fill-opacity="0.86" letter-spacing="0.13em">Sigma SMS Panel</text>
+                                  <line x1="84" y1="126" x2="385" y2="126" stroke="url(#tg)" stroke-width="0.5" opacity="0.45"/>
+                                  <text x="84" y="143" font-family="Arial,Helvetica Neue,sans-serif" font-size="9.5" font-weight="700" fill="url(#tg)" letter-spacing="0.32em">SMART  |  SECURE  |  POWERFUL</text>
+                                </svg>
                             </div>
                         </div>
-                        <p class="auth-cover-copy">Trusted A2P & P2P IPRN SMS Partner</p>
                     </div>
                 </div>
                 <div class="auth-form auth-form-login">
