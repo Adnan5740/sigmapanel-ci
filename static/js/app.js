@@ -279,80 +279,35 @@ function renderDashboardShell() {
             <button class="mobile-menu-btn" id="mobile-menu-btn">${ICONS.menu}</button>
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <aside class="sidebar" id="sidebar">
-                <div class="sidebar-logo" style="padding:12px 14px">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 160" class="sidebar-ssp-logo" role="img" aria-label="SSP">
-                  <defs>
-                    <filter id="sb-glow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
-                      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0  0 0.78 1 0 0  0 0.64 1 0 0  0 0 0 1.1 0" result="c"/>
-                      <feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                    <filter id="sb-gw" x="-15%" y="-15%" width="130%" height="130%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="b"/>
-                      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                    <linearGradient id="sb-ms1" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#fff"/><stop offset="40%" stop-color="#e2e4f8"/>
-                      <stop offset="70%" stop-color="#fff"/><stop offset="100%" stop-color="#ccd0ee"/>
-                    </linearGradient>
-                    <linearGradient id="sb-ms2" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#eef0ff"/><stop offset="45%" stop-color="#fff"/>
-                      <stop offset="100%" stop-color="#c8ccea"/>
-                    </linearGradient>
-                    <linearGradient id="sb-gp" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#00C6FF"/><stop offset="55%" stop-color="#0072FF"/>
-                      <stop offset="100%" stop-color="#00FFA3"/>
-                    </linearGradient>
-                    <linearGradient id="sb-spd" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#00FFA3" stop-opacity="0.9"/>
-                      <stop offset="100%" stop-color="#00C6FF" stop-opacity="0"/>
-                    </linearGradient>
-                    <linearGradient id="sb-ibg" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#16163a"/><stop offset="100%" stop-color="#090922"/>
-                    </linearGradient>
-                    <linearGradient id="sb-ist" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#00C6FF"/><stop offset="100%" stop-color="#00FFA3"/>
-                    </linearGradient>
-                    <linearGradient id="sb-tg" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#00C6FF" stop-opacity="0.6"/>
-                      <stop offset="50%" stop-color="#fff" stop-opacity="0.4"/>
-                      <stop offset="100%" stop-color="#00FFA3" stop-opacity="0.6"/>
-                    </linearGradient>
-                    <linearGradient id="sb-sh" x1="0%" y1="0%" x2="35%" y2="100%">
-                      <stop offset="0%" stop-color="#fff" stop-opacity="0.5"/>
-                      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <g transform="translate(10,18)">
-                    <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#sb-ibg)"/>
-                    <rect x="4" y="4" width="56" height="56" rx="14" fill="none" stroke="url(#sb-ist)" stroke-width="1.2" stroke-opacity="0.45"/>
-                    <rect x="11" y="13" width="38" height="24" rx="6" fill="none" stroke="url(#sb-ist)" stroke-width="1.7"/>
-                    <path d="M19 37 L15 47 L27 40 Z" fill="url(#sb-ist)" opacity="0.65"/>
-                    <line x1="16" y1="21" x2="40" y2="21" stroke="white" stroke-width="1.4" stroke-opacity="0.4" stroke-linecap="round"/>
-                    <line x1="16" y1="27" x2="36" y2="27" stroke="url(#sb-ist)" stroke-width="1.4" stroke-linecap="round" opacity="0.7"/>
-                    <circle cx="41" cy="27" r="2.2" fill="#00FFA3" opacity="0.9"/>
-                    <path d="M42 9 Q50 9 50 17" stroke="#00C6FF" stroke-width="1.2" fill="none" stroke-opacity="0.5" stroke-linecap="round"/>
-                    <circle cx="42" cy="9" r="1.5" fill="#00FFA3" opacity="0.8"/>
-                  </g>
-                  <g transform="translate(82,8)">
-                    <text x="2" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="white" fill-opacity="0.1" filter="url(#sb-gw)" letter-spacing="-3">S</text>
-                    <text x="2" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sb-ms1)" letter-spacing="-3">S</text>
-                    <text x="2" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sb-sh)" letter-spacing="-3">S</text>
-                    <text x="60" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sb-ms2)" letter-spacing="-3">S</text>
-                    <text x="60" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sb-sh)" letter-spacing="-3">S</text>
-                    <circle cx="119" cy="46" r="1.6" fill="#00FFA3" opacity="0.9"/>
-                    <rect x="222" y="60" width="40" height="2.5" rx="1.2" fill="url(#sb-spd)"/>
-                    <rect x="226" y="68" width="32" height="2" rx="1" fill="url(#sb-spd)" opacity="0.65"/>
-                    <rect x="230" y="76" width="24" height="1.4" rx="0.7" fill="url(#sb-spd)" opacity="0.4"/>
-                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="#00C6FF" fill-opacity="0.14" letter-spacing="-3" transform="translate(3,2)">P</text>
-                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sb-gp)" filter="url(#sb-glow)" letter-spacing="-3">P</text>
-                    <text x="124" y="74" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="78" fill="url(#sb-gp)" letter-spacing="-3">P</text>
-                  </g>
-                  <text x="84" y="115" font-family="Arial,Helvetica Neue,sans-serif" font-size="15.5" font-weight="700" fill="white" fill-opacity="0.82" letter-spacing="0.13em">Sigma SMS Panel</text>
-                  <line x1="84" y1="126" x2="385" y2="126" stroke="url(#sb-tg)" stroke-width="0.5" opacity="0.4"/>
-                  <text x="84" y="143" font-family="Arial,Helvetica Neue,sans-serif" font-size="9.5" font-weight="700" fill="url(#sb-tg)" letter-spacing="0.3em">SMART  |  SECURE  |  POWERFUL</text>
-                </svg>
-            </div>
+                <div class="sidebar-logo">
+                <div class="ssp-sidebar-logo">
+                    <div class="ssp-sidebar-icon">
+                        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="6" width="22" height="15" rx="4" stroke="url(#si1)" stroke-width="1.6"/>
+                            <path d="M6 22 L4 28 L12 24" stroke="url(#si1)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="6" y1="12" x2="18" y2="12" stroke="white" stroke-width="1.3" stroke-opacity="0.5" stroke-linecap="round"/>
+                            <line x1="6" y1="16" x2="15" y2="16" stroke="url(#si1)" stroke-width="1.3" stroke-linecap="round"/>
+                            <circle cx="20" cy="16" r="1.8" fill="#00FFA3"/>
+                            <path d="M25 5 Q30 5 30 11" stroke="#00C6FF" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-opacity="0.6"/>
+                            <path d="M27 3 Q32 3 32 12" stroke="#00C6FF" stroke-width="1" fill="none" stroke-linecap="round" stroke-opacity="0.3"/>
+                            <circle cx="25" cy="5" r="1.4" fill="#00FFA3"/>
+                            <defs>
+                                <linearGradient id="si1" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#00C6FF"/>
+                                    <stop offset="100%" stop-color="#00FFA3"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="ssp-sidebar-text">
+                        <div class="ssp-sidebar-wordmark">
+                            <span class="ssp-s">SS</span><span class="ssp-p">P</span>
+                        </div>
+                        <div class="ssp-sidebar-sub">Sigma SMS</div>
+                        <div class="ssp-sidebar-tag">A2P SMS Power</div>
+                    </div>
+                </div>
+            </div></div>
                 <nav class="sidebar-nav">${sidebarNav}</nav>
                 <div class="sidebar-user">
                     <div class="sidebar-user-info">${window.ui.renderUserAvatar(user, 'sidebar-user-avatar')}<div><div class="sidebar-user-name">${user.full_name || user.fullName || user.username}</div><div class="sidebar-user-role">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
