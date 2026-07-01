@@ -62,9 +62,8 @@ const auth = {
                             <div class="ssp-login-name">Sigma SMS</div>
                             <div class="ssp-login-tag">A2P SMS Power</div>
                         </div>
-                        <p class="auth-cover-copy">Trusted A2P &amp; P2P IPRN SMS Partner</p>
+                        <p class="auth-cover-copy">Trusted A2P & P2P IPRN SMS Partner</p>
                     </div>
-                </div>
                 </div>
                 <div class="auth-form auth-form-login">
                     <div class="auth-form-inner auth-login-inner">

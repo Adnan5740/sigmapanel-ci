@@ -307,7 +307,7 @@ function renderDashboardShell() {
                         <div class="ssp-sidebar-tag">A2P SMS Power</div>
                     </div>
                 </div>
-            </div></div>
+            </div>
                 <nav class="sidebar-nav">${sidebarNav}</nav>
                 <div class="sidebar-user">
                     <div class="sidebar-user-info">${window.ui.renderUserAvatar(user, 'sidebar-user-avatar')}<div><div class="sidebar-user-name">${user.full_name || user.fullName || user.username}</div><div class="sidebar-user-role">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
