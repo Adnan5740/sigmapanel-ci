@@ -368,25 +368,146 @@ const settings = {
 
     async renderBackupRestore(container) {
         container.innerHTML = `
-        <div class="card">
-            <div class="card-header"><div class="card-title">Disaster Recovery</div></div>
-            <div class="card-body">
-                <button class="fly-btn fly-btn-secondary" onclick="window.settings.triggerBackup()">Trigger Full SQL Snapshot</button>
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">${ICONS.backup} Backup — SQL Snapshot</div>
+                </div>
+                <div class="card-body" style="padding:20px;display:flex;flex-direction:column;gap:14px">
+                    <p style="color:var(--text-secondary);font-size:13px;margin:0">
+                        Creates a full copy of the live database and immediately downloads it to your browser as a <code>.sqlite</code> file. No server-side file is kept.
+                    </p>
+                    <div style="background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;color:var(--text-secondary)">
+                        ${ICONS.alertCircle} The download starts automatically. Keep the file safe — it contains all users, SMS, numbers, and settings.
+                    </div>
+                    <div>
+                        <button id="backup-btn" class="fly-btn" onclick="window.settings.triggerBackup()">
+                            ${ICONS.backup} Download SQL Snapshot
+                        </button>
+                        <span id="backup-status" style="margin-left:12px;font-size:12px;color:var(--text-secondary)"></span>
+                    </div>
+                </div>
             </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">${ICONS.upload} Restore from Backup</div>
+                </div>
+                <div class="card-body" style="padding:20px;display:flex;flex-direction:column;gap:14px">
+                    <p style="color:var(--text-secondary);font-size:13px;margin:0">
+                        Upload a previously downloaded <code>.sqlite</code> backup file to restore the database. The current database is automatically saved before being replaced.
+                    </p>
+                    <div style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:14px;font-size:12px;color:var(--danger)">
+                        ${ICONS.alertCircle} <strong>Warning:</strong> This overwrites the live database immediately. Ensure the service is idle before restoring.
+                    </div>
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                        <label class="fly-btn secondary" style="cursor:pointer;margin:0">
+                            ${ICONS.upload} Choose .sqlite file
+                            <input type="file" id="restore-file" accept=".sqlite,.db" style="display:none" onchange="window.settings.onRestoreFileSelected(this)">
+                        </label>
+                        <span id="restore-filename" style="font-size:13px;color:var(--text-secondary)">No file chosen</span>
+                    </div>
+                    <div id="restore-preview" style="display:none;background:var(--bg-page);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px"></div>
+                    <button id="restore-btn" class="fly-btn" style="background:var(--danger);display:none" onclick="window.settings.doRestore()">
+                        ${ICONS.transfer} Restore Database Now
+                    </button>
+                    <div id="restore-status" style="font-size:12px;color:var(--text-secondary)"></div>
+                </div>
+            </div>
+
         </div>`;
     },
 
     async triggerBackup() {
+        const btn = document.getElementById('backup-btn');
+        const status = document.getElementById('backup-status');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner spinner-inline"></span> Creating snapshot...'; }
+        if (status) status.textContent = '';
         try {
-            const btn = document.querySelector('button[onclick="window.settings.triggerBackup()"]');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner spinner-inline"></span> Backing up...'; }
-            const res = await window.api.call('/api/settings/backup', { method: 'POST' });
-            window.ui.showToast('Backup successful: ' + res.file, 'success');
+            // Use fetch directly to get the file blob and trigger download
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/settings/backup', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Backup failed');
+            }
+            const blob = await res.blob();
+            const cd = res.headers.get('Content-Disposition') || '';
+            const fnMatch = cd.match(/filename="([^"]+)"/);
+            const filename = fnMatch ? fnMatch[1] : 'sigmapanel_backup.sqlite';
+            // Trigger browser download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+            if (status) status.textContent = '✓ Downloaded: ' + filename;
+            window.ui.showToast('Backup downloaded: ' + filename, 'success');
         } catch (e) {
             window.ui.showToast(e.message, 'error');
+            if (status) status.textContent = '✗ ' + e.message;
         } finally {
-            const btn = document.querySelector('button[onclick="window.settings.triggerBackup()"]');
-            if (btn) { btn.disabled = false; btn.textContent = 'Trigger Full SQL Snapshot'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = (ICONS.backup || '') + ' Download SQL Snapshot'; }
+        }
+    },
+
+    onRestoreFileSelected(input) {
+        const file = input.files[0];
+        const nameEl = document.getElementById('restore-filename');
+        const preview = document.getElementById('restore-preview');
+        const btn = document.getElementById('restore-btn');
+        if (!file) { nameEl.textContent = 'No file chosen'; preview.style.display='none'; btn.style.display='none'; return; }
+        nameEl.textContent = file.name;
+        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+        preview.style.display = 'block';
+        preview.innerHTML =
+            '<div style="display:flex;gap:24px;flex-wrap:wrap">' +
+            '<div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em">File</div><strong>' + window.ui.escapeHtml(file.name) + '</strong></div>' +
+            '<div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em">Size</div><strong>' + sizeMB + ' MB</strong></div>' +
+            '<div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em">Type</div><strong>' + (file.type || '.sqlite') + '</strong></div>' +
+            '</div>';
+        btn.style.display = 'inline-flex';
+    },
+
+    async doRestore() {
+        const input = document.getElementById('restore-file');
+        const file = input?.files[0];
+        const statusEl = document.getElementById('restore-status');
+        const btn = document.getElementById('restore-btn');
+        if (!file) { window.ui.showToast('Please select a backup file first', 'error'); return; }
+        if (!confirm('⚠️ This will REPLACE the live database with the uploaded file.\n\nA safety backup is auto-created before restore.\n\nContinue?')) return;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner spinner-inline"></span> Restoring...';
+        if (statusEl) statusEl.textContent = 'Uploading...';
+        try {
+            const token = localStorage.getItem('token');
+            const form = new FormData();
+            form.append('file', file);
+            const res = await fetch('/api/settings/restore', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: form
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Restore failed');
+            if (statusEl) statusEl.textContent = '✓ ' + data.message;
+            window.ui.showToast(data.message, 'success');
+            // Clear the file input
+            input.value = '';
+            document.getElementById('restore-filename').textContent = 'No file chosen';
+            document.getElementById('restore-preview').style.display = 'none';
+            btn.style.display = 'none';
+        } catch (e) {
+            window.ui.showToast(e.message, 'error');
+            if (statusEl) statusEl.textContent = '✗ ' + e.message;
+            btn.disabled = false;
+            btn.innerHTML = (ICONS.transfer || '') + ' Restore Database Now';
         }
     },
 

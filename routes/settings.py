@@ -132,16 +132,52 @@ async def update_payout_rates(body: dict, p=Depends(require_role(["admin", "mana
 
 @router.post("/backup")
 async def backup_database(p=Depends(require_role(["admin"]))):
-    import shutil
-    import datetime
+    """Create a SQLite snapshot and stream it directly to the browser as a download."""
+    import shutil, datetime, io
+    from fastapi.responses import StreamingResponse
     try:
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = f"database_backup_{ts}.sqlite"
-        shutil.copy2(get_db_path(), backup_file)
-
+        filename = f"sigmapanel_backup_{ts}.sqlite"
+        src = get_db_path()
+        # Read into memory so we don't serve a live write-locked DB file
+        buf = io.BytesIO()
+        with open(src, "rb") as f:
+            buf.write(f.read())
+        buf.seek(0)
         with get_db() as conn:
-            log_audit(conn, p, 'system_backup', 'backup', backup_file, f"Backup created: {backup_file}", None)
+            log_audit(conn, p, "system_backup", "backup", filename, f"Backup downloaded: {filename}", None)
+        return StreamingResponse(
+            buf,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
-        return {"message": "Backup created successfully", "file": backup_file}
+@router.post("/restore")
+async def restore_database(request: Request, p=Depends(require_role(["admin"]))):
+    """Upload a .sqlite backup file and replace the live database."""
+    import shutil, datetime, io
+    MAX_SIZE = 500 * 1024 * 1024  # 500 MB
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        raise HTTPException(400, "No file provided")
+    data = await file.read()
+    if len(data) < 100:
+        raise HTTPException(400, "File too small — not a valid SQLite database")
+    if not data.startswith(b"SQLite format 3"):
+        raise HTTPException(400, "Not a valid SQLite database file")
+    if len(data) > MAX_SIZE:
+        raise HTTPException(400, "File too large (max 500 MB)")
+    db_path = get_db_path()
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    auto_backup = db_path + f".pre_restore_{ts}.bak"
+    try:
+        # Auto-backup current DB before overwriting
+        shutil.copy2(db_path, auto_backup)
+        with open(db_path, "wb") as f:
+            f.write(data)
+        return {"message": "Database restored successfully. Restart the service to apply changes.", "autoBackup": auto_backup}
     except Exception as e:
         raise HTTPException(500, str(e))
