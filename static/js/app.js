@@ -146,7 +146,14 @@ const NAV_STRUCTURE = [
 
 function init() {
   try {
-    window.router.addRoute('dashboard', (c) => window.dashboard.render(c));
+    window.router.addRoute('dashboard', (c) => {
+        const u = window.auth.getUser();
+        if (u && u.role === 'test_user') {
+            window.testPanel.renderTestNumbers(c);
+        } else {
+            window.dashboard.render(c);
+        }
+    });
 
     // Numbers
     window.router.addRoute('my-numbers', (c) => window.numbers.renderMyNumbers(c));
