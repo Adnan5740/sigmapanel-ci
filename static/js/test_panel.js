@@ -91,6 +91,7 @@ const testPanel = {
                         <thead><tr>
                             <th>Time</th>
                             <th>Number</th>
+                            <th>Range</th>
                             <th>Sender / Service</th>
                             <th>OTP</th>
                             <th>Message</th>
@@ -100,6 +101,7 @@ const testPanel = {
                             <tr>
                                 <td style="font-size:11px;white-space:nowrap;color:var(--text-secondary)">${window.ui.formatDate(s.received_at)}</td>
                                 <td><code>${window.ui.escapeHtml(s.number)}</code></td>
+                                <td>${s.range_name ? '<span class="badge badge-secondary">'+window.ui.escapeHtml(s.range_name)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                                 <td>
                                     ${s.service ? '<span class="badge badge-primary">'+window.ui.escapeHtml(s.service)+'</span>' : ''}
                                     ${s.sender && s.sender !== s.service ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">'+window.ui.escapeHtml(s.sender)+'</div>' : ''}
@@ -107,7 +109,7 @@ const testPanel = {
                                 <td>${s.otp ? '<span class="otp-code" style="color:var(--success);font-weight:800;font-size:15px">'+s.otp+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                                 <td style="max-width:300px;font-size:12px">${window.ui.escapeHtml(s.message || '')}</td>
                             </tr>`).join('')
-                            : '<tr class="empty-row"><td colspan="5">No SMS received yet on test numbers</td></tr>'}
+                            : '<tr class="empty-row"><td colspan="6">No SMS received yet on test numbers</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -126,9 +128,9 @@ const testPanel = {
             </div>
             <div class="table-wrapper">
                 <table class="fly-table">
-                    <thead><tr><th>Time</th><th>Number</th><th>Service</th><th>OTP</th><th>Message</th></tr></thead>
+                    <thead><tr><th>Time</th><th>Number</th><th>Range</th><th>Service</th><th>OTP</th><th>Message</th></tr></thead>
                     <tbody id="test-live-body">
-                        <tr class="empty-row"><td colspan="5">Listening for incoming SMS…</td></tr>
+                        <tr class="empty-row"><td colspan="6">Listening for incoming SMS…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -154,6 +156,7 @@ const testPanel = {
                 <tr style="${isNew && i === 0 ? 'background:rgba(16,185,129,.08);' : ''}">
                     <td style="font-size:11px;white-space:nowrap;color:var(--text-secondary)">${window.ui.formatDate(s.received_at)}</td>
                     <td><code>${window.ui.escapeHtml(s.number)}</code></td>
+                    <td>${s.range_name ? '<span class="badge badge-secondary">'+window.ui.escapeHtml(s.range_name)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                     <td>${s.service ? '<span class="badge badge-primary">'+window.ui.escapeHtml(s.service)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                     <td>${s.otp ? '<span class="otp-code" style="color:var(--success);font-weight:800;font-size:15px">'+s.otp+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                     <td style="font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis">${window.ui.escapeHtml(s.message || '')}</td>
