@@ -133,6 +133,23 @@ async def list_test_panel_numbers(p=Depends(get_current_user)):
         params.append(p["username"])
     where = " AND ".join(conds)
     with get_db() as conn:
+        # Auto-seed 5 test numbers if test_user has none yet
+        if p["role"] == "test_user":
+            existing = conn.execute(
+                "SELECT COUNT(*) FROM numbers WHERE status='test' AND assigned_to=?",
+                (p["username"],)
+            ).fetchone()[0]
+            if existing < 5:
+                needed = 5 - existing
+                candidates = conn.execute(
+                    "SELECT id FROM numbers WHERE status='active' AND (assigned_to IS NULL OR assigned_to='') LIMIT ?",
+                    (needed,)
+                ).fetchall()
+                for row in candidates:
+                    conn.execute(
+                        "UPDATE numbers SET status='test', assigned_to=?, assigned_at=datetime('now') WHERE id=?",
+                        (p["username"], row["id"])
+                    )
         rows = conn.execute(f"""
             SELECT n.*, COALESCE(n.range_name, r.name) AS display_range_name
             FROM numbers n

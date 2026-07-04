@@ -136,4 +136,84 @@ def process_incoming_sms(payload: dict):
                 conn.execute("INSERT INTO profit_log (id, user_id, number_id, sms_received_id, profit_amount) VALUES (?, ?, ?, ?, ?)",
                              (generate_id(), user['id'], num_row['id'] if num_row else None, sms_id, profit))
 
+        # 4. Test number rotation: if SMS landed on a test number, rotate it out
+        #    and pull a fresh one from active inventory for the same range/user.
+        if num_row and num_row['status'] == 'test':
+            _rotate_test_number(conn, num_row, assigned_to)
+
     return {'success': True, 'smsId': sms_id, 'number': normalized_number, 'sender': sender, 'service': service, 'otp': otp}
+
+
+def _rotate_test_number(conn, used_num_row, username):
+    """
+    After an SMS is received on a test number:
+    1. Mark the used number as 'used_test' (retired) so it no longer receives.
+    2. Pull a fresh unassigned active number from the same range (or any range).
+    3. Mark the new number as 'test' and assign it to the same user.
+    """
+    try:
+        used_id    = used_num_row['id']
+        range_name = used_num_row['range_name']
+        range_id   = used_num_row['range_id']
+
+        # Retire the used test number
+        conn.execute("UPDATE numbers SET status='used_test' WHERE id=?", (used_id,))
+        logger.info(f"Test number {used_num_row['number']} retired after SMS received.")
+
+        # Find a replacement: prefer same range, unassigned active number
+        replacement = None
+        if range_name:
+            replacement = conn.execute(
+                "SELECT id FROM numbers WHERE status='active' AND range_name=? AND (assigned_to IS NULL OR assigned_to='') LIMIT 1",
+                (range_name,)
+            ).fetchone()
+
+        # Fall back to any active unassigned number
+        if not replacement:
+            replacement = conn.execute(
+                "SELECT id FROM numbers WHERE status='active' AND (assigned_to IS NULL OR assigned_to='') LIMIT 1"
+            ).fetchone()
+
+        if replacement:
+            conn.execute(
+                "UPDATE numbers SET status='test', assigned_to=?, assigned_at=datetime('now') WHERE id=?",
+                (username, replacement['id'])
+            )
+            logger.info(f"New test number assigned (id={replacement['id']}) to {username}.")
+        else:
+            logger.warning(f"No available active numbers to replace test number for {username}.")
+    except Exception as e:
+        logger.error(f"Test number rotation error: {e}")
+
+
+def seed_test_numbers(username: str, count: int = 5):
+    """
+    If a user has fewer than `count` test numbers, fill up to `count`
+    by pulling unassigned active numbers from the inventory.
+    Called on test_user login or from the test panel.
+    """
+    with get_db() as conn:
+        existing = conn.execute(
+            "SELECT COUNT(*) FROM numbers WHERE status='test' AND assigned_to=?",
+            (username,)
+        ).fetchone()[0]
+
+        needed = max(0, count - existing)
+        if needed == 0:
+            return 0
+
+        candidates = conn.execute(
+            "SELECT id FROM numbers WHERE status='active' AND (assigned_to IS NULL OR assigned_to='') LIMIT ?",
+            (needed,)
+        ).fetchall()
+
+        assigned = 0
+        for row in candidates:
+            conn.execute(
+                "UPDATE numbers SET status='test', assigned_to=?, assigned_at=datetime('now') WHERE id=?",
+                (username, row['id'])
+            )
+            assigned += 1
+
+        logger.info(f"Seeded {assigned} test numbers for {username}.")
+        return assigned

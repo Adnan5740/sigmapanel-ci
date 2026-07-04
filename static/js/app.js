@@ -20,6 +20,18 @@ const TEST_NAV = [
 
 const NAV_STRUCTURE = [
     {
+        group: 'DASHBOARD',
+        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
+        items: [
+            { key: 'dashboard',      label: 'Overview',        icon: ICONS.dashboard, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-otp-feed',  label: 'Live OTP Feed',   icon: ICONS.bell,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-sms',         label: 'My SMS',          icon: ICONS.sms,       roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'profit-stats',   label: 'Profit Stats',    icon: ICONS.profit,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'users',          label: 'Users',           icon: ICONS.users,     roles: ['admin', 'manager'] },
+            { key: 'live-traffic',   label: 'Live Traffic',    icon: ICONS.activity,  roles: ['admin', 'manager'] },
+        ]
+    },
+        {
         group: 'NUMBERS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
@@ -101,8 +113,6 @@ const NAV_STRUCTURE = [
         items: [
             { key: 'api-tokens',      label: 'API Tokens',     icon: ICONS.key,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'api-playground',  label: 'API Playground', icon: ICONS.terminal, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'live-test',       label: 'Live Test',      icon: ICONS.send,     roles: ['admin', 'manager'] },
-            { key: 'webhook-config',  label: 'Webhook Config', icon: ICONS.webhook,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'documentation',   label: 'Documentation',  icon: ICONS.report,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
