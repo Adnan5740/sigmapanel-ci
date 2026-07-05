@@ -182,7 +182,16 @@ const smpp = {
         if (!body) return;
         try {
             const res = await window.api.call('/api/smpp-interconnect/server-sessions');
-            body.innerHTML = res.data.map(s => `<tr><td><code>${s.ip_address}</code></td><td><strong>${s.system_id}</strong></td><td>${s.bind_type}</td><td>${window.ui.formatDate(s.connected_at)}</td><td>${window.ui.formatDate(s.last_activity)}</td></tr>`).join('') || '<tr><td colspan="5">No active sessions</td></tr>';
+            if (res.data && res.data.length) {
+                body.innerHTML = res.data.map(s => `<tr><td><code>${s.ip_address}</code></td><td><strong>${s.system_id}</strong></td><td>${s.bind_type}</td><td>${window.ui.formatDate(s.connected_at)}</td><td>${window.ui.formatDate(s.last_activity)}</td></tr>`).join('');
+            } else {
+                // No active sessions — show recent log entries instead
+                const logs = await window.api.call('/api/smpp-interconnect/logs?limit=10').catch(() => ({ data: [] }));
+                const logRows = (logs.data || []).slice(0,5).map(l =>
+                    `<tr style="opacity:.7"><td><code>${window.ui.escapeHtml(l.ip_address||'—')}</code></td><td><strong>${window.ui.escapeHtml(l.system_id||'—')}</strong></td><td>${window.ui.escapeHtml(l.event_type||'—')}</td><td>${window.ui.formatDate(l.created_at)}</td><td>${window.ui.escapeHtml(l.detail||'')}</td></tr>`
+                ).join('');
+                body.innerHTML = logRows || '<tr><td colspan="5" style="color:var(--text-secondary)">No active sessions. Recent connections shown above when available.</td></tr>';
+            }
         } catch (e) {}
     },
 

@@ -27,7 +27,7 @@ const sms = {
                 <div class="filter-bar filter-bar-labeled">
                     <div class="filter-field filter-field-wide">
                         <label for="sms-search">Search</label>
-                        <input type="text" class="search-input" id="sms-search" placeholder="Message, sender, or number" value="${window.ui.escapeHtml(existingSearch)}" oninput="window.sms.renderMySms(document.getElementById('page-content'), 1)" onkeydown="if(event.key==='Enter') window.sms.renderMySms(document.getElementById('page-content'), 1)">
+                        <input type="text" class="search-input" id="sms-search" placeholder="Message, sender, or number" value="${window.ui.escapeHtml(existingSearch)}" onkeydown="if(event.key==='Enter'){window.sms.renderMySms(document.getElementById('page-content'),1)}" oninput="clearTimeout(window._smsSearchT);window._smsSearchT=setTimeout(()=>window.sms.renderMySms(document.getElementById('page-content'),1),500)">
                     </div>
                     <div class="filter-field">
                         <label for="sms-date-from">From</label>
