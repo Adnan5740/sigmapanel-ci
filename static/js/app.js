@@ -54,14 +54,12 @@ const NAV_STRUCTURE = [
         group: 'SMS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'my-sms', label: 'My SMS', icon: ICONS.sms, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'profit-stats', label: 'Profit Stats', icon: ICONS.profit, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'live-otp-feed', label: 'Live OTP Feed', icon: ICONS.bell, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'sms-analytics', label: 'SMS Analytics', icon: ICONS.chart, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'search-sms', label: 'Search SMS', icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'delivery-logs', label: 'Delivery Logs', icon: ICONS.report, roles: ['admin', 'manager'] },
-            { key: 'failed-sms', label: 'Failed SMS', icon: ICONS.x, roles: ['admin', 'manager'] },
-            { key: 'live-traffic', label: 'Live Traffic', icon: ICONS.activity, roles: ['admin', 'manager'] },
+            { key: 'my-sms',        label: 'My SMS',       icon: ICONS.sms,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'profit-stats',  label: 'Profit Stats', icon: ICONS.profit, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'sms-analytics', label: 'SMS Analytics',icon: ICONS.chart,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'search-sms',    label: 'Search SMS',   icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'delivery-logs', label: 'Delivery Logs',icon: ICONS.report, roles: ['admin', 'manager'] },
+            { key: 'failed-sms',    label: 'Failed SMS',   icon: ICONS.x,      roles: ['admin', 'manager'] },
         ]
     },
     {
@@ -90,10 +88,10 @@ const NAV_STRUCTURE = [
         group: 'MANAGEMENT GROUP',
         roles: ['admin', 'manager', 'reseller'],
         items: [
-            { key: 'users', label: 'Users', icon: ICONS.users, roles: ['admin', 'manager', 'reseller'] },
+            { key: 'users',            label: 'Users',            icon: ICONS.users,  roles: ['admin', 'manager', 'reseller'] },
             { key: 'account-balances', label: 'Account Balances', icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller'] },
-            { key: 'audit-logs', label: 'Audit Logs', icon: ICONS.shield, roles: ['admin'] },
-            { key: 'permissions', label: 'Permissions', icon: ICONS.key, roles: ['admin'] },
+            { key: 'audit-logs',       label: 'Audit Logs',       icon: ICONS.shield, roles: ['admin'] },
+            { key: 'permissions',      label: 'Permissions',      icon: ICONS.key,    roles: ['admin'] },
         ]
     },
     {
