@@ -5,45 +5,27 @@ const testPanel = {
         try {
             const res = await window.api.call('/api/numbers/test-panel');
             const data = res.data || [];
-
-            if (!data.length) {
-                container.innerHTML = `
-                <div class="card">
-                    <div class="card-header"><div class="card-title">${ICONS.phone} Your Test Numbers</div></div>
-                    <div class="empty-state">
-                        <h3>No test numbers assigned</h3>
-                        <p>Contact your administrator to get test numbers assigned to your account.</p>
-                    </div>
-                </div>`;
-                return;
-            }
-
-            // Group by range
-            const grouped = {};
-            data.forEach(n => {
-                const key = n.range_name || 'No Range';
-                if (!grouped[key]) grouped[key] = [];
-                grouped[key].push(n);
-            });
+            const totalSms = data.reduce((s,n) => s+(n.total_sms||0), 0);
+            const ranges = [...new Set(data.map(n => n.range_name).filter(Boolean))];
 
             container.innerHTML = `
             <div style="display:flex;flex-direction:column;gap:20px">
                 <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-card-label">Total Numbers</div><div class="stat-card-value">${data.length}</div></div>
-                    <div class="stat-card"><div class="stat-card-label">Ranges</div><div class="stat-card-value">${Object.keys(grouped).length}</div></div>
-                    <div class="stat-card"><div class="stat-card-label">Total SMS Received</div><div class="stat-card-value" style="color:var(--success)">${data.reduce((s,n)=>s+(n.total_sms||0),0)}</div></div>
+                    <div class="stat-card"><div class="stat-card-label">Test Numbers</div><div class="stat-card-value">${data.length}</div></div>
+                    <div class="stat-card"><div class="stat-card-label">Ranges</div><div class="stat-card-value">${ranges.length}</div></div>
+                    <div class="stat-card"><div class="stat-card-label">Total SMS</div><div class="stat-card-value" style="color:var(--success)">${totalSms}</div></div>
                     <div class="stat-card"><div class="stat-card-label">Active Services</div><div class="stat-card-value">${[...new Set(data.map(n=>n.service).filter(Boolean))].length}</div></div>
                 </div>
-                ${Object.keys(grouped).map(range => `
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">${ICONS.layers} ${window.ui.escapeHtml(range)}</div>
-                        <span class="badge badge-secondary">${grouped[range].length} number${grouped[range].length>1?'s':''}</span>
+                        <div class="card-title">${ICONS.phone} My Test Numbers</div>
+                        <button class="fly-btn fly-btn-sm" onclick="window.testPanel.renderTestNumbers(document.getElementById('page-content'))">${ICONS.refresh||'↻'} Refresh</button>
                     </div>
                     <div class="table-wrapper">
                         <table class="fly-table">
                             <thead><tr>
                                 <th>Number</th>
+                                <th>Range</th>
                                 <th>Country</th>
                                 <th>Last Service</th>
                                 <th>Total SMS</th>
@@ -51,19 +33,21 @@ const testPanel = {
                                 <th>Status</th>
                             </tr></thead>
                             <tbody>
-                                ${grouped[range].map(n => `
+                                ${data.length ? data.map(n => `
                                 <tr>
-                                    <td><code style="font-size:13px">${window.ui.escapeHtml(n.number)}</code></td>
-                                    <td>${window.ui.escapeHtml(n.country_name || '—')}</td>
+                                    <td><code>${window.ui.escapeHtml(n.number)}</code></td>
+                                    <td><span class="badge badge-info">${window.ui.escapeHtml(n.range_name || '—')}</span></td>
+                                    <td style="font-size:12px">${window.ui.escapeHtml(n.country_name || '—')}</td>
                                     <td>${n.service ? '<span class="badge badge-primary">'+window.ui.escapeHtml(n.service)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                                     <td><strong>${n.total_sms || 0}</strong></td>
                                     <td style="font-size:11px;color:var(--text-secondary)">${n.last_sms_at ? window.ui.formatDate(n.last_sms_at) : '—'}</td>
                                     <td><span class="badge badge-warning">TEST</span></td>
-                                </tr>`).join('')}
+                                </tr>`).join('')
+                                : '<tr class="empty-row"><td colspan="7">No test numbers assigned yet — they will be auto-assigned when you load this page.</td></tr>'}
                             </tbody>
                         </table>
                     </div>
-                </div>`).join('')}
+                </div>
             </div>`;
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Error loading test numbers</h3><p>${e.message}</p><button class="fly-btn" onclick="window.testPanel.renderTestNumbers(document.getElementById('page-content'))">Retry</button></div>`;
