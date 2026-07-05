@@ -374,7 +374,7 @@ const numbers = {
                                 <span>Available</span><strong style="color:var(--success)">${r._count.available}</strong>
                             </div>
                             <button class="fly-btn" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.weekly_rate ?? r.rate ?? 0)}, ${Number(r.monthly_rate ?? r.rate ?? 0)})" ${disabled ? 'disabled' : ''}>
-                                ${disabled && r._count.available > 0 ? 'Limit Reached' : 'Request Numbers'}
+                                ${disabled && r._count.available > 0 ? 'Limit Reached' : 'Allocate Numbers'}
                             </button>
                         </div>`;
                     }).join('')}
@@ -451,12 +451,22 @@ const numbers = {
                     </div>
                     
                     <div class="form-group">
-                        <label>Step 2: Target User * (Search)</label>
-                        <input type="text" id="ba-user-search" class="fly-input" placeholder="Search users..." oninput="window.numbers.filterBulkUsers(this.value)" style="margin-bottom:10px">
-                        <select id="ba-user" class="fly-input">
-                            <option value="">-- Select User --</option>
-                            ${users.data.map(u => `<option value="${u.id}" data-username="${u.username}" data-role="${u.role}">${u.username} (${u.role})</option>`).join('')}
-                        </select>
+                        <label>Step 2: Target User *</label>
+                        <input type="text" id="ba-user-search" class="fly-input" placeholder="Search by username or role..." oninput="window.numbers.filterBulkUsers(this.value)" style="margin-bottom:8px" autocomplete="off">
+                        <input type="hidden" id="ba-user" value="">
+                        <div id="ba-user-list" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:6px;background:var(--bg-card)">
+                            ${users.data.map(u => `
+                            <div class="ba-user-item" data-id="${u.id}" data-username="${u.username.toLowerCase()}" data-role="${u.role.toLowerCase()}"
+                                 onclick="window.numbers.selectBulkUser(this)"
+                                 style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background .15s;border:1.5px solid transparent">
+                                <div style="flex:1">
+                                    <div style="font-size:13px;font-weight:600">${window.ui.escapeHtml(u.username)}</div>
+                                    <div style="font-size:11px;color:var(--text-secondary)">${u.role}${u.email ? ' · '+window.ui.escapeHtml(u.email) : ''}</div>
+                                </div>
+                                <span class="badge badge-secondary" style="font-size:10px">${u.role}</span>
+                            </div>`).join('')}
+                        </div>
+                        <div id="ba-user-selected" style="display:none;margin-top:8px;padding:10px;background:rgba(99,102,241,.08);border:1.5px solid var(--primary);border-radius:8px;font-size:13px;font-weight:600;color:var(--primary)"></div>
                     </div>
                     
                     <div id="ba-qty-section" style="display:none">
@@ -490,14 +500,27 @@ const numbers = {
         });
     },
 
-    filterBulkUsers(query) {        const options = document.querySelectorAll('#ba-user option');
-        options.forEach(opt => {
-            if (opt.value === '') return; // Always show the placeholder
-            const username = (opt.dataset.username || '').toLowerCase();
-            const role = (opt.dataset.role || '').toLowerCase();
-            const searchText = (username + ' ' + role).includes(query.toLowerCase());
-            opt.style.display = searchText ? '' : 'none';
+    filterBulkUsers(query) {
+        const q = query.toLowerCase();
+        document.querySelectorAll('.ba-user-item').forEach(item => {
+            const match = (item.dataset.username + ' ' + item.dataset.role).includes(q);
+            item.style.display = match ? 'flex' : 'none';
         });
+    },
+
+    selectBulkUser(el) {
+        // Deselect all
+        document.querySelectorAll('.ba-user-item').forEach(i => {
+            i.style.background = '';
+            i.style.borderColor = 'transparent';
+        });
+        // Select clicked
+        el.style.background = 'rgba(99,102,241,.08)';
+        el.style.borderColor = 'var(--primary)';
+        document.getElementById('ba-user').value = el.dataset.id;
+        const sel = document.getElementById('ba-user-selected');
+        sel.style.display = 'block';
+        sel.innerHTML = '✓ Selected: <strong>' + window.ui.escapeHtml(el.querySelector('div div:first-child').textContent) + '</strong>';
     },
 
     updateBulkRanges() {
