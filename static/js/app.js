@@ -19,7 +19,6 @@ const TEST_NAV = [
 ];
 
 const NAV_STRUCTURE = [
-    // ── MAIN ─────────────────────────────────────────────────────────────────
     {
         group: 'MAIN',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
@@ -33,7 +32,6 @@ const NAV_STRUCTURE = [
             { key: 'live-traffic',  label: 'Live Traffic',   icon: ICONS.activity,  roles: ['admin', 'manager'] },
         ]
     },
-    // ── NUMBERS ───────────────────────────────────────────────────────────────
     {
         group: 'NUMBERS',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
@@ -74,18 +72,6 @@ const NAV_STRUCTURE = [
             { key: 'smpp-settings',          label: 'SMPP Settings',   icon: ICONS.settings,  roles: ['admin'] },
         ]
     },
-
-    {
-        group: 'MANAGEMENT',
-        roles: ['admin', 'manager', 'reseller'],
-        items: [
-            { key: 'account-balances',       label: 'Account Balances',       icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller'] },
-            { key: 'registration-requests',  label: 'Registration Requests',  icon: ICONS.users,  roles: ['admin', 'manager'] },
-            { key: 'payout-requests',        label: 'Payout Requests',        icon: ICONS.wallet, roles: ['admin', 'manager'] },
-            { key: 'audit-logs',             label: 'Audit Logs',             icon: ICONS.shield, roles: ['admin'] },
-            { key: 'permissions',            label: 'Permissions',            icon: ICONS.key,    roles: ['admin'] },
-        ]
-    },
     {
         group: 'HTTP PROVIDERS',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
@@ -95,6 +81,17 @@ const NAV_STRUCTURE = [
             { key: 'http-postback',       label: 'Custom Postback',     icon: ICONS.transfer, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'http-field-mapping',  label: 'Field Mapping Guide', icon: ICONS.layers,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'http-test',           label: 'Test Endpoint',       icon: ICONS.terminal, roles: ['admin', 'manager'] },
+        ]
+    },
+    {
+        group: 'MANAGEMENT',
+        roles: ['admin', 'manager', 'reseller'],
+        items: [
+            { key: 'account-balances',       label: 'Account Balances',       icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller'] },
+            { key: 'registration-requests',  label: 'Registration Requests',  icon: ICONS.users,  roles: ['admin', 'manager'] },
+            { key: 'payout-requests',        label: 'Payout Requests',        icon: ICONS.wallet, roles: ['admin', 'manager'] },
+            { key: 'audit-logs',             label: 'Audit Logs',             icon: ICONS.shield, roles: ['admin'] },
+            { key: 'permissions',            label: 'Permissions',            icon: ICONS.key,    roles: ['admin'] },
         ]
     },
     {
@@ -114,7 +111,6 @@ const NAV_STRUCTURE = [
             { key: 'support', label: 'Support Tickets', icon: ICONS.help, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
-
     {
         group: 'FIREWALL',
         roles: ['admin'],
