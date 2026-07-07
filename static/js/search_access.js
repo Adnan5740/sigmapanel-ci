@@ -29,7 +29,7 @@ const searchAccess = {
         resDiv.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
             const [smsRes, rangesRes] = await Promise.all([
-                window.api.call('/api/sms?search=' + encodeURIComponent(q) + '&limit=200'),
+                window.api.call('/api/sms?search=' + encodeURIComponent(q) + '&limit=100'),
                 window.api.call('/api/ranges?search=' + encodeURIComponent(q))
             ]);
             const smsRows = smsRes.data || [];
