@@ -6,7 +6,7 @@ from routes.deps import get_current_user, require_role
 
 router = APIRouter(prefix="/api/sms", tags=["sms"])
 
-PRODUCTION_SMS = "number NOT IN (SELECT number FROM numbers WHERE status IN ('test','used_test'))"
+PRODUCTION_SMS = "number NOT IN (SELECT number FROM numbers WHERE status = 'test')"
 TEST_SMS = "number IN (SELECT number FROM numbers WHERE status IN ('test','used_test'))"
 
 @router.get("")
@@ -99,7 +99,7 @@ async def payout_stats(p=Depends(get_current_user)):
     role = p["role"]
     username = p["username"]
     uid = p["id"]
-    PROD = "number NOT IN (SELECT number FROM numbers WHERE status IN ('test','used_test'))"
+    PROD = "number NOT IN (SELECT number FROM numbers WHERE status = 'test')"
     with get_db() as conn:
         if role in ("admin", "manager"):
             cond, params = PROD, []

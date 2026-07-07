@@ -138,9 +138,11 @@ def process_incoming_sms(payload: dict):
 
         # 4. Test number rotation: if SMS landed on a test number, rotate it out
         #    and pull a fresh one from active inventory for the same range/user.
-        if num_row and num_row['status'] == 'test':
-            _rotate_test_number(conn, num_row, assigned_to)
-
+        # Test number rotation — ONLY for test_user accounts, not real reseller numbers
+        if num_row and num_row['status'] == 'test' and assigned_to:
+            user_chk = conn.execute("SELECT role FROM users WHERE username=?", (assigned_to,)).fetchone()
+            if user_chk and user_chk['role'] == 'test_user':
+                _rotate_test_number(conn, num_row, assigned_to)
     return {'success': True, 'smsId': sms_id, 'number': normalized_number, 'sender': sender, 'service': service, 'otp': otp}
 
 
