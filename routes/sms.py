@@ -16,6 +16,7 @@ async def list_sms(
     number: str = Query(None),
     search: str = Query(None),
     sender: str = Query(None),
+    rangeName: str = Query(None),
     dateFrom: str = Query(None, alias="from"),
     dateTo: str = Query(None, alias="to"),
     scope: str = Query(None),
@@ -48,6 +49,8 @@ async def list_sms(
     
     if service:
         conds.append("service LIKE ?"); params.append(f"%{service}%")
+    if rangeName:
+        conds.append("range_name = ?"); params.append(rangeName)
     if number:
         conds.append("number LIKE ?"); params.append(f"%{number}%")
     if sender:

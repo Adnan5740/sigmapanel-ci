@@ -12,13 +12,17 @@ const sms = {
     async renderMySms(container, page = 1) {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
-            const existingFrom = document.getElementById('sms-date-from')?.value || '';
-            const existingTo = document.getElementById('sms-date-to')?.value || '';
-            const existingSearch = document.getElementById('sms-search')?.value || '';
+            const existingFrom    = document.getElementById('sms-date-from')?.value || '';
+            const existingTo      = document.getElementById('sms-date-to')?.value || '';
+            const existingSearch  = document.getElementById('sms-search')?.value || '';
+            const existingRange   = document.getElementById('sms-range-filter')?.value || '';
+            const existingService = document.getElementById('sms-service-filter')?.value || '';
             let endpoint = '/api/sms?limit=20&page=' + page;
-            if (existingSearch) endpoint += '&search=' + encodeURIComponent(existingSearch);
-            if (existingFrom) endpoint += '&from=' + encodeURIComponent(existingFrom);
-            if (existingTo) endpoint += '&to=' + encodeURIComponent(existingTo);
+            if (existingSearch)  endpoint += '&search='  + encodeURIComponent(existingSearch);
+            if (existingFrom)    endpoint += '&from='    + encodeURIComponent(existingFrom);
+            if (existingTo)      endpoint += '&to='      + encodeURIComponent(existingTo);
+            if (existingRange)   endpoint += '&rangeName='   + encodeURIComponent(existingRange);
+            if (existingService) endpoint += '&service=' + encodeURIComponent(existingService);
             const data = await window.api.call(endpoint);
             const rows = data.data || [];
             container.innerHTML = `
@@ -28,6 +32,10 @@ const sms = {
                     <div class="filter-field filter-field-wide">
                         <label for="sms-search">Search</label>
                         <input type="text" class="search-input" id="sms-search" placeholder="Message, sender, or number" value="${window.ui.escapeHtml(existingSearch)}" onkeydown="if(event.key==='Enter'){window.sms.renderMySms(document.getElementById('page-content'),1)}" oninput="clearTimeout(window._smsSearchT);window._smsSearchT=setTimeout(()=>window.sms.renderMySms(document.getElementById('page-content'),1),500)">
+                    </div>
+                    <div class="filter-field">
+                        <label>Service/App</label>
+                        <input type="text" class="filter-select" id="sms-service-filter" placeholder="e.g. WhatsApp" value="${window.ui.escapeHtml(existingService)}" oninput="clearTimeout(window._smsSvcT);window._smsSvcT=setTimeout(()=>window.sms.renderMySms(document.getElementById('page-content'),1),400)">
                     </div>
                     <div class="filter-field">
                         <label for="sms-date-from">From</label>

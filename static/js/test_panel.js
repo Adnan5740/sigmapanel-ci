@@ -32,7 +32,7 @@ const testPanel = {
                                 <th>Last SMS</th>
                                 <th>Status</th>
                             </tr></thead>
-                            <tbody>
+                            <tbody id="tp-numbers-tbody">
                                 ${data.length ? data.map(n => `
                                 <tr>
                                     <td><code>${window.ui.escapeHtml(n.number)}</code></td>
@@ -52,6 +52,18 @@ const testPanel = {
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Error loading test numbers</h3><p>${e.message}</p><button class="fly-btn" onclick="window.testPanel.renderTestNumbers(document.getElementById('page-content'))">Retry</button></div>`;
         }
+    },
+
+    filterTestNumbers() {
+        const q = (document.getElementById('tp-search')?.value || '').toLowerCase();
+        const r = (document.getElementById('tp-range-filter')?.value || '').toLowerCase();
+        document.querySelectorAll('#tp-numbers-tbody tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const rangeCell = row.cells[1]?.textContent.toLowerCase() || '';
+            const matchQ = !q || text.includes(q);
+            const matchR = !r || rangeCell.includes(r);
+            row.style.display = matchQ && matchR ? '' : 'none';
+        });
     },
 
     async renderTestReports(container) {

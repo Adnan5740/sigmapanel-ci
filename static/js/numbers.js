@@ -1,17 +1,31 @@
 const numbers = {
-    async renderMyNumbers(container, page = 1, search = '') {
+    async renderMyNumbers(container, page = 1, search = '', rangeFilter = '') {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
-            const q = search ? `&search=${encodeURIComponent(search)}` : '';
-            const res = await window.api.call(`/api/numbers?limit=50&page=${page}${q}`);
+            // Preserve existing filter values
+            search = search || document.getElementById('search-mynumbers')?.value || '';
+            rangeFilter = rangeFilter || document.getElementById('filter-range-mynumbers')?.value || '';
+            let endpoint = `/api/numbers?limit=50&page=${page}`;
+            if (search) endpoint += `&search=${encodeURIComponent(search)}`;
+            if (rangeFilter) endpoint += `&rangeName=${encodeURIComponent(rangeFilter)}`;
+            const [res, rangesRes] = await Promise.all([
+                window.api.call(endpoint),
+                window.api.call('/api/ranges').catch(() => ({ data: [] }))
+            ]);
+            const user = window.auth.getUser() || {};
+            const isAdmin = ['admin','manager'].includes(user.role);
+            const rangeOptions = (rangesRes.data || []).map(r =>
+                `<option value="${window.ui.escapeHtml(r.name)}" ${rangeFilter===r.name?'selected':''}>${window.ui.escapeHtml(r.name)}</option>`
+            ).join('');
             container.innerHTML = `
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">My Virtual Numbers</div>
                     <div class="card-header-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                        <div class="input-wrapper" style="width:200px">
-                            <input type="text" id="search-mynumbers" class="search-input" placeholder="Search numbers..." value="${window.ui.escapeHtml(search)}" oninput="window.numbers.renderMyNumbers(document.getElementById('page-content'),1,this.value)">
-                        </div>
+                        <input type="text" id="search-mynumbers" class="search-input" placeholder="Search number..." style="width:160px" value="${window.ui.escapeHtml(search)}" oninput="clearTimeout(window._mnT);window._mnT=setTimeout(()=>window.numbers.renderMyNumbers(document.getElementById('page-content'),1,this.value),400)">
+                        <select id="filter-range-mynumbers" class="filter-select" onchange="window.numbers.renderMyNumbers(document.getElementById('page-content'),1,'',this.value)">
+                            <option value="">All Ranges</option>${rangeOptions}
+                        </select>
                         <button class="fly-btn fly-btn-sm" onclick="window.numbers.showExportModal()">${ICONS.download} Export</button>
                     </div>
                 </div>
@@ -36,7 +50,10 @@ const numbers = {
                             <td>${window.ui.escapeHtml(n.service||'-')}</td>
                             <td><span class="badge ${n.status==='active'?'badge-success':'badge-danger'}">${n.status==='active'?'IPRN':window.ui.escapeHtml(n.status)}</span></td>
                             <td>$${Number(n.rate||0).toFixed(4)}</td>
-                            <td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td>
+                            <td style="display:flex;gap:4px">
+                                <button class="action-btn" onclick="window.numbers.revoke('${n.id}')">${ICONS.transfer||'↩'} Revoke</button>
+                                ${isAdmin ? `<button class="action-btn delete" onclick="window.numbers.deleteNumber('${n.id}')">${ICONS.trash}</button>` : ''}
+                            </td>
                         </tr>`).join('')||'<tr class="empty-row"><td colspan="7">No numbers assigned</td></tr>'}</tbody>
                     </table>
                 </div>
