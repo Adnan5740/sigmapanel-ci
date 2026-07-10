@@ -136,10 +136,13 @@ async def update_range(rid: str, body: RangeUpdate, request: Request, p=Depends(
         if "name" in updates and updates["name"] != existing["name"]:
             conn.execute("UPDATE numbers SET range_name=? WHERE range_id=?", (updates["name"], rid))
             conn.execute("UPDATE allocations SET range_name=? WHERE range_name=?", (updates["name"], existing["name"]))
-        if "rate" in updates or "profit_margin" in updates:
-            payout_rate = updates.get("rate", existing["rate"])
+        # Propagate rate changes to all numbers in this range
+        if "rate" in updates or "profit_margin" in updates or "weekly_rate" in updates or "monthly_rate" in updates:
+            # Use monthly_rate as the per-SMS payout if set, else weekly_rate, else base rate
+            final_rate = updates.get("monthly_rate", existing["monthly_rate"]) or                          updates.get("weekly_rate",  existing["weekly_rate"])  or                          updates.get("rate",         existing["rate"])         or 0.0
             payout_margin = updates.get("profit_margin", existing["profit_margin"])
-            conn.execute("UPDATE numbers SET rate=?, profit_margin=? WHERE range_id=?", (payout_rate, payout_margin, rid))
+            conn.execute("UPDATE numbers SET rate=?, profit_margin=? WHERE range_id=?",
+                         (float(final_rate), payout_margin, rid))
         row = conn.execute("SELECT * FROM ranges WHERE id=?", (rid,)).fetchone()
         log_audit(conn, p, "range_updated", "range", rid, ", ".join(updates.keys()), request)
     return {"data": dict(row)}
@@ -149,7 +152,10 @@ async def delete_range(rid: str, request: Request, p=Depends(require_role(["admi
     with get_db() as conn:
         rng = conn.execute("SELECT name FROM ranges WHERE id=?", (rid,)).fetchone()
         if not rng: raise HTTPException(404, "Range not found")
+        # Delete unassigned numbers in this range; keep assigned ones (detach only)
+        conn.execute("DELETE FROM numbers WHERE range_id=? AND (assigned_to IS NULL OR assigned_to='')", (rid,))
         conn.execute("UPDATE numbers SET range_id=NULL, range_name=NULL WHERE range_id=?", (rid,))
+        conn.execute("UPDATE allocations SET status='revoked' WHERE range_name=? AND status='active'", (rng["name"],))
         conn.execute("DELETE FROM ranges WHERE id=?", (rid,))
         log_audit(conn, p, "range_deleted", "range", rid, rng["name"], request)
     return {"message": "Deleted"}
