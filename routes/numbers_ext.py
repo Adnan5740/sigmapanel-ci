@@ -422,3 +422,244 @@ async def remove_from_blacklist(bid: str, p=Depends(require_role(["admin", "mana
     with get_db() as conn:
         conn.execute("DELETE FROM blacklisted_apps WHERE id=?", (bid,))
     return {"message": "Removed from blacklist"}
+
+# ─── BULK RANGE IMPORT ────────────────────────────────────────────────────────
+import io as _io, re as _re
+from datetime import datetime as _dt
+
+def _provider_to_our_rate(provider_rate: float) -> float:
+    """Convert provider payout rate to our platform rate."""
+    pr = float(provider_rate or 0)
+    if pr >= 0.025: return 0.018
+    if pr >= 0.020: return 0.015
+    if pr >= 0.015: return 0.012
+    if pr >= 0.010: return 0.008
+    if pr > 0:      return round(pr * 0.75, 6)  # 75% of whatever provider gives
+    return 0.0
+
+def _make_range_name(termination: str, _unused: str = "", date_str: str = None) -> str:
+    """Build range name from full termination string: Country Operator SSP MonthDay"""
+    term = (termination or "").strip()
+    if " - " in term:
+        country_part, op_part = term.split(" - ", 1)
+        country_part = country_part.strip().title()
+        op_part = op_part.strip().title()
+    else:
+        country_part, op_part = term.strip().title(), ""
+    # Date suffix
+    suffix = _dt.utcnow().strftime("%b %-d")
+    if date_str:
+        for fmt in ("%m/%d/%Y %H:%M", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M"):
+            try:
+                suffix = _dt.strptime(date_str.strip(), fmt).strftime("%b %-d")
+                break
+            except Exception:
+                continue
+    parts = [p for p in [country_part, op_part, "SSP", suffix] if p]
+    return _re.sub(r'\s+', ' ', " ".join(parts)).strip()
+
+def _parse_bulk_file(data: bytes, filename: str, provider_name_hint: str = None) -> list[dict]:
+    """
+    Parse CSV, Excel, or TXT file.
+    Returns list of dicts: {number, termination, monthly_rate, weekly_rate, currency, date_str}
+    """
+    fname = (filename or "").lower()
+    rows = []
+
+    # ── Excel ──
+    if fname.endswith(('.xlsx', '.xls')):
+        import pandas as pd
+        df = pd.read_excel(_io.BytesIO(data), dtype=str)
+        df.columns = [c.strip().upper() for c in df.columns]
+        for _, row in df.iterrows():
+            number      = str(row.get('NUMBER', row.get('PHONE', row.get('MSISDN', '')))).strip().replace(' ', '')
+            termination = str(row.get('TERMINATION', row.get('TERM', row.get('OPERATOR', '')))).strip()
+            monthly     = float(row.get('MONTHLY RATE', row.get('MONTHLY', row.get('MONTHLY_RATE', 0))) or 0)
+            weekly      = float(row.get('WEEKLY RATE',  row.get('WEEKLY',  row.get('WEEKLY_RATE',  0))) or 0)
+            currency    = str(row.get('CURRENCY', 'USD')).strip()
+            date_str    = str(row.get('ALLOCATION DATE TIME', row.get('DATE', ''))).strip()
+            if number and number.replace('+','').isdigit():
+                rows.append(dict(number=number, termination=termination,
+                                 monthly_rate=monthly, weekly_rate=weekly,
+                                 currency=currency, date_str=date_str))
+
+    # ── CSV ──
+    elif fname.endswith('.csv'):
+        import csv
+        text = data.decode('utf-8', errors='ignore')
+        reader = csv.DictReader(_io.StringIO(text))
+        headers = {h.strip().upper(): h for h in (reader.fieldnames or [])}
+        def gh(keys):
+            for k in keys:
+                if k.upper() in headers:
+                    return headers[k.upper()]
+            return None
+        f_num  = gh(['NUMBER','PHONE','MSISDN'])
+        f_term = gh(['TERMINATION','TERM','OPERATOR'])
+        f_mon  = gh(['MONTHLY RATE','MONTHLY','MONTHLY_RATE'])
+        f_wk   = gh(['WEEKLY RATE','WEEKLY','WEEKLY_RATE'])
+        f_cur  = gh(['CURRENCY'])
+        f_date = gh(['ALLOCATION DATE TIME','DATE','DATETIME'])
+        for row in reader:
+            number = (row.get(f_num, '') or '').strip().replace(' ', '')
+            if not number or not number.replace('+','').lstrip('0').isdigit():
+                continue
+            rows.append(dict(
+                number=number,
+                termination=(row.get(f_term, '') or '').strip(),
+                monthly_rate=float(row.get(f_mon, 0) or 0),
+                weekly_rate=float(row.get(f_wk, 0) or 0),
+                currency=(row.get(f_cur, 'USD') or 'USD').strip(),
+                date_str=(row.get(f_date, '') or '').strip(),
+            ))
+
+    # ── TXT — plain numbers, one per line ──
+    else:
+        text = data.decode('utf-8', errors='ignore')
+        for line in text.splitlines():
+            num = line.strip().replace(' ', '')
+            if num and num.replace('+','').lstrip('0').isdigit() and len(num) >= 7:
+                rows.append(dict(number=num, termination=provider_name_hint or '',
+                                 monthly_rate=0, weekly_rate=0, currency='USD', date_str=''))
+    return rows
+
+
+@router.post("/bulk-range-import")
+async def bulk_range_import(request: Request, preview: int = 0, p=Depends(require_role(["admin", "manager"]))):
+    """
+    Upload a structured file and auto-create ranges + import numbers.
+    Supports CSV, Excel (.xlsx/.xls), and plain TXT.
+    """
+    form = await request.form()
+    file = form.get("file")
+    provider_name_hint = (form.get("providerName") or "").strip()
+    # Optional manual overrides
+    override_monthly = form.get("overrideMonthly")
+    override_weekly  = form.get("overrideWeekly")
+
+    if not file:
+        raise HTTPException(400, "No file provided")
+
+    filename = getattr(file, "filename", "upload.txt")
+    data = await file.read()
+    if len(data) > 20 * 1024 * 1024:
+        raise HTTPException(400, "File too large (max 20 MB)")
+
+    try:
+        rows = _parse_bulk_file(data, filename, provider_name_hint)
+    except Exception as e:
+        raise HTTPException(400, f"Could not parse file: {e}")
+
+    if not rows:
+        raise HTTPException(400, "No valid numbers found in file")
+
+    # Group by termination string → build ranges
+    groups: dict[str, list] = {}
+    for row in rows:
+        key = row["termination"] or provider_name_hint or "Unknown"
+        groups.setdefault(key, []).append(row)
+
+    results = []
+    # ── PREVIEW MODE: parse only, no DB writes ──────────────────────────────
+    if preview:
+        for key, items in groups.items():
+            rep = items[0]
+            term     = key
+            prov_mon = float(rep.get("monthly_rate", 0) or 0)
+            prov_wk  = float(rep.get("weekly_rate", 0) or 0)
+            our_mon  = _provider_to_our_rate(prov_mon)
+            our_wk   = _provider_to_our_rate(prov_wk)
+            country  = term.split(" - ")[0].strip().title() if " - " in term else term.title()
+            rname    = _make_range_name(term, "", rep.get("date_str", ""))
+            currency = rep.get("currency", "USD") or "USD"
+            results.append({"rangeName": rname, "rangeId": None, "termination": term,
+                "country": country, "providerMonthly": prov_mon, "providerWeekly": prov_wk,
+                "ourMonthly": our_mon, "ourWeekly": our_wk, "currency": currency,
+                "added": len(items), "skipped": 0, "isNew": True})
+        return {"message": f"Preview: {len(rows)} numbers in {len(results)} ranges",
+                "ranges": results,
+                "totalAdded": len(rows), "totalSkipped": 0}
+    # ────────────────────────────────────────────────────────────────────────
+    with get_db() as conn:
+        for termination, items in groups.items():
+            # Representative row for rates / date
+            rep = items[0]
+            provider_monthly = float(override_monthly or rep["monthly_rate"] or 0)
+            provider_weekly  = float(override_weekly  or rep["weekly_rate"]  or 0)
+            our_monthly = _provider_to_our_rate(provider_monthly)
+            our_weekly  = _provider_to_our_rate(provider_weekly)
+            # Country = prefix before " - "
+            country = termination.split(" - ")[0].strip() if " - " in termination else "Global"
+            range_name = _make_range_name(termination, "", rep["date_str"])
+            currency   = rep["currency"] or "USD"
+
+            # Create or reuse range
+            existing_range = conn.execute(
+                "SELECT id FROM ranges WHERE name=?", (range_name,)
+            ).fetchone()
+
+            if existing_range:
+                rid = existing_range["id"]
+                # Update rates
+                conn.execute(
+                    "UPDATE ranges SET monthly_rate=?, weekly_rate=?, rate=? WHERE id=?",
+                    (our_monthly, our_weekly, our_monthly, rid)
+                )
+            else:
+                rid = generate_id()
+                conn.execute(
+                    """INSERT INTO ranges (id, name, real_range_name, country_name, rate,
+                       monthly_rate, weekly_rate, status)
+                       VALUES (?,?,?,?,?,?,?,'active')""",
+                    (rid, range_name, termination, country,
+                     our_monthly, our_monthly, our_weekly)
+                )
+
+            # Import numbers
+            added = skipped = 0
+            for item in items:
+                num = item["number"]
+                if not num.startswith("+"):
+                    num = "+" + num
+                try:
+                    cur = conn.execute(
+                        """INSERT OR IGNORE INTO numbers
+                           (id, number, country_name, range_id, range_name, rate, profit_margin, status)
+                           VALUES (?,?,?,?,?,?,100,'active')""",
+                        (generate_id(), num, country, rid, range_name, our_monthly)
+                    )
+                    if cur.rowcount:
+                        added += 1
+                    else:
+                        skipped += 1
+                except Exception:
+                    skipped += 1
+
+            # Propagate rate to any existing numbers in this range
+            conn.execute(
+                "UPDATE numbers SET rate=? WHERE range_id=?",
+                (our_monthly, rid)
+            )
+
+            results.append({
+                "rangeName": range_name,
+                "rangeId": rid,
+                "termination": termination,
+                "providerMonthly": provider_monthly,
+                "providerWeekly": provider_weekly,
+                "ourMonthly": our_monthly,
+                "ourWeekly": our_weekly,
+                "currency": currency,
+                "added": added,
+                "skipped": skipped,
+                "created": not bool(existing_range),
+            })
+        log_audit(conn, p, "bulk_range_import", "ranges", None,
+                  f"Imported {sum(r['added'] for r in results)} numbers across {len(results)} ranges", request)
+
+    return {
+        "message": f"Imported {sum(r['added'] for r in results)} numbers into {len(results)} range(s)",
+        "ranges": results,
+        "totalAdded": sum(r["added"] for r in results),
+        "totalSkipped": sum(r["skipped"] for r in results),
+    }

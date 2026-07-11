@@ -609,7 +609,7 @@ const numbers = {
 
     stopLiveAccess() { if (this._laInterval) clearInterval(this._laInterval); },
 
-    async renderUpload(container) {
+    async renderUpload(container, activeTab = 'single') {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
             const ranges = await window.api.call('/api/ranges');
@@ -617,50 +617,239 @@ const numbers = {
                 <option value="${window.ui.escapeHtml(r.id)}" data-name="${window.ui.escapeHtml(r.name || '')}" data-country="${window.ui.escapeHtml(r.country_name || '')}">
                     ${window.ui.escapeHtml(r.name || '-')} ${r.provider_name ? '- ' + window.ui.escapeHtml(r.provider_name) : ''}
                 </option>`).join('');
+
             container.innerHTML = `
-            <div class="card professional-card upload-panel">
-                <div class="card-header professional-header">
-                    <div>
-                        <div class="card-title">Bulk Import Numbers</div>
-                        <div class="professional-subtitle">Select the destination range first, then paste or upload TXT/CSV numbers.</div>
-                    </div>
-                    <span class="badge badge-info">${(ranges.data || []).length} Ranges</span>
+            <div style="display:flex;flex-direction:column;gap:0">
+                <!-- TAB BAR -->
+                <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
+                    <button id="tab-single" onclick="window.numbers._uploadTab('single')"
+                        style="padding:10px 22px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:${activeTab==='single'?'2px solid var(--primary)':'2px solid transparent'};color:${activeTab==='single'?'var(--primary)':'var(--text-secondary)'};margin-bottom:-2px">
+                        ${ICONS.upload} Import to Existing Range
+                    </button>
+                    <button id="tab-bulk" onclick="window.numbers._uploadTab('bulk')"
+                        style="padding:10px 22px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:${activeTab==='bulk'?'2px solid var(--primary)':'2px solid transparent'};color:${activeTab==='bulk'?'var(--primary)':'var(--text-secondary)'};margin-bottom:-2px">
+                        ${ICONS.layers} Bulk Range Import
+                    </button>
                 </div>
-                <div class="card-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="fly-label" for="up-range">Destination Range *</label>
-                            <select id="up-range" class="fly-input">
-                                <option value="">Select range...</option>
-                                ${options}
-                            </select>
-                            <div class="field-help">Imported numbers become live/assignable numbers in this range.</div>
+
+                <!-- TAB: SINGLE RANGE IMPORT -->
+                <div id="tab-content-single" style="display:${activeTab==='single'?'block':'none'}">
+                <div class="card professional-card upload-panel">
+                    <div class="card-header professional-header">
+                        <div>
+                            <div class="card-title">Import Numbers to Range</div>
+                            <div class="professional-subtitle">Select a range, then paste or upload numbers (TXT/CSV — one per line).</div>
                         </div>
-                        <div class="form-group">
-                            <label class="fly-label" for="up-country">Country Override</label>
-                            <input type="text" id="up-country" class="fly-input" placeholder="Leave blank to use range country">
-                            <div class="field-help">Use only when this batch country differs from the range default.</div>
-                        </div>
+                        <span class="badge badge-info">${(ranges.data || []).length} Ranges</span>
                     </div>
-                    <div class="professional-note">
-                        <strong>Import format</strong>
-                        <span>One number per line. Spaces, dashes, brackets, and 00 prefixes are normalized before saving.</span>
-                    </div>
-                    <div class="form-group">
-                        <div class="upload-toolbar">
-                            <label class="fly-label" for="up-text">Numbers *</label>
-                            <div class="upload-toolbar-actions">
-                                <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('up-file').click()">${ICONS.upload} Upload TXT/CSV</button>
-                                <input type="file" id="up-file" accept=".txt,.csv,text/plain,text/csv" style="display:none" onchange="window.numbers.loadUploadFile(this)">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="fly-label" for="up-range">Destination Range *</label>
+                                <select id="up-range" class="fly-input">
+                                    <option value="">Select range...</option>
+                                    ${options}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="fly-label" for="up-country">Country Override</label>
+                                <input type="text" id="up-country" class="fly-input" placeholder="Leave blank to use range country">
                             </div>
                         </div>
-                        <textarea id="up-text" class="fly-input upload-textarea" rows="12" placeholder="+1234567890&#10;+9876543210&#10;001234567890"></textarea>
+                        <div class="form-group">
+                            <div class="upload-toolbar">
+                                <label class="fly-label" for="up-text">Numbers *</label>
+                                <div class="upload-toolbar-actions">
+                                    <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('up-file').click()">${ICONS.upload} Upload TXT/CSV</button>
+                                    <input type="file" id="up-file" accept=".txt,.csv,text/plain,text/csv" style="display:none" onchange="window.numbers.loadUploadFile(this)">
+                                </div>
+                            </div>
+                            <textarea id="up-text" class="fly-input upload-textarea" rows="10" placeholder="+1234567890&#10;+9876543210&#10;001234567890"></textarea>
+                        </div>
+                        <button class="fly-btn upload-submit-btn" onclick="window.numbers.doUpload()">${ICONS.upload} Import Numbers</button>
                     </div>
-                    <button class="fly-btn upload-submit-btn" onclick="window.numbers.doUpload()">${ICONS.upload} Import Numbers</button>
+                </div>
+                </div>
+
+                <!-- TAB: BULK RANGE IMPORT -->
+                <div id="tab-content-bulk" style="display:${activeTab==='bulk'?'block':'none'}">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">${ICONS.layers} Bulk Range Import</div>
+                            <div class="professional-subtitle">Upload a provider file (CSV / Excel / TXT). Ranges are auto-created per termination with correct names and rates.</div>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display:flex;flex-direction:column;gap:18px">
+
+                        <!-- Rate formula info -->
+                        <div style="background:rgba(99,102,241,.06);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px">
+                            <strong>Auto Payout Formula:</strong>
+                            Provider 0.025 → Our 0.018 &nbsp;|&nbsp;
+                            Provider 0.020 → Our 0.015 &nbsp;|&nbsp;
+                            Provider 0.015 → Our 0.012 &nbsp;|&nbsp;
+                            Provider 0.010 → Our 0.008<br>
+                            <strong>Range Name Format:</strong> <code>Country Operator SSP MonthDay</code> — e.g. <em>Afghanistan Awcc Red SSP Jul 10</em>
+                        </div>
+
+                        <!-- Provider name (for TXT files) -->
+                        <div class="form-group">
+                            <label class="fly-label">Provider Name <span style="font-size:11px;color:var(--text-secondary)">(required for plain TXT, optional for CSV/Excel)</span></label>
+                            <input type="text" id="bri-provider" class="fly-input" placeholder="e.g. IPRN, Telecom1..." style="max-width:340px">
+                        </div>
+
+                        <!-- File upload drop zone -->
+                        <div id="bri-dropzone"
+                            style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s"
+                            onclick="document.getElementById('bri-file').click()"
+                            ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='rgba(99,102,241,.04)'"
+                            ondragleave="this.style.borderColor='';this.style.background=''"
+                            ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';window.numbers.brHandleDrop(event)">
+                            <div style="font-size:32px;margin-bottom:8px">${ICONS.upload}</div>
+                            <div style="font-weight:700;font-size:14px">Drop file here or click to browse</div>
+                            <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Supports CSV, Excel (.xlsx/.xls), TXT · Max 25 MB</div>
+                            <input type="file" id="bri-file" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="window.numbers.brLoadFile(this)">
+                        </div>
+
+                        <!-- File selected indicator -->
+                        <div id="bri-file-info" style="display:none;padding:10px 14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:13px;font-weight:600;color:var(--success)"></div>
+
+                        <!-- Preview table -->
+                        <div id="bri-preview" style="display:none"></div>
+
+                        <!-- Buttons -->
+                        <div style="display:flex;gap:10px;flex-wrap:wrap">
+                            <button class="fly-btn secondary" onclick="window.numbers.brPreview()" id="bri-preview-btn" disabled>${ICONS.eye} Preview Ranges</button>
+                            <button class="fly-btn" onclick="window.numbers.brImport()" id="bri-import-btn" style="display:none">${ICONS.upload} Import All</button>
+                        </div>
+                        <div id="bri-result" style="display:none"></div>
+                    </div>
+                </div>
                 </div>
             </div>`;
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Unable to load upload tool</h3><p>${window.ui.escapeHtml(e.message)}</p></div>`;
+        }
+    },
+
+    _uploadTab(tab) {
+        window.numbers.renderUpload(document.getElementById('page-content'), tab);
+    },
+
+    brHandleDrop(event) {
+        const file = event.dataTransfer?.files?.[0];
+        if (!file) return;
+        const input = document.getElementById('bri-file');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        window.numbers.brLoadFile(input);
+    },
+
+    brLoadFile(input) {
+        const file = input?.files?.[0];
+        if (!file) return;
+        window._briFile = file;
+        const info = document.getElementById('bri-file-info');
+        const previewBtn = document.getElementById('bri-preview-btn');
+        const importBtn = document.getElementById('bri-import-btn');
+        const preview = document.getElementById('bri-preview');
+        if (info) { info.style.display = 'block'; info.textContent = '✓ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)'; }
+        if (previewBtn) previewBtn.disabled = false;
+        if (importBtn) importBtn.style.display = 'none';
+        if (preview) preview.style.display = 'none';
+    },
+
+    async brPreview() {
+        const file = window._briFile;
+        if (!file) { window.ui.showToast('Please select a file first', 'error'); return; }
+        const provider = document.getElementById('bri-provider')?.value.trim() || '';
+        const previewDiv = document.getElementById('bri-preview');
+        const previewBtn = document.getElementById('bri-preview-btn');
+        const importBtn = document.getElementById('bri-import-btn');
+        if (previewBtn) { previewBtn.disabled = true; previewBtn.innerHTML = '<span class="spinner spinner-inline"></span> Parsing...'; }
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('providerName', provider);
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/numbers-ext/bulk-range-import?preview=1', {
+                method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Parse failed');
+
+            const ranges = data.ranges || [];
+            let html = `<div class="card" style="margin-top:0">
+                <div class="card-header">
+                    <div class="card-title">Preview — ${ranges.length} Range(s) · ${data.totalAdded} Numbers</div>
+                </div>
+                <div class="table-wrapper"><table class="fly-table">
+                    <thead><tr>
+                        <th>Range Name (Auto)</th><th>Termination</th><th>Numbers</th>
+                        <th>Provider Monthly</th><th>Our Monthly</th>
+                        <th>Provider Weekly</th><th>Our Weekly</th>
+                        <th>Currency</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                        ${ranges.map(r => `<tr>
+                            <td><strong>${window.ui.escapeHtml(r.rangeName)}</strong></td>
+                            <td style="font-size:11px;color:var(--text-secondary)">${window.ui.escapeHtml(r.termination)}</td>
+                            <td><span class="badge badge-secondary">${r.added}</span></td>
+                            <td><span class="badge badge-info">$${Number(r.providerMonthly).toFixed(4)}</span></td>
+                            <td><span class="badge badge-success">$${Number(r.ourMonthly).toFixed(4)}</span></td>
+                            <td><span class="badge badge-info">$${Number(r.providerWeekly).toFixed(4)}</span></td>
+                            <td><span class="badge badge-success">$${Number(r.ourWeekly).toFixed(4)}</span></td>
+                            <td>${window.ui.escapeHtml(r.currency)}</td>
+                            <td>${r.isNew ? '<span class="badge badge-primary">New Range</span>' : '<span class="badge badge-warning">Update</span>'}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table></div>
+            </div>`;
+            if (previewDiv) { previewDiv.style.display = 'block'; previewDiv.innerHTML = html; }
+            if (importBtn) importBtn.style.display = 'inline-flex';
+        } catch (e) {
+            window.ui.showToast(e.message, 'error');
+        } finally {
+            if (previewBtn) { previewBtn.disabled = false; previewBtn.innerHTML = (ICONS.eye||'') + ' Preview Ranges'; }
+        }
+    },
+
+    async brImport() {
+        const file = window._briFile;
+        if (!file) { window.ui.showToast('No file selected', 'error'); return; }
+        const provider = document.getElementById('bri-provider')?.value.trim() || '';
+        const importBtn = document.getElementById('bri-import-btn');
+        const resultDiv = document.getElementById('bri-result');
+        if (importBtn) { importBtn.disabled = true; importBtn.innerHTML = '<span class="spinner spinner-inline"></span> Importing...'; }
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('providerName', provider);
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/numbers-ext/bulk-range-import', {
+                method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Import failed');
+
+            window.api.invalidate('/api/ranges');
+            window.api.invalidate('/api/numbers');
+            window._briFile = null;
+
+            if (resultDiv) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<div style="padding:16px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.25);border-radius:8px">
+                    <div style="font-size:15px;font-weight:700;color:var(--success);margin-bottom:8px">✓ ${data.message}</div>
+                    <div style="font-size:12px;color:var(--text-secondary)">${data.totalAdded} numbers added · ${data.totalSkipped} duplicates skipped · ${(data.ranges||[]).filter(r=>r.isNew).length} new ranges created</div>
+                </div>`;
+            }
+            window.ui.showToast(data.message, 'success');
+            if (importBtn) importBtn.style.display = 'none';
+        } catch (e) {
+            window.ui.showToast(e.message, 'error');
+        } finally {
+            if (importBtn) { importBtn.disabled = false; importBtn.innerHTML = (ICONS.upload||'') + ' Import All'; }
         }
     },
 
