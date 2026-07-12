@@ -536,6 +536,7 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
     import_as_test    = (form.get("importAsTest") or "0") in ("1", "true", "yes")
     override_monthly  = form.get("overrideMonthly")
     override_weekly   = form.get("overrideWeekly")
+    country_filter    = (form.get("countryFilter") or "").strip().lower()
     # Optional manual overrides
     override_monthly = form.get("overrideMonthly")
     override_weekly  = form.get("overrideWeekly")
@@ -555,6 +556,17 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
 
     if not rows:
         raise HTTPException(400, "No valid numbers found in file")
+
+    # Apply country filter if provided (for per-country TXT import)
+    if country_filter:
+        from country_detector import detect_country
+        filtered = []
+        for row in rows:
+            detected = detect_country(row["number"])
+            if detected and detected["name"].lower() == country_filter:
+                # Set termination = provider_name_hint (already set by frontend as "COUNTRY - Auto")
+                filtered.append(row)
+        rows = filtered if filtered else rows
 
     # Group by termination string → build ranges
     groups: dict[str, list] = {}
@@ -667,4 +679,57 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
         "ranges": results,
         "totalAdded": sum(r["added"] for r in results),
         "totalSkipped": sum(r["skipped"] for r in results),
+    }
+
+
+@router.post("/preview-txt")
+async def preview_txt_numbers(request: Request, p=Depends(require_role(["admin", "manager"]))):
+    """Parse a plain TXT file of numbers, auto-detect country from prefix, return grouped summary."""
+    from country_detector import detect_country
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        raise HTTPException(400, "No file provided")
+    data = await file.read()
+    text = data.decode("utf-8", errors="ignore")
+
+    # Parse all numbers
+    numbers = []
+    for line in text.splitlines():
+        num = line.strip().replace(" ", "").replace("-", "")
+        if num and len(num) >= 7 and num.lstrip("+").isdigit():
+            if not num.startswith("+"): num = "+" + num
+            numbers.append(num)
+
+    if not numbers:
+        raise HTTPException(400, "No valid numbers found in file")
+
+    # Group by country
+    groups: dict = {}
+    undetected = []
+    for num in numbers:
+        country = detect_country(num)
+        if country:
+            key = country["name"]
+            if key not in groups:
+                groups[key] = {"country": country["name"], "code": country["code"], "numbers": []}
+            groups[key]["numbers"].append(num)
+        else:
+            undetected.append(num)
+
+    # Build response
+    result = []
+    for country_name, grp in sorted(groups.items()):
+        result.append({
+            "country": country_name,
+            "code": grp["code"],
+            "count": len(grp["numbers"]),
+            "sample": grp["numbers"][:3],
+        })
+
+    return {
+        "total": len(numbers),
+        "groups": result,
+        "undetected": len(undetected),
+        "undetectedSample": undetected[:5],
     }

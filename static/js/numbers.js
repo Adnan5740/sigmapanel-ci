@@ -726,21 +726,8 @@ const numbers = {
                         <!-- File selected indicator -->
                         <div id="bri-file-info" style="display:none;padding:10px 14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:13px;font-weight:600;color:var(--success)"></div>
 
-                        <!-- TXT file: payout details -->
-                        <div id="bri-txt-extra" style="display:none;background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:16px">
-                            <div style="font-weight:700;font-size:13px;margin-bottom:12px">📋 Plain numbers file — enter details to auto-create range name and rates</div>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                                <div class="form-group"><label class="fly-label">Country *</label>
-                                    <input type="text" id="bri-txt-country" class="fly-input" placeholder="e.g. Pakistan"></div>
-                                <div class="form-group"><label class="fly-label">Telecom Operator *</label>
-                                    <input type="text" id="bri-txt-operator" class="fly-input" placeholder="e.g. Ufone, Jazz"></div>
-                                <div class="form-group"><label class="fly-label">Provider Monthly Rate ($) *</label>
-                                    <input type="number" id="bri-txt-monthly" class="fly-input" placeholder="0.025" step="0.001" min="0" oninput="window.numbers.brRateHint()"></div>
-                                <div class="form-group"><label class="fly-label">Provider Weekly Rate ($)</label>
-                                    <input type="number" id="bri-txt-weekly" class="fly-input" placeholder="0.015" step="0.001" min="0" oninput="window.numbers.brRateHint()"></div>
-                            </div>
-                            <div id="bri-rate-hint" style="margin-top:8px;font-size:12px;color:var(--success);font-weight:600"></div>
-                        </div>
+                        <!-- TXT auto-detect result -->
+                        <div id="bri-txt-extra" style="display:none"></div>
 
                         <!-- TXT-only: payout details form -->
                         <div id="bri-txt-extra" style="display:none;background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:16px">
@@ -822,7 +809,83 @@ const numbers = {
         }
     },
 
-    async brPreview() {
+    brRateHint2(input) {
+        const m = parseFloat(input?.value||0)||0;
+        const country = input?.dataset?.country||'';
+        const ourM = m>=0.025?0.018:m>=0.020?0.015:m>=0.015?0.012:m>=0.010?0.008:m>0?Math.round(m*0.75*10000)/10000:0;
+        const hid = 'hint-'+country.replace(/[^a-zA-Z0-9]/g,'_');
+        const h = document.getElementById(hid);
+        if (h) h.textContent = m ? ('Your rate: $'+ourM.toFixed(4)) : '';
+    },
+
+    async brImportTxt(groupsJson) {
+        const groups = typeof groupsJson === 'string' ? JSON.parse(groupsJson) : groupsJson;
+        const token = localStorage.getItem('token');
+        const file  = window._briFile;
+        const isTest = document.getElementById('bri-type-test')?.checked;
+        if (!file) { window.ui.showToast('No file selected','error'); return; }
+
+        // Collect per-country rates
+        const countryRates = {};
+        let valid = true;
+        document.querySelectorAll('.bri-monthly').forEach(inp => {
+            const country = inp.dataset.country;
+            const m = parseFloat(inp.value||0)||0;
+            if (!m) { window.ui.showToast('Please set monthly rate for '+country,'error'); valid=false; return; }
+            const wEl = document.querySelector('.bri-weekly[data-country="'+CSS.escape(country)+'"]');
+            const oEl = document.querySelector('.bri-otp-limit[data-country="'+CSS.escape(country)+'"]');
+            countryRates[country] = {
+                monthly: m,
+                weekly: parseFloat(wEl?.value||0)||0,
+                otpLimit: parseInt(oEl?.value||0)||0
+            };
+        });
+        if (!valid || Object.keys(countryRates).length===0) return;
+
+        let totalAdded=0, totalSkipped=0, rangesCreated=0, allRanges=[];
+        const btn = document.querySelector('[onclick*="brImportTxt"]');
+        if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner spinner-inline"></span> Importing...'; }
+
+        for (const g of groups) {
+            const rates = countryRates[g.country];
+            if (!rates) continue;
+            const form = new FormData();
+            form.append('file', file);
+            form.append('providerName', g.country.toUpperCase()+' - Auto');
+            form.append('overrideMonthly', rates.monthly);
+            form.append('overrideWeekly',  rates.weekly||0);
+            form.append('countryFilter',   g.country);
+            if (isTest) form.append('importAsTest','1');
+            try {
+                const r = await fetch('/api/numbers-ext/bulk-range-import',
+                    {method:'POST',headers:{'Authorization':'Bearer '+token},body:form});
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.detail||'Import failed');
+                totalAdded   += d.totalAdded||0;
+                totalSkipped += d.totalSkipped||0;
+                rangesCreated += (d.ranges||[]).filter(x=>x.isNew).length;
+                allRanges.push(...(d.ranges||[]));
+            } catch(e) { window.ui.showToast('Error for '+g.country+': '+e.message,'error'); }
+        }
+        window.api.invalidate('/api/ranges');
+        window.api.invalidate('/api/numbers');
+        window._briFile=null; window._briCountriesDetected=false;
+        if (btn) { btn.disabled=false; btn.innerHTML=(ICONS.upload||'↑')+' Import All Countries'; }
+
+        const resultDiv = document.getElementById('bri-result');
+        if (resultDiv) {
+            resultDiv.style.display='block';
+            resultDiv.innerHTML = '<div style="padding:16px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.25);border-radius:8px">'
+                +'<div style="font-size:15px;font-weight:700;color:var(--success);margin-bottom:6px">✓ Import Complete</div>'
+                +'<div style="font-size:13px">'+totalAdded+' numbers · '+totalSkipped+' duplicates · '+rangesCreated+' new ranges</div>'
+                +allRanges.map(r=>'<div style="font-size:11px;color:var(--text-secondary);margin-top:3px">'
+                    +window.ui.escapeHtml(r.rangeName)+' — '+r.added+' numbers · $'+Number(r.ourMonthly).toFixed(4)+'/SMS</div>').join('')
+                +'</div>';
+        }
+        window.ui.showToast(totalAdded+' numbers into '+rangesCreated+' range(s)','success');
+    },
+
+        async brPreview() {
         const file = window._briFile;
         if (!file) { window.ui.showToast('Please select a file first', 'error'); return; }
         const provider = document.getElementById('bri-provider')?.value.trim() || '';
@@ -923,6 +986,7 @@ const numbers = {
             window.api.invalidate('/api/ranges');
             window.api.invalidate('/api/numbers');
             window._briFile = null;
+            window._briCountriesDetected = false;
 
             if (resultDiv) {
                 resultDiv.style.display = 'block';
