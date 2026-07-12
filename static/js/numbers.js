@@ -692,6 +692,18 @@ const numbers = {
                             <strong>Range Name Format:</strong> <code>Country Operator SSP MonthDay</code> — e.g. <em>Afghanistan Awcc Red SSP Jul 10</em>
                         </div>
 
+                        <!-- Import type toggle -->
+                        <div style="display:flex;gap:16px;align-items:center;padding:12px;background:var(--bg-page);border-radius:8px;border:1px solid var(--border)">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                                <input type="radio" name="bri-type" value="active" id="bri-type-active" checked style="accent-color:var(--primary)">
+                                <span>IPRN Numbers <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">(live, assignable to resellers)</span></span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                                <input type="radio" name="bri-type" value="test" id="bri-type-test" style="accent-color:var(--primary)">
+                                <span>Test Numbers <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">(show in Test Panel for testing)</span></span>
+                            </label>
+                        </div>
+
                         <!-- Provider name (for TXT files) -->
                         <div class="form-group">
                             <label class="fly-label">Provider Name <span style="font-size:11px;color:var(--text-secondary)">(required for plain TXT, optional for CSV/Excel)</span></label>
@@ -826,6 +838,8 @@ const numbers = {
             const form = new FormData();
             form.append('file', file);
             form.append('providerName', provider);
+            const isTest = document.getElementById('bri-type-test')?.checked;
+            if (isTest) form.append('importAsTest', '1');
             const token = localStorage.getItem('token');
             const res = await fetch('/api/numbers-ext/bulk-range-import', {
                 method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form

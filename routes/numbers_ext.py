@@ -533,6 +533,7 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
     form = await request.form()
     file = form.get("file")
     provider_name_hint = (form.get("providerName") or "").strip()
+    import_as_test = (form.get("importAsTest") or "0") in ("1", "true", "yes")
     # Optional manual overrides
     override_monthly = form.get("overrideMonthly")
     override_weekly  = form.get("overrideWeekly")
@@ -616,6 +617,8 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
                 )
 
             # Import numbers
+            num_status = "test" if import_as_test else "active"
+            num_assigned = provider_name_hint if import_as_test else None
             added = skipped = 0
             for item in items:
                 num = item["number"]
@@ -624,9 +627,9 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
                 try:
                     cur = conn.execute(
                         """INSERT OR IGNORE INTO numbers
-                           (id, number, country_name, range_id, range_name, rate, profit_margin, status)
-                           VALUES (?,?,?,?,?,?,100,'active')""",
-                        (generate_id(), num, country, rid, range_name, our_monthly)
+                           (id, number, country_name, range_id, range_name, rate, profit_margin, status, assigned_to)
+                           VALUES (?,?,?,?,?,?,100,?,?)""",
+                        (generate_id(), num, country, rid, range_name, our_monthly, num_status, num_assigned)
                     )
                     if cur.rowcount:
                         added += 1
