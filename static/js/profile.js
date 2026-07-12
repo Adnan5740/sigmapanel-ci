@@ -73,6 +73,13 @@ const profile = {
                         </div>
                     </div>
 
+                    <!-- Performance & Level -->
+                    <div class="card" id="perf-card">
+                        <div class="card-body" style="padding:20px">
+                            <div class="loading-spinner"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+
                     <!-- Security Settings -->
                     <div class="card">
                         <div class="card-header">
@@ -247,6 +254,59 @@ const profile = {
         } catch (e) {
             window.ui.showToast(e.message, 'error');
         }
-    }
+    },
+
+    async loadPerformance(userId) {
+        const card = document.getElementById('perf-card');
+        if (!card) return;
+        try {
+            const url = userId ? `/api/dashboard/user-performance?userId=${userId}` : '/api/dashboard/user-performance';
+            const p = await window.api.call(url);
+            const pct = p.progress || 0;
+            const nextInfo = p.nextLevel
+                ? `<span style="font-size:11px;color:var(--text-secondary)">${p.otpToday} / ${p.nextLevelMin} OTP today to reach ${p.nextLevel}</span>`
+                : '<span style="font-size:11px;color:var(--success)">Max level reached!</span>';
+            card.querySelector('.card-body').innerHTML = `
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+                <div style="font-size:42px">${p.icon}</div>
+                <div style="flex:1">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                        <span style="font-size:20px;font-weight:900;color:${p.color}">${p.level}</span>
+                        <span class="badge badge-secondary">Level</span>
+                    </div>
+                    <div style="height:8px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:4px">
+                        <div style="height:100%;width:${pct}%;background:${p.color};border-radius:10px;transition:width .8s ease"></div>
+                    </div>
+                    ${nextInfo}
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px">
+                <div style="text-align:center;padding:12px;background:var(--bg-page);border-radius:8px">
+                    <div style="font-size:22px;font-weight:800;color:var(--success)">${p.otpToday}</div>
+                    <div style="font-size:11px;color:var(--text-secondary)">OTP Today</div>
+                </div>
+                <div style="text-align:center;padding:12px;background:var(--bg-page);border-radius:8px">
+                    <div style="font-size:22px;font-weight:800;color:var(--primary)">${p.otp30Days}</div>
+                    <div style="font-size:11px;color:var(--text-secondary)">OTP (30 days)</div>
+                </div>
+                <div style="text-align:center;padding:12px;background:var(--bg-page);border-radius:8px">
+                    <div style="font-size:22px;font-weight:800">${p.numbersHeld}</div>
+                    <div style="font-size:11px;color:var(--text-secondary)">Numbers Held</div>
+                </div>
+                <div style="text-align:center;padding:12px;background:var(--bg-page);border-radius:8px">
+                    <div style="font-size:22px;font-weight:800;color:var(--warning)">$${Number(p.totalPayout).toFixed(2)}</div>
+                    <div style="font-size:11px;color:var(--text-secondary)">Total Earned</div>
+                </div>
+                <div style="text-align:center;padding:12px;background:var(--bg-page);border-radius:8px;border:2px solid ${p.color}">
+                    <div style="font-size:22px;font-weight:800;color:${p.color}">${p.allocationLimit}</div>
+                    <div style="font-size:11px;color:var(--text-secondary)">Alloc. Limit</div>
+                </div>
+            </div>`;
+        } catch(e) {
+            const card = document.getElementById('perf-card');
+            if (card) card.style.display = 'none';
+        }
+    },
+
 };
 window.profile = profile;

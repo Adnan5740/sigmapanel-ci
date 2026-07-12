@@ -267,3 +267,88 @@ async def dashboard_audit_logs(request: Request, limit: int = Query(50, ge=1, le
     with get_db() as conn:
         rows = conn.execute("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
     return {"data": [dict(r) for r in rows]}
+
+
+def _calc_level(otp_today: int) -> dict:
+    """Calculate user level and allocation limit based on daily OTPs received."""
+    levels = [
+        {"name": "Bronze",   "min": 0,    "max": 99,   "limit": 10,  "color": "#cd7f32", "icon": "🥉"},
+        {"name": "Silver",   "min": 100,  "max": 299,  "limit": 30,  "color": "#c0c0c0", "icon": "🥈"},
+        {"name": "Gold",     "min": 300,  "max": 699,  "limit": 75,  "color": "#ffd700", "icon": "🥇"},
+        {"name": "Platinum", "min": 700,  "max": 999,  "limit": 150, "color": "#e5e4e2", "icon": "💎"},
+        {"name": "Diamond",  "min": 1000, "max": 1999, "limit": 300, "color": "#b9f2ff", "icon": "💠"},
+        {"name": "Elite",    "min": 2000, "max": 9999, "limit": 500, "color": "#7c3aed", "icon": "⭐"},
+        {"name": "Legend",   "min": 10000,"max": 999999,"limit": 1000,"color": "#dc2626","icon": "👑"},
+    ]
+    current = levels[0]
+    next_lvl = levels[1] if len(levels) > 1 else None
+    for i, lvl in enumerate(levels):
+        if otp_today >= lvl["min"]:
+            current = lvl
+            next_lvl = levels[i+1] if i+1 < len(levels) else None
+    progress = 0
+    if next_lvl:
+        span = next_lvl["min"] - current["min"]
+        progress = int(min(100, (otp_today - current["min"]) / span * 100)) if span > 0 else 100
+    else:
+        progress = 100
+    return {
+        "level": current["name"],
+        "icon": current["icon"],
+        "color": current["color"],
+        "allocationLimit": current["limit"],
+        "otpToday": otp_today,
+        "nextLevel": next_lvl["name"] if next_lvl else None,
+        "nextLevelMin": next_lvl["min"] if next_lvl else None,
+        "progress": progress,
+    }
+
+
+@router.get("/user-performance")
+async def user_performance(request: Request, userId: str = None, p=Depends(get_current_user)):
+    """Return performance stats and level for a user (or current user)."""
+    from auth import extract_token, verify_token
+    uid = userId if userId and p["role"] in ("admin", "manager") else p["id"]
+    username = p["username"]
+    if userId and userId != p["id"] and p["role"] in ("admin", "manager"):
+        from database import get_db as _gdb
+        with _gdb() as conn:
+            u = conn.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
+            if u: username = u["username"]
+
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    thirty_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+
+    with get_db() as conn:
+        otp_today   = conn.execute(
+            "SELECT COUNT(*) FROM sms_received WHERE username=? AND otp IS NOT NULL AND date(received_at)=?",
+            (username, today)).fetchone()[0]
+        otp_30days  = conn.execute(
+            "SELECT COUNT(*) FROM sms_received WHERE username=? AND otp IS NOT NULL AND received_at>=?",
+            (username, thirty_ago)).fetchone()[0]
+        sms_30days  = conn.execute(
+            "SELECT COUNT(*) FROM sms_received WHERE username=? AND received_at>=?",
+            (username, thirty_ago)).fetchone()[0]
+        total_payout = conn.execute(
+            "SELECT COALESCE(SUM(profit),0) FROM sms_received WHERE username=?",
+            (username,)).fetchone()[0]
+        numbers_held = conn.execute(
+            "SELECT COUNT(*) FROM numbers WHERE assigned_to=? AND status='active'",
+            (username,)).fetchone()[0]
+        alloc_limit_enabled = conn.execute(
+            "SELECT self_allocation_limit_enabled FROM users WHERE id=?", (uid,)).fetchone()
+        limit_enabled = alloc_limit_enabled["self_allocation_limit_enabled"] if alloc_limit_enabled else 0
+
+    level_info = _calc_level(otp_today)
+
+    return {
+        "userId": uid,
+        "username": username,
+        "otpToday": otp_today,
+        "otp30Days": otp_30days,
+        "sms30Days": sms_30days,
+        "totalPayout": round(float(total_payout), 4),
+        "numbersHeld": numbers_held,
+        "limitEnabled": bool(limit_enabled),
+        **level_info,
+    }
