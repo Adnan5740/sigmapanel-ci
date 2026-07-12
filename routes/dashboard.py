@@ -91,16 +91,8 @@ async def get_stats(request: Request, p=Depends(get_current_user)):
         else:
             total_allocations = conn.execute("SELECT COUNT(*) FROM allocations WHERE user_id=? AND status='active'", (user_id,)).fetchone()[0]
 
-        # DLRs - Only show to admin and manager
-        if role == "admin":
-            total_dlrs = conn.execute(f"SELECT COUNT(*) FROM sms_received WHERE otp IS NOT NULL AND {PRODUCTION_SMS}").fetchone()[0]
-        elif role == "manager":
-            total_dlrs = conn.execute(f"SELECT COUNT(*) FROM sms_received WHERE otp IS NOT NULL AND {PRODUCTION_SMS}").fetchone()[0]
-        else:
-            # For reseller/sub_reseller, calculate their own DLRs only
-            dlr_cond = f"otp IS NOT NULL AND {sms_cond}"
-            args = sms_param if isinstance(sms_param, list) else ([sms_param] if sms_param else [])
-            total_dlrs = conn.execute(dlr_cond, args).fetchone()[0] if args else conn.execute(dlr_cond).fetchone()[0]
+        # DLRs Today — OTPs received today only
+        total_dlrs = sms_count(f"otp IS NOT NULL AND received_at >= '{day_start}'")
 
         # Profit uses sms_received.profit so dashboard, payout pages, and analytics
         # report the same scoped earnings even if a legacy row has no ledger entry.

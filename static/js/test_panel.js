@@ -77,7 +77,9 @@ const testPanel = {
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">${ICONS.sms} Test SMS Reports</div>
-                    <div style="display:flex;gap:8px;align-items:center">
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="tr-search" class="search-input" placeholder="Search number, service..." style="width:180px"
+                            oninput="window.testPanel.filterTestReports()">
                         <span class="badge badge-secondary">${total} total</span>
                         <button class="fly-btn fly-btn-sm" onclick="window.testPanel.renderTestReports(document.getElementById('page-content'))">${ICONS.refresh || '↻'} Refresh</button>
                     </div>
@@ -88,24 +90,19 @@ const testPanel = {
                             <th>Time</th>
                             <th>Number</th>
                             <th>Range</th>
-                            <th>Sender / Service</th>
+                            <th>Service</th>
                             <th>OTP</th>
-                            <th>Message</th>
                         </tr></thead>
-                        <tbody>
+                        <tbody id="tr-tbody">
                             ${rows.length ? rows.map(s => `
                             <tr>
                                 <td style="font-size:11px;white-space:nowrap;color:var(--text-secondary)">${window.ui.formatDate(s.received_at)}</td>
                                 <td><code>${window.ui.escapeHtml(s.number)}</code></td>
                                 <td>${s.range_name ? '<span class="badge badge-secondary">'+window.ui.escapeHtml(s.range_name)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
-                                <td>
-                                    ${s.service ? '<span class="badge badge-primary">'+window.ui.escapeHtml(s.service)+'</span>' : ''}
-                                    ${s.sender && s.sender !== s.service ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">'+window.ui.escapeHtml(s.sender)+'</div>' : ''}
-                                </td>
-                                <td>${s.otp ? '<span class="otp-code" style="color:var(--success);font-weight:800;font-size:15px">'+s.otp+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
-                                <td style="max-width:300px;font-size:12px">${window.ui.escapeHtml(s.message || '')}</td>
+                                <td>${s.service ? '<span class="badge badge-primary">'+window.ui.maskService(s.service)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
+                                <td>${s.otp ? '<span class="otp-code" style="color:var(--success);font-weight:800;font-size:16px">'+s.otp+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                             </tr>`).join('')
-                            : '<tr class="empty-row"><td colspan="6">No SMS received yet on test numbers</td></tr>'}
+                            : '<tr class="empty-row"><td colspan="5">No SMS received yet on test numbers</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -153,7 +150,7 @@ const testPanel = {
                     <td style="font-size:11px;white-space:nowrap;color:var(--text-secondary)">${window.ui.formatDate(s.received_at)}</td>
                     <td><code>${window.ui.escapeHtml(s.number)}</code></td>
                     <td>${s.range_name ? '<span class="badge badge-secondary">'+window.ui.escapeHtml(s.range_name)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
-                    <td>${s.service ? '<span class="badge badge-primary">'+window.ui.escapeHtml(s.service)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
+                    <td>${s.service ? '<span class="badge badge-primary">'+window.ui.maskService(s.service)+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                     <td>${s.otp ? '<span class="otp-code" style="color:var(--success);font-weight:800;font-size:15px">'+s.otp+'</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
                     <td style="font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis">${window.ui.escapeHtml(s.message || '')}</td>
                 </tr>`).join('');
