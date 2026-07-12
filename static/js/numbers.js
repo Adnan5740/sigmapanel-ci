@@ -888,79 +888,91 @@ const numbers = {
         async brPreview() {
         const file = window._briFile;
         if (!file) { window.ui.showToast('Please select a file first', 'error'); return; }
+
+        const isTxt = file.name.toLowerCase().endsWith('.txt');
+
+        // TXT: always auto-detect countries, never use standard preview
+        if (isTxt) {
+            const previewBtn = document.getElementById('bri-preview-btn');
+            const txtExtra   = document.getElementById('bri-txt-extra');
+            if (previewBtn) { previewBtn.disabled=true; previewBtn.innerHTML='<span class="spinner spinner-inline"></span> Detecting countries...'; }
+            try {
+                const fd = new FormData(); fd.append('file', file);
+                const tok = localStorage.getItem('token');
+                const r = await fetch('/api/numbers-ext/preview-txt', {method:'POST',headers:{'Authorization':'Bearer '+tok},body:fd});
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.detail||'Detection failed');
+                if (!d.groups||d.groups.length===0) { window.ui.showToast('No recognisable country prefixes found','error'); return; }
+                const dateLabel = new Date().toLocaleString('en',{month:'short',day:'numeric'});
+                if (txtExtra) {
+                    txtExtra.style.display='block';
+                    txtExtra.innerHTML = `<div style="background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:16px">
+                        <div style="font-weight:700;font-size:14px;margin-bottom:4px">📊 ${d.groups.length} countries · ${d.total} numbers${d.undetected?` <span class='badge badge-warning'>${d.undetected} unrecognised</span>`:''}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">Set rates per country. Range auto-named: e.g. <em>${d.groups[0]?.country||'Russia'} SSP ${dateLabel}</em></div>
+                        <div style="display:flex;flex-direction:column;gap:10px">
+                        ${d.groups.map(g=>`<div style="padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+                            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+                                <div style="font-weight:700;font-size:13px">${window.ui.escapeHtml(g.country)} <span class="badge badge-secondary">${g.count} numbers</span></div>
+                                <div style="font-size:11px;color:var(--text-secondary)">${g.sample.slice(0,2).map(n=>window.ui.escapeHtml(n)).join(', ')}${g.count>2?'...':''}</div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;align-items:end">
+                                <div><label style="font-size:11px;color:var(--text-secondary)">Monthly Rate ($)*</label>
+                                    <input type="number" class="fly-input bri-monthly" data-country="${window.ui.escapeHtml(g.country)}" placeholder="0.025" step="0.001" min="0" style="margin-top:2px" oninput="window.numbers.brRateHint2(this)"></div>
+                                <div><label style="font-size:11px;color:var(--text-secondary)">Weekly Rate ($)</label>
+                                    <input type="number" class="fly-input bri-weekly" data-country="${window.ui.escapeHtml(g.country)}" placeholder="0.015" step="0.001" min="0" style="margin-top:2px"></div>
+                                <div><label style="font-size:11px;color:var(--text-secondary)">Daily OTP Limit</label>
+                                    <input type="number" class="fly-input bri-otp-limit" data-country="${window.ui.escapeHtml(g.country)}" placeholder="Unlimited" min="0" style="margin-top:2px"></div>
+                                <div id="hint-${window.ui.escapeHtml(g.country).replace(/[^a-zA-Z0-9]/g,'_')}" style="font-size:11px;color:var(--success);font-weight:600;padding-top:18px"></div>
+                            </div>
+                        </div>`).join('')}
+                        </div>
+                        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                            <button class="fly-btn" onclick="window.numbers.brImportTxt(${JSON.stringify(d.groups).replace(/"/g,'&quot;')})">
+                                ${ICONS.upload||'↑'} Import ${d.total} Numbers → ${d.groups.length} Ranges
+                            </button>
+                        </div>
+                    </div>`;
+                }
+            } catch(e) { window.ui.showToast(e.message,'error'); }
+            finally { if (previewBtn) { previewBtn.disabled=false; previewBtn.innerHTML=(ICONS.eye||'👁')+' Re-detect Countries'; } }
+            return;
+        }
+
+        // CSV/Excel: standard bulk preview
         const provider = document.getElementById('bri-provider')?.value.trim() || '';
         const previewDiv = document.getElementById('bri-preview');
         const previewBtn = document.getElementById('bri-preview-btn');
-        const importBtn = document.getElementById('bri-import-btn');
-
-        // For TXT files validate and build provider name from country+operator
-        const isTxt = file.name.toLowerCase().endsWith('.txt');
-        let txtCountry = '', txtOperator = '', txtMonthly = 0, txtWeekly = 0;
-        if (isTxt) {
-            txtCountry  = document.getElementById('bri-txt-country')?.value.trim() || '';
-            txtOperator = document.getElementById('bri-txt-operator')?.value.trim() || '';
-            txtMonthly  = parseFloat(document.getElementById('bri-txt-monthly')?.value || 0) || 0;
-            txtWeekly   = parseFloat(document.getElementById('bri-txt-weekly')?.value || 0) || 0;
-            if (!txtCountry || !txtOperator) {
-                window.ui.showToast('Please enter Country and Telecom Operator', 'error'); return;
-            }
-            if (!txtMonthly) { window.ui.showToast('Please enter Provider Monthly Rate', 'error'); return; }
-        }
-
-        if (previewBtn) { previewBtn.disabled = true; previewBtn.innerHTML = '<span class="spinner spinner-inline"></span> Parsing...'; }
+        const importBtn  = document.getElementById('bri-import-btn');
+        if (previewBtn) { previewBtn.disabled=true; previewBtn.innerHTML='<span class="spinner spinner-inline"></span> Parsing...'; }
         try {
             const form = new FormData();
             form.append('file', file);
-            // For TXT: build termination string so backend auto-names the range
-            const effectiveProvider = isTxt
-                ? `${txtCountry.toUpperCase()} - ${txtOperator}`
-                : provider;
-            form.append('providerName', effectiveProvider);
-            if (isTxt) {
-                form.append('overrideMonthly', txtMonthly);
-                form.append('overrideWeekly',  txtWeekly);
-            }
+            form.append('providerName', provider);
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/numbers-ext/bulk-range-import?preview=1', {
-                method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form
-            });
+            const res = await fetch('/api/numbers-ext/bulk-range-import?preview=1', {method:'POST',headers:{'Authorization':'Bearer '+token},body:form});
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Parse failed');
-
-            const ranges = data.ranges || [];
+            if (!res.ok) throw new Error(data.detail||'Parse failed');
+            const ranges = data.ranges||[];
             let html = `<div class="card" style="margin-top:0">
-                <div class="card-header">
-                    <div class="card-title">Preview — ${ranges.length} Range(s) · ${data.totalAdded} Numbers</div>
-                </div>
+                <div class="card-header"><div class="card-title">Preview — ${ranges.length} Range(s) · ${data.totalAdded} Numbers</div></div>
                 <div class="table-wrapper"><table class="fly-table">
-                    <thead><tr>
-                        <th>Range Name (Auto)</th><th>Termination</th><th>Numbers</th>
-                        <th>Provider Monthly</th><th>Our Monthly</th>
-                        <th>Provider Weekly</th><th>Our Weekly</th>
-                        <th>Currency</th><th>Status</th>
-                    </tr></thead>
-                    <tbody>
-                        ${ranges.map(r => `<tr>
-                            <td><strong>${window.ui.escapeHtml(r.rangeName)}</strong></td>
-                            <td style="font-size:11px;color:var(--text-secondary)">${window.ui.escapeHtml(r.termination)}</td>
-                            <td><span class="badge badge-secondary">${r.added}</span></td>
-                            <td><span class="badge badge-info">$${Number(r.providerMonthly).toFixed(4)}</span></td>
-                            <td><span class="badge badge-success">$${Number(r.ourMonthly).toFixed(4)}</span></td>
-                            <td><span class="badge badge-info">$${Number(r.providerWeekly).toFixed(4)}</span></td>
-                            <td><span class="badge badge-success">$${Number(r.ourWeekly).toFixed(4)}</span></td>
-                            <td>${window.ui.escapeHtml(r.currency)}</td>
-                            <td>${r.isNew ? '<span class="badge badge-primary">New Range</span>' : '<span class="badge badge-warning">Update</span>'}</td>
-                        </tr>`).join('')}
-                    </tbody>
-                </table></div>
-            </div>`;
-            if (previewDiv) { previewDiv.style.display = 'block'; previewDiv.innerHTML = html; }
-            if (importBtn) importBtn.style.display = 'inline-flex';
-        } catch (e) {
-            window.ui.showToast(e.message, 'error');
-        } finally {
-            if (previewBtn) { previewBtn.disabled = false; previewBtn.innerHTML = (ICONS.eye||'') + ' Preview Ranges'; }
-        }
+                    <thead><tr><th>Range Name</th><th>Termination</th><th>Numbers</th><th>Provider Monthly</th><th>Our Monthly</th><th>Provider Weekly</th><th>Our Weekly</th><th>Currency</th><th>Status</th></tr></thead>
+                    <tbody>${ranges.map(r=>`<tr>
+                        <td><strong>${window.ui.escapeHtml(r.rangeName)}</strong></td>
+                        <td style="font-size:11px;color:var(--text-secondary)">${window.ui.escapeHtml(r.termination)}</td>
+                        <td><span class="badge badge-secondary">${r.added}</span></td>
+                        <td><span class="badge badge-info">$${Number(r.providerMonthly).toFixed(4)}</span></td>
+                        <td><span class="badge badge-success">$${Number(r.ourMonthly).toFixed(4)}</span></td>
+                        <td><span class="badge badge-info">$${Number(r.providerWeekly).toFixed(4)}</span></td>
+                        <td><span class="badge badge-success">$${Number(r.ourWeekly).toFixed(4)}</span></td>
+                        <td>${window.ui.escapeHtml(r.currency)}</td>
+                        <td>${r.isNew?'<span class="badge badge-primary">New</span>':'<span class="badge badge-warning">Update</span>'}</td>
+                    </tr>`).join('')}</tbody>
+                </table></div></div>`;
+            if (previewDiv) { previewDiv.style.display='block'; previewDiv.innerHTML=html; }
+            if (importBtn) importBtn.style.display='inline-flex';
+        } catch(e) { window.ui.showToast(e.message,'error'); }
+        finally { if (previewBtn) { previewBtn.disabled=false; previewBtn.innerHTML=(ICONS.eye||'👁')+' Preview Ranges'; } }
     },
 
     async brImport() {
