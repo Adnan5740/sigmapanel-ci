@@ -533,7 +533,9 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
     form = await request.form()
     file = form.get("file")
     provider_name_hint = (form.get("providerName") or "").strip()
-    import_as_test = (form.get("importAsTest") or "0") in ("1", "true", "yes")
+    import_as_test    = (form.get("importAsTest") or "0") in ("1", "true", "yes")
+    override_monthly  = form.get("overrideMonthly")
+    override_weekly   = form.get("overrideWeekly")
     # Optional manual overrides
     override_monthly = form.get("overrideMonthly")
     override_weekly  = form.get("overrideWeekly")
@@ -566,8 +568,8 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
         for key, items in groups.items():
             rep = items[0]
             term     = key
-            prov_mon = float(rep.get("monthly_rate", 0) or 0)
-            prov_wk  = float(rep.get("weekly_rate", 0) or 0)
+            prov_mon = float(override_monthly or rep.get("monthly_rate", 0) or 0)
+            prov_wk  = float(override_weekly  or rep.get("weekly_rate",  0) or 0)
             our_mon  = _provider_to_our_rate(prov_mon)
             our_wk   = _provider_to_our_rate(prov_wk)
             country  = term.split(" - ")[0].strip().title() if " - " in term else term.title()

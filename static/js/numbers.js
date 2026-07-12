@@ -726,6 +726,48 @@ const numbers = {
                         <!-- File selected indicator -->
                         <div id="bri-file-info" style="display:none;padding:10px 14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:13px;font-weight:600;color:var(--success)"></div>
 
+                        <!-- TXT file: payout details -->
+                        <div id="bri-txt-extra" style="display:none;background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:16px">
+                            <div style="font-weight:700;font-size:13px;margin-bottom:12px">📋 Plain numbers file — enter details to auto-create range name and rates</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                <div class="form-group"><label class="fly-label">Country *</label>
+                                    <input type="text" id="bri-txt-country" class="fly-input" placeholder="e.g. Pakistan"></div>
+                                <div class="form-group"><label class="fly-label">Telecom Operator *</label>
+                                    <input type="text" id="bri-txt-operator" class="fly-input" placeholder="e.g. Ufone, Jazz"></div>
+                                <div class="form-group"><label class="fly-label">Provider Monthly Rate ($) *</label>
+                                    <input type="number" id="bri-txt-monthly" class="fly-input" placeholder="0.025" step="0.001" min="0" oninput="window.numbers.brRateHint()"></div>
+                                <div class="form-group"><label class="fly-label">Provider Weekly Rate ($)</label>
+                                    <input type="number" id="bri-txt-weekly" class="fly-input" placeholder="0.015" step="0.001" min="0" oninput="window.numbers.brRateHint()"></div>
+                            </div>
+                            <div id="bri-rate-hint" style="margin-top:8px;font-size:12px;color:var(--success);font-weight:600"></div>
+                        </div>
+
+                        <!-- TXT-only: payout details form -->
+                        <div id="bri-txt-extra" style="display:none;background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:16px">
+                            <div style="font-weight:700;font-size:13px;margin-bottom:12px">📋 Plain TXT detected — enter payout details to auto-create range</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                                <div class="form-group">
+                                    <label class="fly-label">Country *</label>
+                                    <input type="text" id="bri-txt-country" class="fly-input" placeholder="e.g. Pakistan">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fly-label">Telecom Operator *</label>
+                                    <input type="text" id="bri-txt-operator" class="fly-input" placeholder="e.g. Ufone, Jazz, Zong">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fly-label">Provider Monthly Rate ($) *</label>
+                                    <input type="number" id="bri-txt-monthly" class="fly-input" placeholder="0.025" step="0.001" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fly-label">Provider Weekly Rate ($)</label>
+                                    <input type="number" id="bri-txt-weekly" class="fly-input" placeholder="0.015" step="0.001" min="0">
+                                </div>
+                            </div>
+                            <div id="bri-txt-rate-preview" style="font-size:12px;color:var(--text-secondary)">
+                                Enter rates above to see your payout.
+                            </div>
+                        </div>
+
                         <!-- Preview table -->
                         <div id="bri-preview" style="display:none"></div>
 
@@ -762,14 +804,22 @@ const numbers = {
         const file = input?.files?.[0];
         if (!file) return;
         window._briFile = file;
-        const info = document.getElementById('bri-file-info');
+        const info     = document.getElementById('bri-file-info');
         const previewBtn = document.getElementById('bri-preview-btn');
-        const importBtn = document.getElementById('bri-import-btn');
-        const preview = document.getElementById('bri-preview');
+        const importBtn  = document.getElementById('bri-import-btn');
+        const preview  = document.getElementById('bri-preview');
+        const txtExtra = document.getElementById('bri-txt-extra');
         if (info) { info.style.display = 'block'; info.textContent = '✓ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)'; }
-        if (previewBtn) previewBtn.disabled = false;
         if (importBtn) importBtn.style.display = 'none';
         if (preview) preview.style.display = 'none';
+
+        // TXT file = plain numbers only — ask for payout details before preview
+        const isTxt = file.name.toLowerCase().endsWith('.txt');
+        if (txtExtra) txtExtra.style.display = isTxt ? 'block' : 'none';
+        if (previewBtn) {
+            previewBtn.disabled = false;
+            previewBtn.textContent = isTxt ? '⚙️ Set Details & Preview' : '👁 Preview Ranges';
+        }
     },
 
     async brPreview() {
@@ -779,11 +829,34 @@ const numbers = {
         const previewDiv = document.getElementById('bri-preview');
         const previewBtn = document.getElementById('bri-preview-btn');
         const importBtn = document.getElementById('bri-import-btn');
+
+        // For TXT files validate and build provider name from country+operator
+        const isTxt = file.name.toLowerCase().endsWith('.txt');
+        let txtCountry = '', txtOperator = '', txtMonthly = 0, txtWeekly = 0;
+        if (isTxt) {
+            txtCountry  = document.getElementById('bri-txt-country')?.value.trim() || '';
+            txtOperator = document.getElementById('bri-txt-operator')?.value.trim() || '';
+            txtMonthly  = parseFloat(document.getElementById('bri-txt-monthly')?.value || 0) || 0;
+            txtWeekly   = parseFloat(document.getElementById('bri-txt-weekly')?.value || 0) || 0;
+            if (!txtCountry || !txtOperator) {
+                window.ui.showToast('Please enter Country and Telecom Operator', 'error'); return;
+            }
+            if (!txtMonthly) { window.ui.showToast('Please enter Provider Monthly Rate', 'error'); return; }
+        }
+
         if (previewBtn) { previewBtn.disabled = true; previewBtn.innerHTML = '<span class="spinner spinner-inline"></span> Parsing...'; }
         try {
             const form = new FormData();
             form.append('file', file);
-            form.append('providerName', provider);
+            // For TXT: build termination string so backend auto-names the range
+            const effectiveProvider = isTxt
+                ? `${txtCountry.toUpperCase()} - ${txtOperator}`
+                : provider;
+            form.append('providerName', effectiveProvider);
+            if (isTxt) {
+                form.append('overrideMonthly', txtMonthly);
+                form.append('overrideWeekly',  txtWeekly);
+            }
             const token = localStorage.getItem('token');
             const res = await fetch('/api/numbers-ext/bulk-range-import?preview=1', {
                 method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form
