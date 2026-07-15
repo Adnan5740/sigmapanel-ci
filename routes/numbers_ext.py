@@ -529,23 +529,41 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
     """
     Upload a structured file and auto-create ranges + import numbers.
     Supports CSV, Excel (.xlsx/.xls), and plain TXT.
+    Accepts both multipart/form-data (file field) and raw text/plain body.
     """
-    form = await request.form()
-    file = form.get("file")
-    provider_name_hint = (form.get("providerName") or "").strip()
-    import_as_test    = (form.get("importAsTest") or "0") in ("1", "true", "yes")
-    override_monthly  = form.get("overrideMonthly")
-    override_weekly   = form.get("overrideWeekly")
-    country_filter    = (form.get("countryFilter") or "").strip().lower()
-    # Optional manual overrides
-    override_monthly = form.get("overrideMonthly")
-    override_weekly  = form.get("overrideWeekly")
+    content_type = request.headers.get("content-type", "")
+    provider_name_hint = ""
+    import_as_test = False
+    override_monthly = None
+    override_weekly = None
+    country_filter = ""
+    data = None
+    filename = "upload.csv"
 
-    if not file:
-        raise HTTPException(400, "No file provided")
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        file = form.get("file")
+        provider_name_hint = (form.get("providerName") or "").strip()
+        import_as_test = (form.get("importAsTest") or "0") in ("1", "true", "yes")
+        override_monthly = form.get("overrideMonthly")
+        override_weekly = form.get("overrideWeekly")
+        country_filter = (form.get("countryFilter") or "").strip().lower()
+        if not file:
+            raise HTTPException(400, "No file provided")
+        filename = getattr(file, "filename", "upload.csv")
+        data = await file.read()
+    else:
+        # Accept raw body (text/plain, text/csv, application/octet-stream, or no content-type)
+        data = await request.body()
+        if not data:
+            raise HTTPException(400, "No file provided")
+        if "csv" in content_type:
+            filename = "upload.csv"
+        elif "excel" in content_type or "spreadsheet" in content_type:
+            filename = "upload.xlsx"
+        else:
+            filename = "upload.csv"
 
-    filename = getattr(file, "filename", "upload.txt")
-    data = await file.read()
     if len(data) > 20 * 1024 * 1024:
         raise HTTPException(400, "File too large (max 20 MB)")
 
@@ -684,13 +702,20 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
 
 @router.post("/preview-txt")
 async def preview_txt_numbers(request: Request, p=Depends(require_role(["admin", "manager"]))):
-    """Parse a plain TXT file of numbers, auto-detect country from prefix, return grouped summary."""
+    """Parse a plain TXT file of numbers, auto-detect country from prefix, return grouped summary.
+    Accepts both multipart/form-data (file field) and raw text/plain body."""
     from country_detector import detect_country
-    form = await request.form()
-    file = form.get("file")
-    if not file:
-        raise HTTPException(400, "No file provided")
-    data = await file.read()
+    content_type = request.headers.get("content-type", "")
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        file = form.get("file")
+        if not file:
+            raise HTTPException(400, "No file provided")
+        data = await file.read()
+    else:
+        data = await request.body()
+        if not data:
+            raise HTTPException(400, "No file provided")
     text = data.decode("utf-8", errors="ignore")
 
     # Parse all numbers

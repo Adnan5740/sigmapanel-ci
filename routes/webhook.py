@@ -131,3 +131,31 @@ async def webhook_test(request: Request, p=Depends(require_role(["admin", "manag
         "service": result.get("service"),
         "error":   result.get("error"),
     })
+
+@router.post("/debug")
+@router.get("/debug")
+async def webhook_debug(request: Request):
+    """Capture and log ALL fields from provider — for debugging unknown field names."""
+    import json as _json
+    if request.method == "POST":
+        ct = request.headers.get("content-type", "")
+        if "application/json" in ct:
+            raw = await request.json()
+        else:
+            form = await request.form()
+            raw = dict(form)
+    else:
+        raw = dict(request.query_params)
+
+    client_ip = request.client.host if request.client else "unknown"
+    import logging
+    logging.getLogger("webhook_debug").warning(
+        f"DEBUG WEBHOOK from {client_ip}: {_json.dumps(raw)}"
+    )
+
+    # Try to process it anyway with all known field names
+    payload = dict(raw)
+    payload["ip_address"] = client_ip
+    result = process_incoming_sms(payload)
+
+    return {"status": "received", "fields": list(raw.keys()), "processed": result.get("success"), "smsId": result.get("smsId")}

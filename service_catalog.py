@@ -359,7 +359,7 @@ CORE_SERVICE_ALIASES = {
     "vercel": "Vercel",
     "netlify": "Netlify",
     "heroku": "Heroku",
-    "digitalocean": "DigitalOcean", "1xbet": "1xBet", "1xslots": "1xSlots",
+    "digitalocean": "DigitalOcean", "1xbet": "1xBet", "melbet": "Melbet", "1xslots": "1xSlots",
     "github": "GitHub", "gh": "GitHub",
     "gitlab": "GitLab",
     "bitbucket": "Bitbucket",
