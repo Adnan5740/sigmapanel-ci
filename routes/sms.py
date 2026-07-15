@@ -7,7 +7,7 @@ from routes.deps import get_current_user, require_role
 router = APIRouter(prefix="/api/sms", tags=["sms"])
 
 PRODUCTION_SMS = "number NOT IN (SELECT number FROM numbers WHERE status = 'test')"
-TEST_SMS = "number IN (SELECT number FROM numbers WHERE status = 'test')"
+TEST_SMS = "number IN (SELECT number FROM numbers WHERE status IN ('test','used_test'))"
 
 @router.get("")
 async def list_sms(
@@ -16,6 +16,7 @@ async def list_sms(
     number: str = Query(None),
     search: str = Query(None),
     sender: str = Query(None),
+    rangeName: str = Query(None),
     dateFrom: str = Query(None, alias="from"),
     dateTo: str = Query(None, alias="to"),
     scope: str = Query(None),
@@ -48,6 +49,8 @@ async def list_sms(
     
     if service:
         conds.append("service LIKE ?"); params.append(f"%{service}%")
+    if rangeName:
+        conds.append("range_name = ?"); params.append(rangeName)
     if number:
         conds.append("number LIKE ?"); params.append(f"%{number}%")
     if sender:

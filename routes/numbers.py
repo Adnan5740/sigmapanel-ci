@@ -133,6 +133,23 @@ async def list_test_panel_numbers(p=Depends(get_current_user)):
         params.append(p["username"])
     where = " AND ".join(conds)
     with get_db() as conn:
+        # Auto-seed 5 test numbers if test_user has none yet
+        if p["role"] == "test_user":
+            existing = conn.execute(
+                "SELECT COUNT(*) FROM numbers WHERE status='test' AND assigned_to=?",
+                (p["username"],)
+            ).fetchone()[0]
+            if existing < 5:
+                needed = 5 - existing
+                candidates = conn.execute(
+                    "SELECT id FROM numbers WHERE status='active' AND (assigned_to IS NULL OR assigned_to='') LIMIT ?",
+                    (needed,)
+                ).fetchall()
+                for row in candidates:
+                    conn.execute(
+                        "UPDATE numbers SET status='test', assigned_to=?, assigned_at=datetime('now') WHERE id=?",
+                        (p["username"], row["id"])
+                    )
         rows = conn.execute(f"""
             SELECT n.*, COALESCE(n.range_name, r.name) AS display_range_name
             FROM numbers n
@@ -153,17 +170,26 @@ async def create_test_number(body: TestNumberCreate, p=Depends(require_role(["ad
     if not number:
         raise HTTPException(400, "Phone number is required")
     with get_db() as conn:
-        nid = generate_id()
         range_name = body.rangeName
         if body.rangeId and not range_name:
             rng = conn.execute("SELECT name FROM ranges WHERE id=?", (body.rangeId,)).fetchone()
             range_name = rng["name"] if rng else None
-        cur = conn.execute(
-            "INSERT OR IGNORE INTO numbers (id, number, country_name, range_id, range_name, service, status) VALUES (?,?,?,?,?,?,?)",
+        # Check if number already exists in any status
+        existing = conn.execute("SELECT id, status FROM numbers WHERE number=?", (number,)).fetchone()
+        if existing:
+            if existing["status"] == "test":
+                return {"message": "Test number already exists", "added": 0, "skipped": 1}
+            # Restore used_test or re-mark active number as test
+            conn.execute(
+                "UPDATE numbers SET status='test', range_id=COALESCE(?,range_id), range_name=COALESCE(?,range_name), service=COALESCE(?,service), assigned_to=NULL WHERE id=?",
+                (body.rangeId, range_name, body.service, existing["id"])
+            )
+            return {"message": "Test number restored to test status", "id": existing["id"], "added": 1}
+        nid = generate_id()
+        conn.execute(
+            "INSERT INTO numbers (id, number, country_name, range_id, range_name, service, status) VALUES (?,?,?,?,?,?,?)",
             (nid, number, body.countryName, body.rangeId, range_name, body.service, "test")
         )
-        if cur.rowcount == 0:
-            return {"message": "Test number already exists", "added": 0, "skipped": 1}
     return {"message": "Test number created", "id": nid, "added": 1}
 
 @router.post("/{item_id}/revoke")

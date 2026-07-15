@@ -37,12 +37,30 @@ const auth = {
             <div class="auth-card auth-card-login">
                 <div class="auth-cover auth-cover-login">
                     <div class="auth-cover-content auth-cover-content-login">
-                        <div class="auth-brand-block">
-                            <div class="auth-brand-mark">${ICONS.send}</div>
-                            <div>
-                                <div class="auth-eyebrow">SMS Management</div>
-                                <h1>SIGMAPANEL</h1>
+                        <div class="ssp-login-logo">
+                            <div class="ssp-login-icon">
+                                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="2" y="7" width="27" height="18" rx="5" stroke="url(#li1)" stroke-width="1.8"/>
+                                    <path d="M5 25 L2 34 L14 29" stroke="url(#li1)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <line x1="7" y1="14" x2="23" y2="14" stroke="white" stroke-width="1.5" stroke-opacity="0.5" stroke-linecap="round"/>
+                                    <line x1="7" y1="19" x2="18" y2="19" stroke="url(#li1)" stroke-width="1.5" stroke-linecap="round"/>
+                                    <circle cx="25" cy="19" r="2.4" fill="#00FFA3"/>
+                                    <path d="M32 4 Q38 4 38 12" stroke="#00C6FF" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-opacity="0.65"/>
+                                    <path d="M35 1 Q42 2 40 15" stroke="#00C6FF" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-opacity="0.3"/>
+                                    <circle cx="32" cy="4" r="1.8" fill="#00FFA3"/>
+                                    <defs>
+                                        <linearGradient id="li1" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0%" stop-color="#00C6FF"/>
+                                            <stop offset="100%" stop-color="#00FFA3"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
                             </div>
+                            <div class="ssp-login-letters">
+                                <span class="ssp-login-ss">SS</span><span class="ssp-login-p">P</span>
+                            </div>
+                            <div class="ssp-login-name">Sigma SMS</div>
+                            <div class="ssp-login-tag">A2P SMS Power</div>
                         </div>
                         <p class="auth-cover-copy">Trusted A2P & P2P IPRN SMS Partner</p>
                     </div>

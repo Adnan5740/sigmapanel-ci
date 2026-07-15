@@ -56,7 +56,7 @@ const users = {
         const statusClass = u.status === 'active' ? 'badge-success' : ['pending','pending_approval'].includes(u.status) ? 'badge-warning' : 'badge-danger';
         return `<tr>
             <td><strong>${window.ui.escapeHtml(u.username)}</strong><div style="font-size:11px;color:var(--text-secondary)">${window.ui.escapeHtml(u.email || '-')}</div></td>
-            <td><span class="badge ${window.ROLE_COLORS[u.role] || 'badge-secondary'}">${window.ROLE_LABELS[u.role] || u.role}</span></td>
+            <td><span class="badge ${window.ROLE_COLORS[u.role] || 'badge-secondary'}">${window.ROLE_LABELS[u.role] || u.role}</span>${u._perf ? `<span class="badge" style="margin-left:4px;background:${u._perf.color};color:#fff;font-size:9px">${u._perf.icon} ${u._perf.level}</span>` : ''}</td>
             <td><span class="badge ${statusClass}">${window.ui.escapeHtml(u.status || '-')}</span></td>
             <td>$${Number(u.balance || 0).toFixed(2)}</td>
             <td>${u._count?.children || 0}</td>

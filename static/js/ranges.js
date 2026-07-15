@@ -38,7 +38,8 @@ const ranges = {
                                         <button class="action-btn" title="Edit Range" onclick="window.ranges.showEdit('${r.id}')">${ICONS.edit} Edit</button>
                                         ${isAdmin ? `<button class="action-btn delete" title="Delete Range" onclick="window.ranges.del('${r.id}')">${ICONS.trash}</button>` : ''}
                                         ` : `
-                                        <button class="fly-btn fly-btn-sm" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.weekly_rate ?? r.rate ?? 0)}, ${Number(r.monthly_rate ?? r.rate ?? 0)})" ${r._count.available === 0 ? 'disabled' : ''}>Request</button>
+                                        <button class="fly-btn fly-btn-sm" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.weekly_rate ?? r.rate ?? 0)}, ${Number(r.monthly_rate ?? r.rate ?? 0)})"
+                                        ${r._count.available === 0 ? 'disabled' : ''}>Allocate Numbers</button>
                                         `}
                                     </td>
                                 </tr>`).join('') || `<tr class="empty-row"><td colspan="${canManage ? 9 : 7}">No ranges found</td></tr>`}

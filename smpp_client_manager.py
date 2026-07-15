@@ -111,8 +111,15 @@ class RemoteSMPPSession:
                             logger.error(f"Bind failed for {self.config['name']} status {status}")
                             self.update_status('failed', f"Bind Error: {status}")
 
-                if cmd_id == 0x00000015: # Enquire Link
+                if cmd_id == 0x00000015: # Enquire Link request — respond
                     await self.send_pdu(0x80000015, 0, seq, b'')
+
+                if cmd_id == 0x80000015: # Enquire Link response — just acknowledge, keep alive
+                    pass
+
+                if cmd_id == 0x00000006: # Unbind request — respond and close
+                    await self.send_pdu(0x80000006, 0, seq, b'')
+                    break
 
                 if cmd_id == 0x00000005: # DELIVER_SM (MO or DLR)
                     await self.send_pdu(0x80000005, 0, seq, b'\x00')

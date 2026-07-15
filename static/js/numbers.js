@@ -1,17 +1,31 @@
 const numbers = {
-    async renderMyNumbers(container, page = 1, search = '') {
+    async renderMyNumbers(container, page = 1, search = '', rangeFilter = '') {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
-            const q = search ? `&search=${encodeURIComponent(search)}` : '';
-            const res = await window.api.call(`/api/numbers?limit=50&page=${page}${q}`);
+            // Preserve existing filter values
+            search = search || document.getElementById('search-mynumbers')?.value || '';
+            rangeFilter = rangeFilter || document.getElementById('filter-range-mynumbers')?.value || '';
+            let endpoint = `/api/numbers?limit=50&page=${page}`;
+            if (search) endpoint += `&search=${encodeURIComponent(search)}`;
+            if (rangeFilter) endpoint += `&rangeName=${encodeURIComponent(rangeFilter)}`;
+            const [res, rangesRes] = await Promise.all([
+                window.api.call(endpoint),
+                window.api.call('/api/ranges').catch(() => ({ data: [] }))
+            ]);
+            const user = window.auth.getUser() || {};
+            const isAdmin = ['admin','manager'].includes(user.role);
+            const rangeOptions = (rangesRes.data || []).map(r =>
+                `<option value="${window.ui.escapeHtml(r.name)}" ${rangeFilter===r.name?'selected':''}>${window.ui.escapeHtml(r.name)}</option>`
+            ).join('');
             container.innerHTML = `
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">My Virtual Numbers</div>
                     <div class="card-header-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                        <div class="input-wrapper" style="width:200px">
-                            <input type="text" id="search-mynumbers" class="search-input" placeholder="Search numbers..." value="${window.ui.escapeHtml(search)}" oninput="window.numbers.renderMyNumbers(document.getElementById('page-content'),1,this.value)">
-                        </div>
+                        <input type="text" id="search-mynumbers" class="search-input" placeholder="Search number..." style="width:160px" value="${window.ui.escapeHtml(search)}" oninput="clearTimeout(window._mnT);window._mnT=setTimeout(()=>window.numbers.renderMyNumbers(document.getElementById('page-content'),1,this.value),400)">
+                        <select id="filter-range-mynumbers" class="filter-select" onchange="window.numbers.renderMyNumbers(document.getElementById('page-content'),1,'',this.value)">
+                            <option value="">All Ranges</option>${rangeOptions}
+                        </select>
                         <button class="fly-btn fly-btn-sm" onclick="window.numbers.showExportModal()">${ICONS.download} Export</button>
                     </div>
                 </div>
@@ -36,7 +50,10 @@ const numbers = {
                             <td>${window.ui.escapeHtml(n.service||'-')}</td>
                             <td><span class="badge ${n.status==='active'?'badge-success':'badge-danger'}">${n.status==='active'?'IPRN':window.ui.escapeHtml(n.status)}</span></td>
                             <td>$${Number(n.rate||0).toFixed(4)}</td>
-                            <td><button class="action-btn" onclick="window.numbers.revoke('${n.id}')">Revoke</button></td>
+                            <td style="display:flex;gap:4px">
+                                <button class="action-btn" onclick="window.numbers.revoke('${n.id}')">${ICONS.transfer||'↩'} Revoke</button>
+                                ${isAdmin ? `<button class="action-btn delete" onclick="window.numbers.deleteNumber('${n.id}')">${ICONS.trash}</button>` : ''}
+                            </td>
                         </tr>`).join('')||'<tr class="empty-row"><td colspan="7">No numbers assigned</td></tr>'}</tbody>
                     </table>
                 </div>
@@ -374,7 +391,7 @@ const numbers = {
                                 <span>Available</span><strong style="color:var(--success)">${r._count.available}</strong>
                             </div>
                             <button class="fly-btn" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.weekly_rate ?? r.rate ?? 0)}, ${Number(r.monthly_rate ?? r.rate ?? 0)})" ${disabled ? 'disabled' : ''}>
-                                ${disabled && r._count.available > 0 ? 'Limit Reached' : 'Request Numbers'}
+                                ${disabled && r._count.available > 0 ? 'Limit Reached' : 'Allocate Numbers'}
                             </button>
                         </div>`;
                     }).join('')}
@@ -451,12 +468,22 @@ const numbers = {
                     </div>
                     
                     <div class="form-group">
-                        <label>Step 2: Target User * (Search)</label>
-                        <input type="text" id="ba-user-search" class="fly-input" placeholder="Search users..." oninput="window.numbers.filterBulkUsers(this.value)" style="margin-bottom:10px">
-                        <select id="ba-user" class="fly-input">
-                            <option value="">-- Select User --</option>
-                            ${users.data.map(u => `<option value="${u.id}" data-username="${u.username}" data-role="${u.role}">${u.username} (${u.role})</option>`).join('')}
-                        </select>
+                        <label>Step 2: Target User *</label>
+                        <input type="text" id="ba-user-search" class="fly-input" placeholder="Search by username or role..." oninput="window.numbers.filterBulkUsers(this.value)" style="margin-bottom:8px" autocomplete="off">
+                        <input type="hidden" id="ba-user" value="">
+                        <div id="ba-user-list" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:6px;background:var(--bg-card)">
+                            ${users.data.map(u => `
+                            <div class="ba-user-item" data-id="${u.id}" data-username="${u.username.toLowerCase()}" data-role="${u.role.toLowerCase()}"
+                                 onclick="window.numbers.selectBulkUser(this)"
+                                 style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background .15s;border:1.5px solid transparent">
+                                <div style="flex:1">
+                                    <div style="font-size:13px;font-weight:600">${window.ui.escapeHtml(u.username)}</div>
+                                    <div style="font-size:11px;color:var(--text-secondary)">${u.role}${u.email ? ' · '+window.ui.escapeHtml(u.email) : ''}</div>
+                                </div>
+                                <span class="badge badge-secondary" style="font-size:10px">${u.role}</span>
+                            </div>`).join('')}
+                        </div>
+                        <div id="ba-user-selected" style="display:none;margin-top:8px;padding:10px;background:rgba(99,102,241,.08);border:1.5px solid var(--primary);border-radius:8px;font-size:13px;font-weight:600;color:var(--primary)"></div>
                     </div>
                     
                     <div id="ba-qty-section" style="display:none">
@@ -490,14 +517,27 @@ const numbers = {
         });
     },
 
-    filterBulkUsers(query) {        const options = document.querySelectorAll('#ba-user option');
-        options.forEach(opt => {
-            if (opt.value === '') return; // Always show the placeholder
-            const username = (opt.dataset.username || '').toLowerCase();
-            const role = (opt.dataset.role || '').toLowerCase();
-            const searchText = (username + ' ' + role).includes(query.toLowerCase());
-            opt.style.display = searchText ? '' : 'none';
+    filterBulkUsers(query) {
+        const q = query.toLowerCase();
+        document.querySelectorAll('.ba-user-item').forEach(item => {
+            const match = (item.dataset.username + ' ' + item.dataset.role).includes(q);
+            item.style.display = match ? 'flex' : 'none';
         });
+    },
+
+    selectBulkUser(el) {
+        // Deselect all
+        document.querySelectorAll('.ba-user-item').forEach(i => {
+            i.style.background = '';
+            i.style.borderColor = 'transparent';
+        });
+        // Select clicked
+        el.style.background = 'rgba(99,102,241,.08)';
+        el.style.borderColor = 'var(--primary)';
+        document.getElementById('ba-user').value = el.dataset.id;
+        const sel = document.getElementById('ba-user-selected');
+        sel.style.display = 'block';
+        sel.innerHTML = '✓ Selected: <strong>' + window.ui.escapeHtml(el.querySelector('div div:first-child').textContent) + '</strong>';
     },
 
     updateBulkRanges() {
@@ -569,7 +609,7 @@ const numbers = {
 
     stopLiveAccess() { if (this._laInterval) clearInterval(this._laInterval); },
 
-    async renderUpload(container) {
+    async renderUpload(container, activeTab = 'single') {
         container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
         try {
             const ranges = await window.api.call('/api/ranges');
@@ -577,50 +617,402 @@ const numbers = {
                 <option value="${window.ui.escapeHtml(r.id)}" data-name="${window.ui.escapeHtml(r.name || '')}" data-country="${window.ui.escapeHtml(r.country_name || '')}">
                     ${window.ui.escapeHtml(r.name || '-')} ${r.provider_name ? '- ' + window.ui.escapeHtml(r.provider_name) : ''}
                 </option>`).join('');
+
             container.innerHTML = `
-            <div class="card professional-card upload-panel">
-                <div class="card-header professional-header">
-                    <div>
-                        <div class="card-title">Bulk Import Numbers</div>
-                        <div class="professional-subtitle">Select the destination range first, then paste or upload TXT/CSV numbers.</div>
-                    </div>
-                    <span class="badge badge-info">${(ranges.data || []).length} Ranges</span>
+            <div style="display:flex;flex-direction:column;gap:0">
+                <!-- TAB BAR -->
+                <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
+                    <button id="tab-single" onclick="window.numbers._uploadTab('single')"
+                        style="padding:10px 22px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:${activeTab==='single'?'2px solid var(--primary)':'2px solid transparent'};color:${activeTab==='single'?'var(--primary)':'var(--text-secondary)'};margin-bottom:-2px">
+                        ${ICONS.upload} Import to Existing Range
+                    </button>
+                    <button id="tab-bulk" onclick="window.numbers._uploadTab('bulk')"
+                        style="padding:10px 22px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:${activeTab==='bulk'?'2px solid var(--primary)':'2px solid transparent'};color:${activeTab==='bulk'?'var(--primary)':'var(--text-secondary)'};margin-bottom:-2px">
+                        ${ICONS.layers} Bulk Range Import
+                    </button>
                 </div>
-                <div class="card-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="fly-label" for="up-range">Destination Range *</label>
-                            <select id="up-range" class="fly-input">
-                                <option value="">Select range...</option>
-                                ${options}
-                            </select>
-                            <div class="field-help">Imported numbers become live/assignable numbers in this range.</div>
+
+                <!-- TAB: SINGLE RANGE IMPORT -->
+                <div id="tab-content-single" style="display:${activeTab==='single'?'block':'none'}">
+                <div class="card professional-card upload-panel">
+                    <div class="card-header professional-header">
+                        <div>
+                            <div class="card-title">Import Numbers to Range</div>
+                            <div class="professional-subtitle">Select a range, then paste or upload numbers (TXT/CSV — one per line).</div>
                         </div>
-                        <div class="form-group">
-                            <label class="fly-label" for="up-country">Country Override</label>
-                            <input type="text" id="up-country" class="fly-input" placeholder="Leave blank to use range country">
-                            <div class="field-help">Use only when this batch country differs from the range default.</div>
-                        </div>
+                        <span class="badge badge-info">${(ranges.data || []).length} Ranges</span>
                     </div>
-                    <div class="professional-note">
-                        <strong>Import format</strong>
-                        <span>One number per line. Spaces, dashes, brackets, and 00 prefixes are normalized before saving.</span>
-                    </div>
-                    <div class="form-group">
-                        <div class="upload-toolbar">
-                            <label class="fly-label" for="up-text">Numbers *</label>
-                            <div class="upload-toolbar-actions">
-                                <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('up-file').click()">${ICONS.upload} Upload TXT/CSV</button>
-                                <input type="file" id="up-file" accept=".txt,.csv,text/plain,text/csv" style="display:none" onchange="window.numbers.loadUploadFile(this)">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="fly-label" for="up-range">Destination Range *</label>
+                                <select id="up-range" class="fly-input">
+                                    <option value="">Select range...</option>
+                                    ${options}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="fly-label" for="up-country">Country Override</label>
+                                <input type="text" id="up-country" class="fly-input" placeholder="Leave blank to use range country">
                             </div>
                         </div>
-                        <textarea id="up-text" class="fly-input upload-textarea" rows="12" placeholder="+1234567890&#10;+9876543210&#10;001234567890"></textarea>
+                        <div class="form-group">
+                            <div class="upload-toolbar">
+                                <label class="fly-label" for="up-text">Numbers *</label>
+                                <div class="upload-toolbar-actions">
+                                    <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('up-file').click()">${ICONS.upload} Upload TXT/CSV</button>
+                                    <input type="file" id="up-file" accept=".txt,.csv,text/plain,text/csv" style="display:none" onchange="window.numbers.loadUploadFile(this)">
+                                </div>
+                            </div>
+                            <textarea id="up-text" class="fly-input upload-textarea" rows="10" placeholder="+1234567890&#10;+9876543210&#10;001234567890"></textarea>
+                        </div>
+                        <button class="fly-btn upload-submit-btn" onclick="window.numbers.doUpload()">${ICONS.upload} Import Numbers</button>
                     </div>
-                    <button class="fly-btn upload-submit-btn" onclick="window.numbers.doUpload()">${ICONS.upload} Import Numbers</button>
+                </div>
+                </div>
+
+                <!-- TAB: BULK RANGE IMPORT -->
+                <div id="tab-content-bulk" style="display:${activeTab==='bulk'?'block':'none'}">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">${ICONS.layers} Bulk Range Import</div>
+                            <div class="professional-subtitle">Upload a provider file (CSV / Excel / TXT). Ranges are auto-created per termination with correct names and rates.</div>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display:flex;flex-direction:column;gap:18px">
+
+                        <!-- Rate formula info -->
+                        <div style="background:rgba(99,102,241,.06);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px">
+                            <strong>Auto Payout Formula:</strong>
+                            Provider 0.025 → Our 0.018 &nbsp;|&nbsp;
+                            Provider 0.020 → Our 0.015 &nbsp;|&nbsp;
+                            Provider 0.015 → Our 0.012 &nbsp;|&nbsp;
+                            Provider 0.010 → Our 0.008<br>
+                            <strong>Range Name Format:</strong> <code>Country Operator SSP MonthDay</code> — e.g. <em>Afghanistan Awcc Red SSP Jul 10</em>
+                        </div>
+
+                        <!-- Import type toggle -->
+                        <div style="display:flex;gap:16px;align-items:center;padding:12px;background:var(--bg-page);border-radius:8px;border:1px solid var(--border)">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                                <input type="radio" name="bri-type" value="active" id="bri-type-active" checked style="accent-color:var(--primary)">
+                                <span>IPRN Numbers <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">(live, assignable to resellers)</span></span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                                <input type="radio" name="bri-type" value="test" id="bri-type-test" style="accent-color:var(--primary)">
+                                <span>Test Numbers <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">(show in Test Panel for testing)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Provider name (for TXT files) -->
+                        <div class="form-group">
+                            <label class="fly-label">Provider Name <span style="font-size:11px;color:var(--text-secondary)">(required for plain TXT, optional for CSV/Excel)</span></label>
+                            <input type="text" id="bri-provider" class="fly-input" placeholder="e.g. IPRN, Telecom1..." style="max-width:340px">
+                        </div>
+
+                        <!-- File upload drop zone -->
+                        <div id="bri-dropzone"
+                            style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s"
+                            onclick="document.getElementById('bri-file').click()"
+                            ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='rgba(99,102,241,.04)'"
+                            ondragleave="this.style.borderColor='';this.style.background=''"
+                            ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';window.numbers.brHandleDrop(event)">
+                            <div style="font-size:32px;margin-bottom:8px">${ICONS.upload}</div>
+                            <div style="font-weight:700;font-size:14px">Drop file here or click to browse</div>
+                            <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Supports CSV, Excel (.xlsx/.xls), TXT · Max 25 MB</div>
+                            <input type="file" id="bri-file" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="window.numbers.brLoadFile(this)">
+                        </div>
+
+                        <!-- File selected indicator -->
+                        <div id="bri-file-info" style="display:none;padding:10px 14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:13px;font-weight:600;color:var(--success)"></div>
+
+                        <!-- TXT auto-detect result -->
+                        <div id="bri-txt-extra" style="display:none"></div>
+
+                        <!-- TXT-only: payout details form -->
+                        <div id="bri-txt-extra" style="display:none;background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:16px">
+                            <div style="font-weight:700;font-size:13px;margin-bottom:12px">📋 Plain TXT detected — enter payout details to auto-create range</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                                <div class="form-group">
+                                    <label class="fly-label">Country *</label>
+                                    <input type="text" id="bri-txt-country" class="fly-input" placeholder="e.g. Pakistan">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fly-label">Telecom Operator *</label>
+                                    <input type="text" id="bri-txt-operator" class="fly-input" placeholder="e.g. Ufone, Jazz, Zong">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fly-label">Provider Monthly Rate ($) *</label>
+                                    <input type="number" id="bri-txt-monthly" class="fly-input" placeholder="0.025" step="0.001" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fly-label">Provider Weekly Rate ($)</label>
+                                    <input type="number" id="bri-txt-weekly" class="fly-input" placeholder="0.015" step="0.001" min="0">
+                                </div>
+                            </div>
+                            <div id="bri-txt-rate-preview" style="font-size:12px;color:var(--text-secondary)">
+                                Enter rates above to see your payout.
+                            </div>
+                        </div>
+
+                        <!-- Preview table -->
+                        <div id="bri-preview" style="display:none"></div>
+
+                        <!-- Buttons -->
+                        <div style="display:flex;gap:10px;flex-wrap:wrap">
+                            <button class="fly-btn secondary" onclick="window.numbers.brPreview()" id="bri-preview-btn" disabled>${ICONS.eye} Preview Ranges</button>
+                            <button class="fly-btn" onclick="window.numbers.brImport()" id="bri-import-btn" style="display:none">${ICONS.upload} Import All</button>
+                        </div>
+                        <div id="bri-result" style="display:none"></div>
+                    </div>
+                </div>
                 </div>
             </div>`;
         } catch (e) {
             container.innerHTML = `<div class="empty-state"><h3>Unable to load upload tool</h3><p>${window.ui.escapeHtml(e.message)}</p></div>`;
+        }
+    },
+
+    _uploadTab(tab) {
+        window.numbers.renderUpload(document.getElementById('page-content'), tab);
+    },
+
+    brHandleDrop(event) {
+        const file = event.dataTransfer?.files?.[0];
+        if (!file) return;
+        const input = document.getElementById('bri-file');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        window.numbers.brLoadFile(input);
+    },
+
+    brLoadFile(input) {
+        const file = input?.files?.[0];
+        if (!file) return;
+        window._briFile = file;
+        const info     = document.getElementById('bri-file-info');
+        const previewBtn = document.getElementById('bri-preview-btn');
+        const importBtn  = document.getElementById('bri-import-btn');
+        const preview  = document.getElementById('bri-preview');
+        const txtExtra = document.getElementById('bri-txt-extra');
+        if (info) { info.style.display = 'block'; info.textContent = '✓ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)'; }
+        if (importBtn) importBtn.style.display = 'none';
+        if (preview) preview.style.display = 'none';
+
+        // TXT file = plain numbers only — ask for payout details before preview
+        const isTxt = file.name.toLowerCase().endsWith('.txt');
+        if (txtExtra) txtExtra.style.display = isTxt ? 'block' : 'none';
+        if (previewBtn) {
+            previewBtn.disabled = false;
+            previewBtn.textContent = isTxt ? '⚙️ Set Details & Preview' : '👁 Preview Ranges';
+        }
+    },
+
+    brRateHint2(input) {
+        const m = parseFloat(input?.value||0)||0;
+        const country = input?.dataset?.country||'';
+        const ourM = m>=0.025?0.018:m>=0.020?0.015:m>=0.015?0.012:m>=0.010?0.008:m>0?Math.round(m*0.75*10000)/10000:0;
+        const hid = 'hint-'+country.replace(/[^a-zA-Z0-9]/g,'_');
+        const h = document.getElementById(hid);
+        if (h) h.textContent = m ? ('Your rate: $'+ourM.toFixed(4)) : '';
+    },
+
+    async brImportTxt(groupsJson) {
+        const groups = typeof groupsJson === 'string' ? JSON.parse(groupsJson) : groupsJson;
+        const token = localStorage.getItem('token');
+        const file  = window._briFile;
+        const isTest = document.getElementById('bri-type-test')?.checked;
+        if (!file) { window.ui.showToast('No file selected','error'); return; }
+
+        // Collect per-country rates
+        const countryRates = {};
+        let valid = true;
+        document.querySelectorAll('.bri-monthly').forEach(inp => {
+            const country = inp.dataset.country;
+            const m = parseFloat(inp.value||0)||0;
+            if (!m) { window.ui.showToast('Please set monthly rate for '+country,'error'); valid=false; return; }
+            const wEl = document.querySelector('.bri-weekly[data-country="'+CSS.escape(country)+'"]');
+            const oEl = document.querySelector('.bri-otp-limit[data-country="'+CSS.escape(country)+'"]');
+            countryRates[country] = {
+                monthly: m,
+                weekly: parseFloat(wEl?.value||0)||0,
+                otpLimit: parseInt(oEl?.value||0)||0
+            };
+        });
+        if (!valid || Object.keys(countryRates).length===0) return;
+
+        let totalAdded=0, totalSkipped=0, rangesCreated=0, allRanges=[];
+        const btn = document.querySelector('[onclick*="brImportTxt"]');
+        if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner spinner-inline"></span> Importing...'; }
+
+        for (const g of groups) {
+            const rates = countryRates[g.country];
+            if (!rates) continue;
+            const form = new FormData();
+            form.append('file', file);
+            form.append('providerName', g.country.toUpperCase()+' - Auto');
+            form.append('overrideMonthly', rates.monthly);
+            form.append('overrideWeekly',  rates.weekly||0);
+            form.append('countryFilter',   g.country);
+            if (isTest) form.append('importAsTest','1');
+            try {
+                const r = await fetch('/api/numbers-ext/bulk-range-import',
+                    {method:'POST',headers:{'Authorization':'Bearer '+token},body:form});
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.detail||'Import failed');
+                totalAdded   += d.totalAdded||0;
+                totalSkipped += d.totalSkipped||0;
+                rangesCreated += (d.ranges||[]).filter(x=>x.isNew).length;
+                allRanges.push(...(d.ranges||[]));
+            } catch(e) { window.ui.showToast('Error for '+g.country+': '+e.message,'error'); }
+        }
+        window.api.invalidate('/api/ranges');
+        window.api.invalidate('/api/numbers');
+        window._briFile=null; window._briCountriesDetected=false;
+        if (btn) { btn.disabled=false; btn.innerHTML=(ICONS.upload||'↑')+' Import All Countries'; }
+
+        const resultDiv = document.getElementById('bri-result');
+        if (resultDiv) {
+            resultDiv.style.display='block';
+            resultDiv.innerHTML = '<div style="padding:16px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.25);border-radius:8px">'
+                +'<div style="font-size:15px;font-weight:700;color:var(--success);margin-bottom:6px">✓ Import Complete</div>'
+                +'<div style="font-size:13px">'+totalAdded+' numbers · '+totalSkipped+' duplicates · '+rangesCreated+' new ranges</div>'
+                +allRanges.map(r=>'<div style="font-size:11px;color:var(--text-secondary);margin-top:3px">'
+                    +window.ui.escapeHtml(r.rangeName)+' — '+r.added+' numbers · $'+Number(r.ourMonthly).toFixed(4)+'/SMS</div>').join('')
+                +'</div>';
+        }
+        window.ui.showToast(totalAdded+' numbers into '+rangesCreated+' range(s)','success');
+    },
+
+        async brPreview() {
+        const file = window._briFile;
+        if (!file) { window.ui.showToast('Please select a file first', 'error'); return; }
+
+        const isTxt = file.name.toLowerCase().endsWith('.txt');
+
+        // TXT: always auto-detect countries, never use standard preview
+        if (isTxt) {
+            const previewBtn = document.getElementById('bri-preview-btn');
+            const txtExtra   = document.getElementById('bri-txt-extra');
+            if (previewBtn) { previewBtn.disabled=true; previewBtn.innerHTML='<span class="spinner spinner-inline"></span> Detecting countries...'; }
+            try {
+                const fd = new FormData(); fd.append('file', file);
+                const tok = localStorage.getItem('token');
+                const r = await fetch('/api/numbers-ext/preview-txt', {method:'POST',headers:{'Authorization':'Bearer '+tok},body:fd});
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.detail||'Detection failed');
+                if (!d.groups||d.groups.length===0) { window.ui.showToast('No recognisable country prefixes found','error'); return; }
+                const dateLabel = new Date().toLocaleString('en',{month:'short',day:'numeric'});
+                if (txtExtra) {
+                    txtExtra.style.display='block';
+                    txtExtra.innerHTML = `<div style="background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:16px">
+                        <div style="font-weight:700;font-size:14px;margin-bottom:4px">📊 ${d.groups.length} countries · ${d.total} numbers${d.undetected?` <span class='badge badge-warning'>${d.undetected} unrecognised</span>`:''}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">Set rates per country. Range auto-named: e.g. <em>${d.groups[0]?.country||'Russia'} SSP ${dateLabel}</em></div>
+                        <div style="display:flex;flex-direction:column;gap:10px">
+                        ${d.groups.map(g=>`<div style="padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+                            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+                                <div style="font-weight:700;font-size:13px">${window.ui.escapeHtml(g.country)} <span class="badge badge-secondary">${g.count} numbers</span></div>
+                                <div style="font-size:11px;color:var(--text-secondary)">${g.sample.slice(0,2).map(n=>window.ui.escapeHtml(n)).join(', ')}${g.count>2?'...':''}</div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;align-items:end">
+                                <div><label style="font-size:11px;color:var(--text-secondary)">Monthly Rate ($)*</label>
+                                    <input type="number" class="fly-input bri-monthly" data-country="${window.ui.escapeHtml(g.country)}" placeholder="0.025" step="0.001" min="0" style="margin-top:2px" oninput="window.numbers.brRateHint2(this)"></div>
+                                <div><label style="font-size:11px;color:var(--text-secondary)">Weekly Rate ($)</label>
+                                    <input type="number" class="fly-input bri-weekly" data-country="${window.ui.escapeHtml(g.country)}" placeholder="0.015" step="0.001" min="0" style="margin-top:2px"></div>
+                                <div><label style="font-size:11px;color:var(--text-secondary)">Daily OTP Limit</label>
+                                    <input type="number" class="fly-input bri-otp-limit" data-country="${window.ui.escapeHtml(g.country)}" placeholder="Unlimited" min="0" style="margin-top:2px"></div>
+                                <div id="hint-${window.ui.escapeHtml(g.country).replace(/[^a-zA-Z0-9]/g,'_')}" style="font-size:11px;color:var(--success);font-weight:600;padding-top:18px"></div>
+                            </div>
+                        </div>`).join('')}
+                        </div>
+                        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                            <button class="fly-btn" onclick="window.numbers.brImportTxt(${JSON.stringify(d.groups).replace(/"/g,'&quot;')})">
+                                ${ICONS.upload||'↑'} Import ${d.total} Numbers → ${d.groups.length} Ranges
+                            </button>
+                        </div>
+                    </div>`;
+                }
+            } catch(e) { window.ui.showToast(e.message,'error'); }
+            finally { if (previewBtn) { previewBtn.disabled=false; previewBtn.innerHTML=(ICONS.eye||'👁')+' Re-detect Countries'; } }
+            return;
+        }
+
+        // CSV/Excel: standard bulk preview
+        const provider = document.getElementById('bri-provider')?.value.trim() || '';
+        const previewDiv = document.getElementById('bri-preview');
+        const previewBtn = document.getElementById('bri-preview-btn');
+        const importBtn  = document.getElementById('bri-import-btn');
+        if (previewBtn) { previewBtn.disabled=true; previewBtn.innerHTML='<span class="spinner spinner-inline"></span> Parsing...'; }
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('providerName', provider);
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/numbers-ext/bulk-range-import?preview=1', {method:'POST',headers:{'Authorization':'Bearer '+token},body:form});
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail||'Parse failed');
+            const ranges = data.ranges||[];
+            let html = `<div class="card" style="margin-top:0">
+                <div class="card-header"><div class="card-title">Preview — ${ranges.length} Range(s) · ${data.totalAdded} Numbers</div></div>
+                <div class="table-wrapper"><table class="fly-table">
+                    <thead><tr><th>Range Name</th><th>Termination</th><th>Numbers</th><th>Provider Monthly</th><th>Our Monthly</th><th>Provider Weekly</th><th>Our Weekly</th><th>Currency</th><th>Status</th></tr></thead>
+                    <tbody>${ranges.map(r=>`<tr>
+                        <td><strong>${window.ui.escapeHtml(r.rangeName)}</strong></td>
+                        <td style="font-size:11px;color:var(--text-secondary)">${window.ui.escapeHtml(r.termination)}</td>
+                        <td><span class="badge badge-secondary">${r.added}</span></td>
+                        <td><span class="badge badge-info">$${Number(r.providerMonthly).toFixed(4)}</span></td>
+                        <td><span class="badge badge-success">$${Number(r.ourMonthly).toFixed(4)}</span></td>
+                        <td><span class="badge badge-info">$${Number(r.providerWeekly).toFixed(4)}</span></td>
+                        <td><span class="badge badge-success">$${Number(r.ourWeekly).toFixed(4)}</span></td>
+                        <td>${window.ui.escapeHtml(r.currency)}</td>
+                        <td>${r.isNew?'<span class="badge badge-primary">New</span>':'<span class="badge badge-warning">Update</span>'}</td>
+                    </tr>`).join('')}</tbody>
+                </table></div></div>`;
+            if (previewDiv) { previewDiv.style.display='block'; previewDiv.innerHTML=html; }
+            if (importBtn) importBtn.style.display='inline-flex';
+        } catch(e) { window.ui.showToast(e.message,'error'); }
+        finally { if (previewBtn) { previewBtn.disabled=false; previewBtn.innerHTML=(ICONS.eye||'👁')+' Preview Ranges'; } }
+    },
+
+    async brImport() {
+        const file = window._briFile;
+        if (!file) { window.ui.showToast('No file selected', 'error'); return; }
+        const provider = document.getElementById('bri-provider')?.value.trim() || '';
+        const importBtn = document.getElementById('bri-import-btn');
+        const resultDiv = document.getElementById('bri-result');
+        if (importBtn) { importBtn.disabled = true; importBtn.innerHTML = '<span class="spinner spinner-inline"></span> Importing...'; }
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('providerName', provider);
+            const isTest = document.getElementById('bri-type-test')?.checked;
+            if (isTest) form.append('importAsTest', '1');
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/numbers-ext/bulk-range-import', {
+                method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Import failed');
+
+            window.api.invalidate('/api/ranges');
+            window.api.invalidate('/api/numbers');
+            window._briFile = null;
+            window._briCountriesDetected = false;
+
+            if (resultDiv) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<div style="padding:16px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.25);border-radius:8px">
+                    <div style="font-size:15px;font-weight:700;color:var(--success);margin-bottom:8px">✓ ${data.message}</div>
+                    <div style="font-size:12px;color:var(--text-secondary)">${data.totalAdded} numbers added · ${data.totalSkipped} duplicates skipped · ${(data.ranges||[]).filter(r=>r.isNew).length} new ranges created</div>
+                </div>`;
+            }
+            window.ui.showToast(data.message, 'success');
+            if (importBtn) importBtn.style.display = 'none';
+        } catch (e) {
+            window.ui.showToast(e.message, 'error');
+        } finally {
+            if (importBtn) { importBtn.disabled = false; importBtn.innerHTML = (ICONS.upload||'') + ' Import All'; }
         }
     },
 

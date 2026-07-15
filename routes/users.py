@@ -6,7 +6,7 @@ from typing import Optional
 import re
 from database import get_db
 from audit_utils import log_audit
-from auth import verify_token, extract_token, generate_id, hash_password
+from auth import verify_token, extract_token, generate_id, hash_password, verify_password
 from routes.deps import get_current_user, require_role
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -294,6 +294,26 @@ async def get_user_profile(item_id: str, p=Depends(get_current_user)):
         data = dict(user)
         data.pop("password", None)
         return data
+
+@router.post("/me/password")
+async def change_own_password(body: dict, request: Request, p=Depends(get_current_user)):
+    """Change the currently logged-in user's own password (requires current password)."""
+    current = (body.get("currentPassword") or "").strip()
+    new_pw  = (body.get("newPassword") or "").strip()
+    if not current:
+        raise HTTPException(400, "Current password is required")
+    if len(new_pw) < 6:
+        raise HTTPException(400, "New password must be at least 6 characters")
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE id=?", (p["id"],)).fetchone()
+        if not user:
+            raise HTTPException(404, "User not found")
+        if not verify_password(current, user["password"]):
+            raise HTTPException(400, "Current password is incorrect")
+        conn.execute("UPDATE users SET password=?, updated_at=datetime('now') WHERE id=?",
+                     (hash_password(new_pw), p["id"]))
+        log_audit(conn, p, "password_changed", "user", p["id"], "Password changed via profile", request)
+    return {"message": "Password updated successfully"}
 
 @router.get("/{item_id}/logs")
 async def get_user_logs(item_id: str, p=Depends(require_role(["admin", "manager"]))):
