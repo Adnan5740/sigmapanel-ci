@@ -279,7 +279,33 @@ function renderDashboardShell() {
             <button class="mobile-menu-btn" id="mobile-menu-btn">${ICONS.menu}</button>
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <aside class="sidebar" id="sidebar">
-                <div class="sidebar-logo"><div class="sidebar-logo-icon">${ICONS.send}</div><div><h1>SIGMAPANEL</h1><p>Telecom Infrastructure</p></div></div>
+                <div class="sidebar-logo">
+                <div class="ssp-sidebar-logo">
+                    <div class="ssp-sidebar-icon">
+                        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="6" width="22" height="15" rx="4" stroke="url(#si1)" stroke-width="1.6"/>
+                            <path d="M6 22 L4 28 L12 24" stroke="url(#si1)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="6" y1="12" x2="18" y2="12" stroke="white" stroke-width="1.3" stroke-opacity="0.5" stroke-linecap="round"/>
+                            <line x1="6" y1="16" x2="15" y2="16" stroke="url(#si1)" stroke-width="1.3" stroke-linecap="round"/>
+                            <circle cx="20" cy="16" r="1.8" fill="#00FFA3"/>
+                            <path d="M25 5 Q30 5 30 11" stroke="#00C6FF" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-opacity="0.6"/>
+                            <path d="M27 3 Q32 3 32 12" stroke="#00C6FF" stroke-width="1" fill="none" stroke-linecap="round" stroke-opacity="0.3"/>
+                            <circle cx="25" cy="5" r="1.4" fill="#00FFA3"/>
+                            <defs>
+                                <linearGradient id="si1" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#00C6FF"/>
+                                    <stop offset="100%" stop-color="#00FFA3"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="ssp-sidebar-text">
+                        <div class="ssp-sidebar-wordmark"><span class="ssp-s">SS</span><span class="ssp-p">P</span></div>
+                        <div class="ssp-sidebar-sub">Sigma SMS</div>
+                        <div class="ssp-sidebar-tag">A2P SMS Power</div>
+                    </div>
+                </div>
+                </div>
                 <nav class="sidebar-nav">${sidebarNav}</nav>
                 <div class="sidebar-user">
                     <div class="sidebar-user-info">${window.ui.renderUserAvatar(user, 'sidebar-user-avatar')}<div><div class="sidebar-user-name">${user.full_name || user.fullName || user.username}</div><div class="sidebar-user-role">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
