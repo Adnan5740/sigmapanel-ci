@@ -290,6 +290,7 @@ function renderDashboardShell() {
                 <header class="top-bar">
                     <h2 class="top-bar-title" id="page-title">Dashboard</h2>
                     <div class="top-bar-actions">
+                        ${window.ui.themeToggleHtml()}
                         <button class="top-bar-logout" id="top-logout-btn" title="Logout">${ICONS.logout}<span>Logout</span></button>
                         <div class="top-bar-user">${window.ui.renderUserAvatar(user, 'top-bar-avatar')}<div class="top-bar-user-name"><div>${user.username}</div><div style="font-size:10px; color:#6B7280">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
                     </div>

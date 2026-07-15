@@ -2,36 +2,126 @@
    VARIABLES
 ═══════════════════════════════════════ */
 :root {
+  /* ── Brand ─────────────────────────── */
   --primary: #6366f1;
   --primary-dark: #4f46e5;
   --primary-light: rgba(99,102,241,0.1);
   --primary-glow: rgba(99,102,241,0.25);
-  --bg-page: #f1f5f9;
+
+  /* ── Semantic colors ───────────────── */
+  --color-danger: #ef4444;
+  --color-danger-ring: rgba(239,68,68,0.2);
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  --color-focus-ring: rgba(99,102,241,0.22);
+  --color-border-hover: #a5b4fc;
+  --color-input-bg: #ffffff;
+
+  /* ── Surfaces (light) ──────────────── */
+  --bg-page: #f0f2f8;
   --bg-card: #ffffff;
   --sidebar-bg: #0f172a;
   --sidebar-hover: rgba(255,255,255,0.07);
   --sidebar-active: rgba(99,102,241,0.9);
+  --color-topbar-bg: rgba(255,255,255,0.88);
+
+  /* ── Text ──────────────────────────── */
   --text-primary: #0f172a;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
+
+  /* ── Borders ───────────────────────── */
   --border: #e2e8f0;
-  --danger: #ef4444;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --info: #3b82f6;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
-  --card-shadow-hover: 0 8px 24px rgba(0,0,0,0.08),0 2px 8px rgba(0,0,0,0.04);
+
+  /* ── Shorthand aliases (kept for legacy rules) ── */
+  --danger: var(--color-danger);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --info: var(--color-info);
+
+  /* ── Shadows ───────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.08),0 2px 8px rgba(0,0,0,0.04);
+  --shadow-lg: 0 25px 60px rgba(0,0,0,0.18);
+  --card-shadow: var(--shadow-sm);
+  --card-shadow-hover: var(--shadow-md);
+
+  /* ── Spacing scale ─────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* ── Radii ─────────────────────────── */
   --radius: 12px;
   --radius-sm: 8px;
   --radius-xs: 6px;
+
+  /* ── Typography ────────────────────── */
+  --font-size-sm: clamp(11px, 0.7vw + 0.3rem, 13px);
+  --font-size-base: clamp(13px, 0.85vw + 0.4rem, 15px);
+  --font-size-lg: clamp(15px, 1vw + 0.5rem, 18px);
+
+  /* ── Durations ─────────────────────── */
+  --duration-fast: 0.15s;
+  --duration-base: 0.22s;
+  --duration-slow: 0.35s;
   --transition: 0.18s ease;
+
+  /* ── Z-index ───────────────────────── */
+  --z-sidebar: 200;
+  --z-topbar: 50;
+  --z-modal: 1000;
+  --z-toast: 9999;
+}
+
+/* ═══════════════════════════════════════
+   DARK MODE TOKENS
+═══════════════════════════════════════ */
+[data-theme="dark"] {
+  /* Surfaces */
+  --bg-page: #0f172a;
+  --bg-card: #1e293b;
+  --sidebar-bg: #0d1424;
+  --sidebar-hover: rgba(255,255,255,0.06);
+  --sidebar-active: rgba(99,102,241,0.85);
+  --color-topbar-bg: rgba(15,23,42,0.92);
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Border */
+  --border: rgba(255,255,255,0.08);
+  --color-border-hover: rgba(255,255,255,0.2);
+
+  /* Input */
+  --color-input-bg: #1e293b;
+  --primary-light: rgba(99,102,241,0.18);
+
+  /* Shadows adapt to dark bg */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3),0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.4),0 2px 8px rgba(0,0,0,0.2);
+  --shadow-lg: 0 25px 60px rgba(0,0,0,0.5);
+  --card-shadow: var(--shadow-sm);
+  --card-shadow-hover: var(--shadow-md);
 }
 
 /* ═══════════════════════════════════════
    RESET
 ═══════════════════════════════════════ */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.875rem;line-height:1.5;color:var(--text-primary);background:var(--bg-page);-webkit-font-smoothing:antialiased;overflow-x:hidden;width:100%}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:var(--font-size-base);line-height:1.5;color:var(--text-primary);background:var(--bg-page);-webkit-font-smoothing:antialiased;overflow-x:hidden;width:100%;transition:background var(--duration-base) ease,color var(--duration-base) ease}
+h1{font-size:clamp(20px,2vw+0.5rem,28px)}
+h2{font-size:clamp(17px,1.5vw+0.4rem,22px)}
+h3{font-size:clamp(15px,1.2vw+0.3rem,18px)}
+h4{font-size:clamp(13px,1vw+0.25rem,16px)}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(99,102,241,.25);border-radius:10px}

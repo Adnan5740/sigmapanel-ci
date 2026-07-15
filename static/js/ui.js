@@ -274,6 +274,56 @@ const ui = {
 
     copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => this.showToast('Copied to clipboard', 'success'));
+    },
+
+    /* ─── Theme Toggle ─────────────────────────────────────────── */
+    _themeKey: 'sigmapanel-theme',
+
+    getTheme() {
+        return localStorage.getItem(this._themeKey) ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    },
+
+    setTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        localStorage.setItem(this._themeKey, theme);
+        // Update all toggle button aria-labels
+        document.querySelectorAll('.theme-toggle').forEach(btn => {
+            btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        });
+    },
+
+    toggleTheme() {
+        const current = this.getTheme();
+        this.setTheme(current === 'dark' ? 'light' : 'dark');
+    },
+
+    themeToggleHtml() {
+        const theme = this.getTheme();
+        const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+        return `<button class="theme-toggle" role="button" aria-label="${label}" onclick="window.ui.toggleTheme()" tabindex="0">
+            <svg class="icon-moon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>`;
+    },
+
+    /* Inject skip link + apply saved theme on shell render */
+    initAccessibility() {
+        // Skip link
+        if (!document.getElementById('skip-link')) {
+            const skip = document.createElement('a');
+            skip.id = 'skip-link';
+            skip.className = 'skip-link';
+            skip.href = '#page-content';
+            skip.textContent = 'Skip to main content';
+            document.body.insertAdjacentElement('afterbegin', skip);
+        }
+        // Ensure saved theme is applied (belt-and-suspenders after JS load)
+        this.setTheme(this.getTheme());
     }
 };
 
@@ -340,6 +390,9 @@ window.ui = ui;
 window.ICONS = ICONS;
 
 window.addEventListener('load', () => {
+    // Apply theme & inject skip link
+    ui.initAccessibility();
+
     // Session timeout
     let lastActivity = Date.now();
     const TIMEOUT = 30 * 60 * 1000;
