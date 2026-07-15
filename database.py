@@ -112,6 +112,20 @@ def _migrate(conn):
     add_col("smpp_remote_servers", "last_connected", "TEXT")
     add_col("smpp_remote_servers", "last_disconnected", "TEXT")
     add_col("smpp_remote_servers", "last_error", "TEXT")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS smpp_remote_sessions (
+            id TEXT PRIMARY KEY,
+            server_id TEXT NOT NULL,
+            server_name TEXT,
+            host TEXT,
+            port INTEGER,
+            system_id TEXT,
+            bind_type TEXT,
+            status TEXT DEFAULT 'active',
+            connected_at TEXT DEFAULT (datetime('now')),
+            last_activity TEXT DEFAULT (datetime('now'))
+        )
+    """)
     # providers table — add all columns added in full schema
     add_col("providers", "api_token", "TEXT")
     add_col("providers", "api_method", "TEXT DEFAULT 'POST'")

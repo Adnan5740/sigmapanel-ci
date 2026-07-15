@@ -31,11 +31,9 @@ async def list_servers(p=Depends(require_role(["admin", "manager"]))):
 
 @router.post("/servers")
 async def create_server(body: dict, p=Depends(require_role(["admin", "manager"]))):
-    # Validate provider connection (requires host and port)
     connection_type = body.get("connection_type", "provider_connection")
     
     if connection_type == "provider_connection":
-        # Provider connection requires Host/IP and Port
         host = body.get("host", "").strip()
         port = body.get("port")
         
@@ -44,18 +42,28 @@ async def create_server(body: dict, p=Depends(require_role(["admin", "manager"])
         if not port or port < 1 or port > 65535:
             raise HTTPException(400, "Valid port (1-65535) is required for provider connection")
     
-    # Validate common fields
     system_id = body.get("system_id", "").strip()
     password = body.get("password", "").strip()
+    bind_type = body.get("bind_type", "transceiver").strip().lower()
     
+    if bind_type not in ("transceiver", "transmitter", "receiver"):
+        raise HTTPException(400, "bind_type must be transceiver, transmitter, or receiver")
     if not system_id:
         raise HTTPException(400, "System ID is required")
     if not password:
         raise HTTPException(400, "Password is required")
     
     with get_db() as conn:
+        if connection_type == "provider_connection":
+            dup = conn.execute(
+                "SELECT id FROM smpp_remote_servers WHERE host=? AND port=? AND system_id=?",
+                (body.get("host", "").strip(), int(body.get("port", 0)), system_id),
+            ).fetchone()
+            if dup:
+                raise HTTPException(409, "This host/port/system_id connection already exists")
+
         sid = generate_id()
-        name = body.get("name") or f"{body.get('system_id')}-{connection_type}"
+        name = body.get("name") or f"{system_id}-{connection_type}"
         
         conn.execute(
             """INSERT INTO smpp_remote_servers
@@ -64,9 +72,9 @@ async def create_server(body: dict, p=Depends(require_role(["admin", "manager"])
                 enquire_link_interval, dlr_enabled, allowed_ips)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (sid, name, body.get("host", ""), int(body.get("port", 0)) if body.get("port") else 0,
-             system_id, password, body.get("bind_type", "transceiver"),
+             system_id, password, bind_type,
              1, int(body.get("priority", 1)), "pending", int(body.get("throughput_limit", 10)),
-             int(body.get("src_ton", 1)), int(body.get("src_npi", 1)),
+             int(body.get("src_ton", 0)), int(body.get("src_npi", 0)),
              int(body.get("dst_ton", 1)), int(body.get("dst_npi", 1)),
              int(body.get("enquire_link_interval", 30)), 1 if body.get("dlr_enabled", 1) else 0,
              body.get("allowed_ips"))
@@ -141,7 +149,24 @@ async def delete_server_account(aid: str, p=Depends(require_role(["admin"]))):
 @router.get("/server-sessions")
 async def get_server_sessions(p=Depends(require_role(["admin", "manager"]))):
     with get_db() as conn:
-        rows = conn.execute("SELECT * FROM smpp_server_sessions").fetchall()
+        inbound = conn.execute("SELECT *, 'inbound' AS direction FROM smpp_server_sessions").fetchall()
+        outbound = conn.execute("SELECT *, 'outbound' AS direction FROM smpp_remote_sessions").fetchall()
+    data = []
+    for row in inbound:
+        item = dict(row)
+        item["session_type"] = "inbound"
+        data.append(item)
+    for row in outbound:
+        item = dict(row)
+        item["session_type"] = "outbound"
+        item["ip_address"] = f"{item.get('host')}:{item.get('port')}"
+        data.append(item)
+    return {"data": data}
+
+@router.get("/remote-sessions")
+async def get_remote_sessions(p=Depends(require_role(["admin", "manager"]))):
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM smpp_remote_sessions ORDER BY connected_at DESC").fetchall()
     return {"data": [dict(r) for r in rows]}
 
 @router.get("/server-logs")
@@ -166,7 +191,9 @@ async def get_failed_packets(p=Depends(require_role(["admin", "manager"]))):
 async def get_smpp_stats(p=Depends(require_role(["admin", "manager"]))):
     minute_start = (datetime.utcnow() - timedelta(minutes=1)).isoformat()
     with get_db() as conn:
-        sessions = conn.execute("SELECT COUNT(*) FROM smpp_server_sessions").fetchone()[0]
+        inbound = conn.execute("SELECT COUNT(*) FROM smpp_server_sessions").fetchone()[0]
+        outbound = conn.execute("SELECT COUNT(*) FROM smpp_remote_sessions WHERE status='active'").fetchone()[0]
+        sessions = inbound + outbound
         remote_total = conn.execute("SELECT COUNT(*) FROM smpp_remote_servers").fetchone()[0]
         remote_enabled = conn.execute("SELECT COUNT(*) FROM smpp_remote_servers WHERE is_active=1").fetchone()[0]
         msg_today = conn.execute("SELECT COUNT(*) FROM sms_received WHERE received_at >= date('now')").fetchone()[0]

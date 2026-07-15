@@ -6,7 +6,6 @@ PYTHON="$(dirname "$0")/venv/bin/python3"
 UVICORN="$(dirname "$0")/venv/bin/uvicorn"
 BASE="$(dirname "$0")"
 
-# Stop stale background workers from previous restarts
 for proc in smpp_server.py worker.py smpp_client_manager.py; do
     pkill -f "${BASE}/${proc}" 2>/dev/null || true
 done

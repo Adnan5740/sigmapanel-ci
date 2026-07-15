@@ -78,7 +78,7 @@ const smppInterconnect = {
 
             const servers = res.data || [];
             document.getElementById('server-count').textContent = servers.length;
-            document.getElementById('active-sessions').textContent = servers.filter(s => ['connected','pending'].includes(s.status)).length;
+            document.getElementById('active-sessions').textContent = servers.filter(s => s.status === 'connected').length;
 
             body.innerHTML = servers.map(s => `
                 <tr>

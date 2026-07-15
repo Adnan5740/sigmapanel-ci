@@ -65,7 +65,18 @@ const smpp = {
                 </div>
                 <div class="form-row"><div class="form-group"><label>Host/IP *</label><input type="text" id="p-host" class="fly-input" placeholder="smtp.provider.com"></div><div class="form-group"><label>Port *</label><input type="number" id="p-port" class="fly-input" value="2775"></div></div>
                 <div class="form-row"><div class="form-group"><label>System ID *</label><input type="text" id="p-sid" class="fly-input"></div><div class="form-group"><label>Password *</label><input type="password" id="p-pass" class="fly-input"></div></div>
-                <div class="form-row"><div class="form-group"><label>Company</label><input type="text" id="p-comp" class="fly-input"></div><div class="form-group"><label>Limit (msg/s)</label><input type="number" id="p-lim" class="fly-input" value="10" min="1"></div></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bind Mode *</label>
+                        <select id="p-bind" class="fly-input">
+                            <option value="transceiver" selected>Transceiver (send + receive)</option>
+                            <option value="receiver">Receiver (receive SMS only)</option>
+                            <option value="transmitter">Transmitter (send SMS only)</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Limit (msg/s)</label><input type="number" id="p-lim" class="fly-input" value="10" min="1"></div>
+                </div>
+                <div class="form-row"><div class="form-group"><label>Company</label><input type="text" id="p-comp" class="fly-input"></div><div class="form-group"><label>Priority</label><input type="number" id="p-priority" class="fly-input" value="1" min="1"></div></div>
                 <div class="form-group"><label>IP Whitelist (optional)</label><input type="text" id="p-ips" class="fly-input" placeholder="provider.com,10.0.0.0/8"></div>
             </div>
             
@@ -138,7 +149,15 @@ const smpp = {
         if (!system_id) throw new Error('System ID is required');
         if (!password) throw new Error('Password is required');
         
-        const payload = { host, port, system_id, password, company: company || null, throughput_limit: isNaN(throughput_limit) ? 10 : throughput_limit, ip_whitelist: ip_whitelist || null, connection_type: 'provider_connection' };
+        const payload = {
+            host, port, system_id, password,
+            bind_type: document.getElementById('p-bind').value,
+            company: company || null,
+            throughput_limit: isNaN(throughput_limit) ? 10 : throughput_limit,
+            priority: parseInt(document.getElementById('p-priority')?.value || '1', 10),
+            ip_whitelist: ip_whitelist || null,
+            connection_type: 'provider_connection'
+        };
         
         try {
             await window.api.call('/api/smpp-interconnect/servers', { method: 'POST', body: JSON.stringify(payload) });
@@ -169,8 +188,8 @@ const smpp = {
             <div class="card-header"><div class="card-title">Live SMPP Sessions</div></div>
             <div class="table-wrapper">
                 <table class="fly-table">
-                    <thead><tr><th>IP Address</th><th>System ID</th><th>Bind</th><th>Connected At</th><th>Last Activity</th></tr></thead>
-                    <tbody id="srv-sessions-body"><tr><td colspan="5">Scanning sessions...</td></tr></tbody>
+                    <thead><tr><th>Type</th><th>Host / IP</th><th>System ID</th><th>Bind</th><th>Connected At</th><th>Last Activity</th></tr></thead>
+                    <tbody id="srv-sessions-body"><tr><td colspan="6">Scanning sessions...</td></tr></tbody>
                 </table>
             </div>
         </div>`;
@@ -182,16 +201,15 @@ const smpp = {
         if (!body) return;
         try {
             const res = await window.api.call('/api/smpp-interconnect/server-sessions');
-            if (res.data && res.data.length) {
-                body.innerHTML = res.data.map(s => `<tr><td><code>${s.ip_address}</code></td><td><strong>${s.system_id}</strong></td><td>${s.bind_type}</td><td>${window.ui.formatDate(s.connected_at)}</td><td>${window.ui.formatDate(s.last_activity)}</td></tr>`).join('');
-            } else {
-                // No active sessions — show recent log entries instead
-                const logs = await window.api.call('/api/smpp-interconnect/logs?limit=10').catch(() => ({ data: [] }));
-                const logRows = (logs.data || []).slice(0,5).map(l =>
-                    `<tr style="opacity:.7"><td><code>${window.ui.escapeHtml(l.ip_address||'—')}</code></td><td><strong>${window.ui.escapeHtml(l.system_id||'—')}</strong></td><td>${window.ui.escapeHtml(l.event_type||'—')}</td><td>${window.ui.formatDate(l.created_at)}</td><td>${window.ui.escapeHtml(l.detail||'')}</td></tr>`
-                ).join('');
-                body.innerHTML = logRows || '<tr><td colspan="5" style="color:var(--text-secondary)">No active sessions. Recent connections shown above when available.</td></tr>';
-            }
+            body.innerHTML = res.data.map(s => `
+                <tr>
+                    <td><span class="badge ${s.session_type === 'outbound' ? 'badge-primary' : 'badge-success'}">${s.session_type === 'outbound' ? 'Outbound Provider' : 'Inbound Client'}</span></td>
+                    <td><code>${s.ip_address || `${s.host}:${s.port}`}</code></td>
+                    <td><strong>${s.system_id}</strong></td>
+                    <td>${s.bind_type || '-'}</td>
+                    <td>${window.ui.formatDate(s.connected_at)}</td>
+                    <td>${window.ui.formatDate(s.last_activity)}</td>
+                </tr>`).join('') || '<tr><td colspan="6">No active sessions</td></tr>';
         } catch (e) {}
     },
 
