@@ -20,105 +20,120 @@ const TEST_NAV = [
 
 const NAV_STRUCTURE = [
     {
+        group: 'MAIN',
+        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
+        items: [
+            { key: 'dashboard',       label: 'Dashboard',       icon: ICONS.dashboard, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-numbers',      label: 'My Numbers',      icon: ICONS.phone,     roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-sms',          label: 'My SMS',          icon: ICONS.sms,       roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-otp-feed',   label: 'Live OTP Feed',   icon: ICONS.bell,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'profit-stats',    label: 'Profit Stats',    icon: ICONS.profit,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-payouts',      label: 'My Payouts',      icon: ICONS.wallet,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'users',           label: 'Users',           icon: ICONS.users,     roles: ['admin', 'manager', 'reseller'] },
+            { key: 'live-traffic',    label: 'Live Traffic',    icon: ICONS.activity,  roles: ['admin', 'manager'] },
+            { key: 'payout-requests', label: 'Payout Requests', icon: ICONS.transfer,  roles: ['admin', 'manager'] },
+        ]
+    },
+    {
         group: 'NUMBERS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'my-numbers', label: 'My Numbers', icon: ICONS.phone, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'self-allocation', label: 'Self Allocation', icon: ICONS.layers, roles: ['reseller', 'sub_reseller'] },
-            { key: 'client-allocation', label: 'Client Allocation', icon: ICONS.users, roles: ['reseller'] },
-            { key: 'bulk-allocation', label: 'Bulk Allocation', icon: ICONS.plus, roles: ['admin', 'manager'] },
-            { key: 'allocation-history', label: 'Allocation History', icon: ICONS.report, roles: ['admin', 'manager'] },
-            { key: 'sms-ranges', label: 'SMS Ranges', icon: ICONS.layers, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'sms-rate-card', label: 'SMS Rate Card', icon: ICONS.profit, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'search-access', label: 'Search Access', icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'live-access', label: 'Live Access', icon: ICONS.eye, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'upload-numbers', label: 'Upload Numbers', icon: ICONS.upload, roles: ['admin', 'manager'] },
-            { key: 'blacklist-management', label: 'Blacklist Management', icon: ICONS.ban, roles: ['admin', 'manager'] },
-            { key: 'bulk-tools', label: 'Revoke Numbers', icon: ICONS.transfer, roles: ['admin', 'manager', 'reseller'] },
-            { key: 'test-numbers-admin', label: 'Test Numbers', icon: ICONS.terminal, roles: ['admin', 'manager'] },
+            { key: 'my-numbers',            label: 'My Numbers',          icon: ICONS.phone,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'self-allocation',        label: 'Self Allocation',     icon: ICONS.layers,   roles: ['reseller', 'sub_reseller'] },
+            { key: 'client-allocation',      label: 'Client Allocation',   icon: ICONS.users,    roles: ['reseller'] },
+            { key: 'bulk-allocation',        label: 'Bulk Allocation',     icon: ICONS.plus,     roles: ['admin', 'manager'] },
+            { key: 'allocation-history',     label: 'Allocation History',  icon: ICONS.report,   roles: ['admin', 'manager'] },
+            { key: 'sms-ranges',             label: 'SMS Ranges',          icon: ICONS.layers,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'sms-rate-card',          label: 'SMS Rate Card',       icon: ICONS.profit,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'search-access',          label: 'Search Access',       icon: ICONS.search,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-access',            label: 'Live Access',         icon: ICONS.eye,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'upload-numbers',         label: 'Upload Numbers',      icon: ICONS.upload,   roles: ['admin', 'manager'] },
+            { key: 'blacklist-management',   label: 'Blacklist Management',icon: ICONS.ban,      roles: ['admin', 'manager'] },
+            { key: 'bulk-tools',             label: 'Revoke Numbers',      icon: ICONS.transfer, roles: ['admin', 'manager', 'reseller'] },
+            { key: 'test-numbers-admin',     label: 'Test Numbers',        icon: ICONS.terminal, roles: ['admin', 'manager'] },
         ]
     },
     {
         group: 'SMS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'my-sms', label: 'My SMS', icon: ICONS.sms, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'profit-stats', label: 'Profit Stats', icon: ICONS.profit, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'live-otp-feed', label: 'Live OTP Feed', icon: ICONS.bell, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'sms-analytics', label: 'SMS Analytics', icon: ICONS.chart, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'search-sms', label: 'Search SMS', icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'delivery-logs', label: 'Delivery Logs', icon: ICONS.report, roles: ['admin', 'manager'] },
-            { key: 'failed-sms', label: 'Failed SMS', icon: ICONS.x, roles: ['admin', 'manager'] },
-            { key: 'live-traffic', label: 'Live Traffic', icon: ICONS.activity, roles: ['admin', 'manager'] },
+            { key: 'my-sms',        label: 'My SMS',          icon: ICONS.sms,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'profit-stats',  label: 'Profit Stats',    icon: ICONS.profit,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-otp-feed', label: 'Live OTP Feed',   icon: ICONS.bell,     roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'sms-analytics', label: 'SMS Analytics',   icon: ICONS.chart,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'search-sms',    label: 'Search SMS',      icon: ICONS.search,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'delivery-logs', label: 'Delivery Logs',   icon: ICONS.report,   roles: ['admin', 'manager'] },
+            { key: 'failed-sms',    label: 'Failed SMS',      icon: ICONS.x,        roles: ['admin', 'manager'] },
+            { key: 'live-traffic',  label: 'Live Traffic',    icon: ICONS.activity, roles: ['admin', 'manager'] },
         ]
     },
     {
         group: 'SMPP SERVER',
         roles: ['admin'],
         items: [
-            { key: 'smpp-server-dash', label: 'Dashboard', icon: ICONS.dashboard, roles: ['admin'] },
-            { key: 'smpp-server-accounts', label: 'SMPP Accounts', icon: ICONS.users, roles: ['admin'] },
-            { key: 'smpp-server-sessions', label: 'SMPP Sessions', icon: ICONS.eye, roles: ['admin'] },
-            { key: 'smpp-server-connected', label: 'Connected Clients', icon: ICONS.transfer, roles: ['admin'] },
-            { key: 'smpp-server-dlr', label: 'DLR Monitor', icon: ICONS.report, roles: ['admin'] },
-            { key: 'smpp-server-throughput', label: 'Throughput Monitor', icon: ICONS.chart, roles: ['admin'] },
-            { key: 'smpp-server-security', label: 'Security Center', icon: ICONS.shield, roles: ['admin'] },
-            { key: 'smpp-server-logs', label: 'Connection Logs', icon: ICONS.report, roles: ['admin'] },
+            { key: 'smpp-server-dash',       label: 'Dashboard',          icon: ICONS.dashboard, roles: ['admin'] },
+            { key: 'smpp-server-accounts',   label: 'SMPP Accounts',      icon: ICONS.users,     roles: ['admin'] },
+            { key: 'smpp-server-sessions',   label: 'SMPP Sessions',      icon: ICONS.eye,       roles: ['admin'] },
+            { key: 'smpp-server-connected',  label: 'Connected Clients',  icon: ICONS.transfer,  roles: ['admin'] },
+            { key: 'smpp-server-dlr',        label: 'DLR Monitor',        icon: ICONS.report,    roles: ['admin'] },
+            { key: 'smpp-server-throughput', label: 'Throughput Monitor', icon: ICONS.chart,     roles: ['admin'] },
+            { key: 'smpp-server-security',   label: 'Security Center',    icon: ICONS.shield,    roles: ['admin'] },
+            { key: 'smpp-server-logs',       label: 'Connection Logs',    icon: ICONS.report,    roles: ['admin'] },
         ]
     },
     {
         group: 'REQUESTS GROUP',
         roles: ['admin', 'manager'],
         items: [
-            { key: 'registration-requests', label: 'Registration Requests', icon: ICONS.users, roles: ['admin', 'manager'] },
-            { key: 'payout-requests', label: 'Payout Requests', icon: ICONS.wallet, roles: ['admin', 'manager'] },
+            { key: 'registration-requests', label: 'Registration Requests', icon: ICONS.users,  roles: ['admin', 'manager'] },
+            { key: 'payout-requests',        label: 'Payout Requests',       icon: ICONS.wallet, roles: ['admin', 'manager'] },
         ]
     },
     {
         group: 'MANAGEMENT GROUP',
         roles: ['admin', 'manager', 'reseller'],
         items: [
-            { key: 'users', label: 'Users', icon: ICONS.users, roles: ['admin', 'manager', 'reseller'] },
-            { key: 'account-balances', label: 'Account Balances', icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller'] },
-            { key: 'audit-logs', label: 'Audit Logs', icon: ICONS.shield, roles: ['admin'] },
-            { key: 'permissions', label: 'Permissions', icon: ICONS.key, roles: ['admin'] },
+            { key: 'users',             label: 'Users',             icon: ICONS.users,  roles: ['admin', 'manager', 'reseller'] },
+            { key: 'account-balances',  label: 'Account Balances',  icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller'] },
+            { key: 'audit-logs',        label: 'Audit Logs',        icon: ICONS.shield, roles: ['admin'] },
+            { key: 'permissions',       label: 'Permissions',       icon: ICONS.key,    roles: ['admin'] },
         ]
     },
     {
         group: 'HTTP PROVIDERS',
-        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
+        roles: ['admin', 'manager'],
         items: [
-            { key: 'http-overview',       label: 'Overview & Setup',    icon: ICONS.report,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'http-standard',       label: 'Standard Webhook',    icon: ICONS.webhook,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'http-postback',       label: 'Custom Postback',     icon: ICONS.transfer, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'http-field-mapping',  label: 'Field Mapping Guide', icon: ICONS.layers,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'http-test',           label: 'Test Endpoint',       icon: ICONS.terminal, roles: ['admin', 'manager'] },
+            { key: 'http-overview',      label: 'Overview & Setup',    icon: ICONS.report,   roles: ['admin', 'manager'] },
+            { key: 'http-standard',      label: 'Standard Webhook',    icon: ICONS.webhook,  roles: ['admin', 'manager'] },
+            { key: 'http-postback',      label: 'Custom Postback',     icon: ICONS.transfer, roles: ['admin', 'manager'] },
+            { key: 'http-field-mapping', label: 'Field Mapping Guide', icon: ICONS.layers,   roles: ['admin', 'manager'] },
+            { key: 'http-test',          label: 'Test Endpoint',       icon: ICONS.terminal, roles: ['admin', 'manager'] },
         ]
     },
     {
         group: 'API GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'api-tokens',      label: 'API Tokens',     icon: ICONS.key,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'api-playground',  label: 'API Playground', icon: ICONS.terminal, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'live-test',       label: 'Live Test',      icon: ICONS.send,     roles: ['admin', 'manager'] },
-            { key: 'webhook-config',  label: 'Webhook Config', icon: ICONS.webhook,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'documentation',   label: 'Documentation',  icon: ICONS.report,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'api-tokens',     label: 'API Tokens',     icon: ICONS.key,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'api-playground', label: 'API Playground', icon: ICONS.terminal, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-test',      label: 'Live Test',      icon: ICONS.send,     roles: ['admin', 'manager'] },
+            { key: 'webhook-config', label: 'Webhook Config', icon: ICONS.webhook,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'documentation',  label: 'Documentation',  icon: ICONS.report,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
     {
         group: 'COMMUNICATION',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'news', label: 'News & Announcements', icon: ICONS.bell, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'support', label: 'Support Tickets', icon: ICONS.help, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'news',    label: 'News & Announcements', icon: ICONS.bell, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'support', label: 'Support Tickets',      icon: ICONS.help, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
     {
         group: 'ACCOUNT',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'my-profile', label: 'My Profile', icon: ICONS.user, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-profile', label: 'My Profile', icon: ICONS.user,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'my-payouts', label: 'My Payouts', icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
@@ -126,20 +141,20 @@ const NAV_STRUCTURE = [
         group: 'SECURITY CENTER',
         roles: ['admin'],
         items: [
-            { key: 'firewall-dashboard', label: 'Firewall Dashboard', icon: ICONS.shield, roles: ['admin'] },
-            { key: 'firewall-blocked-ips', label: 'Blocked IPs', icon: ICONS.ban, roles: ['admin'] },
-            { key: 'firewall-events', label: 'Firewall Events', icon: ICONS.report, roles: ['admin'] },
-            { key: 'firewall-rate-limits', label: 'Rate Limits', icon: ICONS.lock, roles: ['admin'] },
+            { key: 'firewall-dashboard',   label: 'Firewall Dashboard', icon: ICONS.shield, roles: ['admin'] },
+            { key: 'firewall-blocked-ips', label: 'Blocked IPs',        icon: ICONS.ban,    roles: ['admin'] },
+            { key: 'firewall-events',      label: 'Firewall Events',    icon: ICONS.report, roles: ['admin'] },
+            { key: 'firewall-rate-limits', label: 'Rate Limits',        icon: ICONS.lock,   roles: ['admin'] },
         ]
     },
     {
         group: 'SETTINGS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'general-settings', label: 'General Settings', icon: ICONS.settings, roles: ['admin', 'manager'] },
-            { key: 'security-settings', label: 'Security', icon: ICONS.lock, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'smpp-settings', label: 'SMPP Settings', icon: ICONS.smpp, roles: ['admin'] },
-            { key: 'backup-restore', label: 'Backup & Restore', icon: ICONS.backup, roles: ['admin'] },
+            { key: 'general-settings',  label: 'General Settings', icon: ICONS.settings, roles: ['admin', 'manager'] },
+            { key: 'security-settings', label: 'Security',         icon: ICONS.lock,     roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'smpp-settings',     label: 'SMPP Settings',    icon: ICONS.smpp,     roles: ['admin'] },
+            { key: 'backup-restore',    label: 'Backup & Restore', icon: ICONS.backup,   roles: ['admin'] },
         ]
     }
 ];
