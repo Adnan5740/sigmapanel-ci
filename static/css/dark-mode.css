@@ -1,0 +1,600 @@
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE & DESIGN SYSTEM EXTENSIONS
+   Modern Design System v4 — Tasks 1-8
+   ─────────────────────────────────────────────────────────────
+   Tasks covered:
+   1. Design Token Architecture (extended in :root)
+   2. Dark Mode surfaces
+   3. Fluid Typography
+   4. Form validation states
+   5. Button micro-interactions
+   6. Animations / reduced-motion
+   7. Responsive polish
+   8. Accessibility / theme toggle
+═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────
+   TASK 1 — Fluid Typography
+   ──────────────────────────────────────── */
+.fly-label,
+.form-group label {
+  font-size: var(--font-size-sm);
+}
+
+.card-title {
+  font-size: var(--font-size-lg);
+}
+
+.stat-card-label {
+  font-size: var(--font-size-sm);
+}
+
+/* ────────────────────────────────────────
+   TASK 2 — Dark Mode: Page & Layout
+   ──────────────────────────────────────── */
+[data-theme="dark"] body {
+  background: var(--bg-page) url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='g' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 60V0h60' fill='none' stroke='%23ffffff08' stroke-width='.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Cards */
+[data-theme="dark"] .card {
+  background: rgba(30,41,59,0.9);
+  border-color: var(--border);
+  box-shadow: var(--card-shadow);
+}
+[data-theme="dark"] .card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+[data-theme="dark"] .card-header {
+  background: linear-gradient(180deg, #253047 0%, #1e293b 100%);
+  border-bottom-color: var(--border);
+}
+
+/* Stat cards */
+[data-theme="dark"] .stat-card {
+  background: linear-gradient(145deg, #1e293b 0%, #253047 100%);
+  border-color: rgba(99,102,241,0.15);
+}
+[data-theme="dark"] .stat-card::after {
+  background: radial-gradient(circle at top right, rgba(99,102,241,0.12), transparent 70%);
+}
+
+/* Sidebar */
+[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #0d1424 0%, #0a1020 100%);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+}
+
+/* Top bar */
+[data-theme="dark"] .top-bar {
+  background: rgba(15,23,42,0.92);
+  border-bottom-color: rgba(255,255,255,0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Modal */
+[data-theme="dark"] .modal {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .modal-header {
+  background: linear-gradient(180deg, #253047 0%, #1e293b 100%);
+  border-bottom-color: var(--border);
+}
+[data-theme="dark"] .modal-footer {
+  border-top-color: var(--border);
+}
+
+/* Tables */
+[data-theme="dark"] .fly-table thead th {
+  background: linear-gradient(180deg, #253047 0%, #1e293b 100%);
+  border-bottom-color: rgba(255,255,255,0.1);
+  color: var(--text-secondary);
+}
+[data-theme="dark"] .fly-table tbody tr {
+  border-bottom-color: rgba(255,255,255,0.05);
+}
+[data-theme="dark"] .fly-table tbody tr:nth-child(even) {
+  background: rgba(255,255,255,0.02);
+}
+[data-theme="dark"] .fly-table tbody tr:hover {
+  background: rgba(99,102,241,0.07);
+}
+[data-theme="dark"] .fly-table td code {
+  background: rgba(255,255,255,0.07);
+  color: #a5b4fc;
+}
+
+/* Auth pages */
+[data-theme="dark"] .auth-page,
+[data-theme="dark"] .security-verification {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+}
+[data-theme="dark"] .auth-card,
+[data-theme="dark"] .security-verification-box {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .auth-form,
+[data-theme="dark"] .auth-form-login,
+[data-theme="dark"] .auth-form-signup {
+  background: #1e293b !important;
+}
+[data-theme="dark"] .auth-captcha-card {
+  background: #253047;
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .auth-error {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.25);
+  color: #fca5a5;
+}
+
+/* Profile */
+[data-theme="dark"] .profile-card {
+  background: #1e293b;
+  border-color: var(--border);
+}
+[data-theme="dark"] .profile-setting-row {
+  border-bottom-color: var(--border);
+}
+
+/* Filter bar */
+[data-theme="dark"] .filter-bar {
+  background: rgba(30,41,59,0.6);
+  border-bottom-color: var(--border);
+}
+
+/* Pagination */
+[data-theme="dark"] .pagination {
+  border-top-color: var(--border);
+}
+[data-theme="dark"] .pagination-btn {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.1);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .pagination-btn:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: var(--primary);
+}
+[data-theme="dark"] .pagination-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Toasts */
+[data-theme="dark"] .toast {
+  background: rgba(30,41,59,0.96);
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: var(--shadow-lg);
+}
+[data-theme="dark"] .toast-title {
+  color: var(--text-primary);
+}
+[data-theme="dark"] .toast-sub {
+  color: var(--text-secondary);
+}
+
+/* Action buttons */
+[data-theme="dark"] .action-btn {
+  background: rgba(30,41,59,0.8);
+  border-color: rgba(255,255,255,0.1);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .action-btn:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: #a5b4fc;
+  color: #a5b4fc;
+}
+
+/* Badges — dark-adjusted */
+[data-theme="dark"] .badge-success {
+  background: rgba(16,185,129,0.15);
+  color: #34d399;
+  border-color: rgba(16,185,129,0.25);
+}
+[data-theme="dark"] .badge-danger {
+  background: rgba(239,68,68,0.15);
+  color: #f87171;
+  border-color: rgba(239,68,68,0.25);
+}
+[data-theme="dark"] .badge-primary {
+  background: rgba(99,102,241,0.18);
+  color: #a5b4fc;
+  border-color: rgba(99,102,241,0.3);
+}
+[data-theme="dark"] .badge-warning {
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+  border-color: rgba(245,158,11,0.25);
+}
+[data-theme="dark"] .badge-info {
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+  border-color: rgba(59,130,246,0.25);
+}
+[data-theme="dark"] .badge-secondary {
+  background: rgba(255,255,255,0.07);
+  color: #94a3b8;
+  border-color: rgba(255,255,255,0.1);
+}
+
+/* Success popup */
+[data-theme="dark"] .success-modal {
+  background: #1e293b;
+}
+[data-theme="dark"] .success-circle-bg { stroke: rgba(255,255,255,0.12); }
+
+/* Review cards */
+[data-theme="dark"] .review-card {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .review-grid > div {
+  background: #253047;
+  border-color: rgba(255,255,255,0.06);
+}
+[data-theme="dark"] .professional-note {
+  background: rgba(99,102,241,0.1);
+  border-color: rgba(99,102,241,0.2);
+}
+
+/* Misc */
+[data-theme="dark"] .pay-method-card {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .smpp-stat {
+  background: rgba(99,102,241,0.1);
+  border-color: rgba(99,102,241,0.2);
+}
+[data-theme="dark"] .skeleton,
+[data-theme="dark"] .skeleton-row {
+  background: linear-gradient(90deg, #1e293b 25%, #253047 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+[data-theme="dark"] .alloc-progress-bar {
+  background: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .modal-close:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+}
+
+/* ────────────────────────────────────────
+   TASK 3 — Dark Mode: Form Controls
+   ──────────────────────────────────────── */
+[data-theme="dark"] .fly-input,
+[data-theme="dark"] .search-input,
+[data-theme="dark"] .filter-select {
+  background: var(--color-input-bg);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .fly-input::placeholder,
+[data-theme="dark"] .search-input::placeholder {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .fly-input:hover:not(:focus),
+[data-theme="dark"] .search-input:hover:not(:focus),
+[data-theme="dark"] .filter-select:hover:not(:focus) {
+  border-color: rgba(255,255,255,0.22);
+  background: #253047;
+}
+[data-theme="dark"] .fly-input:focus,
+[data-theme="dark"] .search-input:focus,
+[data-theme="dark"] .filter-select:focus {
+  background: #253047;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+[data-theme="dark"] .search-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+}
+
+/* Form validation states */
+.fly-input.is-error,
+.search-input.is-error,
+.filter-select.is-error {
+  border-color: var(--color-danger) !important;
+}
+.fly-input.is-error:focus,
+.search-input.is-error:focus,
+.filter-select.is-error:focus {
+  box-shadow: 0 0 0 3px var(--color-danger-ring) !important;
+}
+.fly-input.is-success,
+.search-input.is-success {
+  border-color: var(--color-success) !important;
+}
+.fly-input.is-success:focus {
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.18) !important;
+}
+.field-error-msg {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  animation: fadeInUp 0.2s ease;
+}
+.field-help {
+  font-size: var(--font-size-sm);
+}
+
+/* Touch targets on mobile */
+@media (max-width: 768px) {
+  .fly-input,
+  .search-input,
+  .filter-select {
+    min-height: 40px;
+  }
+  .fly-btn {
+    min-height: 40px;
+  }
+}
+
+/* ────────────────────────────────────────
+   TASK 4 — Theme Toggle Button
+   ──────────────────────────────────────── */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition), transform var(--duration-fast) ease;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: rotate(12deg);
+}
+.theme-toggle:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease;
+}
+/* Sun icon shown in dark, moon in light */
+.theme-toggle .icon-sun  { display: none; }
+.theme-toggle .icon-moon { display: block; }
+[data-theme="dark"] .theme-toggle .icon-sun  { display: block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+[data-theme="dark"] .theme-toggle {
+  border-color: rgba(255,255,255,0.12);
+  color: #fbbf24;
+}
+[data-theme="dark"] .theme-toggle:hover {
+  background: rgba(251,191,36,0.1);
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+/* ────────────────────────────────────────
+   TASK 5 — Button micro-interactions
+   ──────────────────────────────────────── */
+.fly-btn {
+  transition: transform var(--duration-fast) ease,
+              box-shadow var(--duration-fast) ease,
+              opacity var(--duration-fast) ease;
+}
+.fly-btn:hover {
+  transform: translateY(-2px);
+}
+.fly-btn:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
+}
+.fly-btn:disabled,
+.fly-btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+.fly-btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.fly-btn-danger:hover {
+  box-shadow: 0 6px 18px rgba(239,68,68,0.4);
+}
+
+/* ────────────────────────────────────────
+   TASK 6 — Sidebar hover translation
+   ──────────────────────────────────────── */
+.sidebar-nav-item {
+  transition: color var(--duration-fast) ease,
+              background var(--duration-fast) ease,
+              transform var(--duration-fast) ease;
+}
+.sidebar-nav-item:hover {
+  transform: translateX(2px);
+}
+
+/* ────────────────────────────────────────
+   TASK 7 — Accessibility
+   ──────────────────────────────────────── */
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 10000;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 0 0 var(--radius-sm) 0;
+  text-decoration: none;
+  transition: top var(--duration-fast) ease;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* Visible focus rings on all interactive elements */
+:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Buttons specific focus ring */
+.fly-btn:focus-visible,
+.action-btn:focus-visible,
+.pagination-btn:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Form controls focus ring already handled by box-shadow,
+   suppress duplicate outline */
+.fly-input:focus-visible,
+.search-input:focus-visible,
+.filter-select:focus-visible {
+  outline: none;
+}
+
+/* Sidebar nav item focus */
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid rgba(255,255,255,0.5);
+  outline-offset: -2px;
+}
+
+/* Modal close button */
+.modal-close:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Dark theme focus rings remain visible */
+[data-theme="dark"] :focus-visible {
+  outline-color: rgba(165,180,252,0.6);
+}
+
+/* ────────────────────────────────────────
+   TASK 8 — Reduced motion
+   ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ────────────────────────────────────────
+   TASK 8 — Smooth theme transition
+   ──────────────────────────────────────── */
+html {
+  color-scheme: light dark;
+}
+
+/* Transition key properties when theme changes */
+body,
+.card,
+.stat-card,
+.sidebar,
+.top-bar,
+.modal,
+.fly-input,
+.search-input,
+.filter-select,
+.toast,
+.pagination-btn,
+.action-btn,
+.badge,
+.auth-card,
+.review-card {
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease,
+    color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease;
+}
+
+/* Don't transition transforms to avoid jank */
+.fly-btn,
+.sidebar-nav-item,
+.stat-card,
+.action-btn {
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration-fast) ease,
+    opacity var(--duration-fast) ease;
+}
+
+/* ────────────────────────────────────────
+   TASK 6 — Responsive: mobile touch targets
+   ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .action-btn {
+    min-height: 36px;
+    padding: 6px 12px;
+  }
+  /* Increase tap targets for icon-only buttons */
+  .modal-close {
+    width: 36px;
+    height: 36px;
+  }
+  .mobile-menu-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ────────────────────────────────────────
+   DARK MODE — misc dark body bg class
+   ──────────────────────────────────────── */
+[data-theme="dark"] body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+/* Top bar user role label (inline style override) */
+[data-theme="dark"] .top-bar-user-name > div:last-child {
+  color: var(--text-secondary) !important;
+}
+
+/* Sidebar user role */
+[data-theme="dark"] .sidebar-user-role {
+  color: rgba(255,255,255,0.35);
+}
+
+/* Table scroll hint */
+[data-theme="dark"] .table-wrapper::after {
+  color: var(--text-muted);
+}
+
+/* Scrollbar in dark mode */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(165,180,252,0.2);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(165,180,252,0.35);
+}

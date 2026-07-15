@@ -20,56 +20,68 @@ const TEST_NAV = [
 
 const NAV_STRUCTURE = [
     {
-        group: 'MAIN',
+        group: 'NUMBERS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'dashboard',     label: 'Overview',       icon: ICONS.dashboard, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'my-numbers',    label: 'My Numbers',     icon: ICONS.phone,     roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'my-sms',        label: 'My SMS',         icon: ICONS.sms,       roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'live-otp-feed', label: 'Live OTP Feed',  icon: ICONS.bell,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'profit-stats',  label: 'Profit Stats',   icon: ICONS.profit,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'users',         label: 'Users',          icon: ICONS.users,     roles: ['admin', 'manager', 'reseller'] },
-            { key: 'live-traffic',  label: 'Live Traffic',   icon: ICONS.activity,  roles: ['admin', 'manager'] },
+            { key: 'my-numbers', label: 'My Numbers', icon: ICONS.phone, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'self-allocation', label: 'Self Allocation', icon: ICONS.layers, roles: ['reseller', 'sub_reseller'] },
+            { key: 'client-allocation', label: 'Client Allocation', icon: ICONS.users, roles: ['reseller'] },
+            { key: 'bulk-allocation', label: 'Bulk Allocation', icon: ICONS.plus, roles: ['admin', 'manager'] },
+            { key: 'allocation-history', label: 'Allocation History', icon: ICONS.report, roles: ['admin', 'manager'] },
+            { key: 'sms-ranges', label: 'SMS Ranges', icon: ICONS.layers, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'sms-rate-card', label: 'SMS Rate Card', icon: ICONS.profit, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'search-access', label: 'Search Access', icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-access', label: 'Live Access', icon: ICONS.eye, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'upload-numbers', label: 'Upload Numbers', icon: ICONS.upload, roles: ['admin', 'manager'] },
+            { key: 'blacklist-management', label: 'Blacklist Management', icon: ICONS.ban, roles: ['admin', 'manager'] },
+            { key: 'bulk-tools', label: 'Revoke Numbers', icon: ICONS.transfer, roles: ['admin', 'manager', 'reseller'] },
+            { key: 'test-numbers-admin', label: 'Test Numbers', icon: ICONS.terminal, roles: ['admin', 'manager'] },
         ]
     },
     {
-        group: 'NUMBERS',
+        group: 'SMS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'sms-ranges',          label: 'SMS Ranges',        icon: ICONS.layers,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'sms-rate-card',       label: 'Rate Card',         icon: ICONS.profit,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'self-allocation',     label: 'Self Allocation',   icon: ICONS.layers,  roles: ['reseller', 'sub_reseller'] },
-            { key: 'client-allocation',   label: 'Client Allocation', icon: ICONS.users,   roles: ['reseller'] },
-            { key: 'bulk-allocation',     label: 'Bulk Allocation',   icon: ICONS.plus,    roles: ['admin', 'manager'] },
-            { key: 'allocation-history',  label: 'Alloc. History',    icon: ICONS.report,  roles: ['admin', 'manager'] },
-            { key: 'bulk-tools',          label: 'Revoke Numbers',    icon: ICONS.transfer,roles: ['admin', 'manager', 'reseller'] },
-            { key: 'upload-numbers',      label: 'Upload Numbers',    icon: ICONS.upload,  roles: ['admin', 'manager'] },
-            { key: 'test-numbers-admin',  label: 'Test Numbers',      icon: ICONS.terminal,roles: ['admin', 'manager'] },
-            { key: 'blacklist-management',label: 'Blacklist',         icon: ICONS.ban,     roles: ['admin', 'manager'] },
-        ]
-    },
-    {
-        group: 'SMS',
-        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
-        items: [
-            { key: 'sms-analytics', label: 'SMS Analytics', icon: ICONS.chart,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'search-sms',    label: 'Search SMS',    icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'search-access', label: 'Search Access', icon: ICONS.eye,    roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-sms', label: 'My SMS', icon: ICONS.sms, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'profit-stats', label: 'Profit Stats', icon: ICONS.profit, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-otp-feed', label: 'Live OTP Feed', icon: ICONS.bell, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'sms-analytics', label: 'SMS Analytics', icon: ICONS.chart, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'search-sms', label: 'Search SMS', icon: ICONS.search, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'delivery-logs', label: 'Delivery Logs', icon: ICONS.report, roles: ['admin', 'manager'] },
-            { key: 'failed-sms',    label: 'Failed SMS',    icon: ICONS.x,      roles: ['admin', 'manager'] },
+            { key: 'failed-sms', label: 'Failed SMS', icon: ICONS.x, roles: ['admin', 'manager'] },
+            { key: 'live-traffic', label: 'Live Traffic', icon: ICONS.activity, roles: ['admin', 'manager'] },
         ]
     },
     {
-        group: 'SMPP',
+        group: 'SMPP SERVER',
         roles: ['admin'],
         items: [
-            { key: 'smpp-server-dash',       label: 'SMPP Dashboard',  icon: ICONS.dashboard, roles: ['admin'] },
-            { key: 'smpp-server-accounts',   label: 'SMPP Accounts',   icon: ICONS.users,     roles: ['admin'] },
-            { key: 'smpp-server-sessions',   label: 'Sessions & Clients',icon: ICONS.eye,      roles: ['admin'] },
-            { key: 'smpp-server-logs',       label: 'Connection Logs', icon: ICONS.report,    roles: ['admin'] },
-            { key: 'smpp-server-dlr',        label: 'DLR Monitor',     icon: ICONS.report,    roles: ['admin'] },
-            { key: 'smpp-server-throughput', label: 'Throughput',      icon: ICONS.chart,     roles: ['admin'] },
-            { key: 'smpp-settings',          label: 'SMPP Settings',   icon: ICONS.settings,  roles: ['admin'] },
+            { key: 'smpp-server-dash', label: 'Dashboard', icon: ICONS.dashboard, roles: ['admin'] },
+            { key: 'smpp-server-accounts', label: 'SMPP Accounts', icon: ICONS.users, roles: ['admin'] },
+            { key: 'smpp-server-sessions', label: 'SMPP Sessions', icon: ICONS.eye, roles: ['admin'] },
+            { key: 'smpp-server-connected', label: 'Connected Clients', icon: ICONS.transfer, roles: ['admin'] },
+            { key: 'smpp-server-dlr', label: 'DLR Monitor', icon: ICONS.report, roles: ['admin'] },
+            { key: 'smpp-server-throughput', label: 'Throughput Monitor', icon: ICONS.chart, roles: ['admin'] },
+            { key: 'smpp-server-security', label: 'Security Center', icon: ICONS.shield, roles: ['admin'] },
+            { key: 'smpp-server-logs', label: 'Connection Logs', icon: ICONS.report, roles: ['admin'] },
+        ]
+    },
+    {
+        group: 'REQUESTS GROUP',
+        roles: ['admin', 'manager'],
+        items: [
+            { key: 'registration-requests', label: 'Registration Requests', icon: ICONS.users, roles: ['admin', 'manager'] },
+            { key: 'payout-requests', label: 'Payout Requests', icon: ICONS.wallet, roles: ['admin', 'manager'] },
+        ]
+    },
+    {
+        group: 'MANAGEMENT GROUP',
+        roles: ['admin', 'manager', 'reseller'],
+        items: [
+            { key: 'users', label: 'Users', icon: ICONS.users, roles: ['admin', 'manager', 'reseller'] },
+            { key: 'account-balances', label: 'Account Balances', icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller'] },
+            { key: 'audit-logs', label: 'Audit Logs', icon: ICONS.shield, roles: ['admin'] },
+            { key: 'permissions', label: 'Permissions', icon: ICONS.key, roles: ['admin'] },
         ]
     },
     {
@@ -84,22 +96,13 @@ const NAV_STRUCTURE = [
         ]
     },
     {
-        group: 'MANAGEMENT',
-        roles: ['admin', 'manager', 'reseller'],
-        items: [
-            { key: 'account-balances',       label: 'Account Balances',       icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller'] },
-            { key: 'registration-requests',  label: 'Registration Requests',  icon: ICONS.users,  roles: ['admin', 'manager'] },
-            { key: 'payout-requests',        label: 'Payout Requests',        icon: ICONS.wallet, roles: ['admin', 'manager'] },
-            { key: 'audit-logs',             label: 'Audit Logs',             icon: ICONS.shield, roles: ['admin'] },
-            { key: 'permissions',            label: 'Permissions',            icon: ICONS.key,    roles: ['admin'] },
-        ]
-    },
-    {
         group: 'API GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
             { key: 'api-tokens',      label: 'API Tokens',     icon: ICONS.key,      roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'api-playground',  label: 'API Playground', icon: ICONS.terminal, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'live-test',       label: 'Live Test',      icon: ICONS.send,     roles: ['admin', 'manager'] },
+            { key: 'webhook-config',  label: 'Webhook Config', icon: ICONS.webhook,  roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
             { key: 'documentation',   label: 'Documentation',  icon: ICONS.report,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
@@ -112,37 +115,38 @@ const NAV_STRUCTURE = [
         ]
     },
     {
-        group: 'FIREWALL',
-        roles: ['admin'],
+        group: 'ACCOUNT',
+        roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'firewall-dashboard',   label: 'Firewall',     icon: ICONS.shield, roles: ['admin'] },
-            { key: 'firewall-blocked-ips', label: 'Blocked IPs',  icon: ICONS.ban,    roles: ['admin'] },
-            { key: 'firewall-events',      label: 'Events Log',   icon: ICONS.report, roles: ['admin'] },
+            { key: 'my-profile', label: 'My Profile', icon: ICONS.user, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'my-payouts', label: 'My Payouts', icon: ICONS.wallet, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
         ]
     },
     {
-        group: 'SETTINGS',
+        group: 'SECURITY CENTER',
+        roles: ['admin'],
+        items: [
+            { key: 'firewall-dashboard', label: 'Firewall Dashboard', icon: ICONS.shield, roles: ['admin'] },
+            { key: 'firewall-blocked-ips', label: 'Blocked IPs', icon: ICONS.ban, roles: ['admin'] },
+            { key: 'firewall-events', label: 'Firewall Events', icon: ICONS.report, roles: ['admin'] },
+            { key: 'firewall-rate-limits', label: 'Rate Limits', icon: ICONS.lock, roles: ['admin'] },
+        ]
+    },
+    {
+        group: 'SETTINGS GROUP',
         roles: ['admin', 'manager', 'reseller', 'sub_reseller'],
         items: [
-            { key: 'general-settings',  label: 'General Settings', icon: ICONS.settings, roles: ['admin', 'manager'] },
-            { key: 'security-settings', label: 'Security',         icon: ICONS.lock,     roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'my-profile',        label: 'My Profile',       icon: ICONS.user,     roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'my-payouts',        label: 'My Payouts',       icon: ICONS.wallet,   roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
-            { key: 'backup-restore',    label: 'Backup & Restore', icon: ICONS.backup,   roles: ['admin'] },
+            { key: 'general-settings', label: 'General Settings', icon: ICONS.settings, roles: ['admin', 'manager'] },
+            { key: 'security-settings', label: 'Security', icon: ICONS.lock, roles: ['admin', 'manager', 'reseller', 'sub_reseller'] },
+            { key: 'smpp-settings', label: 'SMPP Settings', icon: ICONS.smpp, roles: ['admin'] },
+            { key: 'backup-restore', label: 'Backup & Restore', icon: ICONS.backup, roles: ['admin'] },
         ]
     }
 ];
 
 function init() {
   try {
-    window.router.addRoute('dashboard', (c) => {
-        const u = window.auth.getUser();
-        if (u && u.role === 'test_user') {
-            window.testPanel.renderTestNumbers(c);
-        } else {
-            window.dashboard.render(c);
-        }
-    });
+    window.router.addRoute('dashboard', (c) => window.dashboard.render(c));
 
     // Numbers
     window.router.addRoute('my-numbers', (c) => window.numbers.renderMyNumbers(c));
@@ -275,35 +279,7 @@ function renderDashboardShell() {
             <button class="mobile-menu-btn" id="mobile-menu-btn">${ICONS.menu}</button>
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <aside class="sidebar" id="sidebar">
-                <div class="sidebar-logo">
-                <div class="ssp-sidebar-logo">
-                    <div class="ssp-sidebar-icon">
-                        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="2" y="6" width="22" height="15" rx="4" stroke="url(#si1)" stroke-width="1.6"/>
-                            <path d="M6 22 L4 28 L12 24" stroke="url(#si1)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                            <line x1="6" y1="12" x2="18" y2="12" stroke="white" stroke-width="1.3" stroke-opacity="0.5" stroke-linecap="round"/>
-                            <line x1="6" y1="16" x2="15" y2="16" stroke="url(#si1)" stroke-width="1.3" stroke-linecap="round"/>
-                            <circle cx="20" cy="16" r="1.8" fill="#00FFA3"/>
-                            <path d="M25 5 Q30 5 30 11" stroke="#00C6FF" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-opacity="0.6"/>
-                            <path d="M27 3 Q32 3 32 12" stroke="#00C6FF" stroke-width="1" fill="none" stroke-linecap="round" stroke-opacity="0.3"/>
-                            <circle cx="25" cy="5" r="1.4" fill="#00FFA3"/>
-                            <defs>
-                                <linearGradient id="si1" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%" stop-color="#00C6FF"/>
-                                    <stop offset="100%" stop-color="#00FFA3"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                    </div>
-                    <div class="ssp-sidebar-text">
-                        <div class="ssp-sidebar-wordmark">
-                            <span class="ssp-s">SS</span><span class="ssp-p">P</span>
-                        </div>
-                        <div class="ssp-sidebar-sub">Sigma SMS</div>
-                        <div class="ssp-sidebar-tag">A2P SMS Power</div>
-                    </div>
-                </div>
-            </div>
+                <div class="sidebar-logo"><div class="sidebar-logo-icon">${ICONS.send}</div><div><h1>SIGMAPANEL</h1><p>Telecom Infrastructure</p></div></div>
                 <nav class="sidebar-nav">${sidebarNav}</nav>
                 <div class="sidebar-user">
                     <div class="sidebar-user-info">${window.ui.renderUserAvatar(user, 'sidebar-user-avatar')}<div><div class="sidebar-user-name">${user.full_name || user.fullName || user.username}</div><div class="sidebar-user-role">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
@@ -314,6 +290,7 @@ function renderDashboardShell() {
                 <header class="top-bar">
                     <h2 class="top-bar-title" id="page-title">Dashboard</h2>
                     <div class="top-bar-actions">
+                        ${window.ui.themeToggleHtml()}
                         <button class="top-bar-logout" id="top-logout-btn" title="Logout">${ICONS.logout}<span>Logout</span></button>
                         <div class="top-bar-user">${window.ui.renderUserAvatar(user, 'top-bar-avatar')}<div class="top-bar-user-name"><div>${user.username}</div><div style="font-size:10px; color:#6B7280">${window.ROLE_LABELS[user.role] || user.role}</div></div></div>
                     </div>
