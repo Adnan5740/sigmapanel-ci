@@ -831,7 +831,7 @@ const numbers = {
         document.querySelectorAll('.bri-monthly').forEach(inp => {
             const country = inp.dataset.country;
             const m = parseFloat(inp.value||0)||0;
-            if (!m) { window.ui.showToast('Please set monthly rate for '+country,'error'); valid=false; return; }
+            // If no rate entered, backend uses panel payout-rates settings
             const wEl = document.querySelector('.bri-weekly[data-country="'+CSS.escape(country)+'"]');
             const oEl = document.querySelector('.bri-otp-limit[data-country="'+CSS.escape(country)+'"]');
             countryRates[country] = {
@@ -916,8 +916,8 @@ const numbers = {
                                 <div style="font-size:11px;color:var(--text-secondary)">${g.sample.slice(0,2).map(n=>window.ui.escapeHtml(n)).join(', ')}${g.count>2?'...':''}</div>
                             </div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;align-items:end">
-                                <div><label style="font-size:11px;color:var(--text-secondary)">Monthly Rate ($)*</label>
-                                    <input type="number" class="fly-input bri-monthly" data-country="${window.ui.escapeHtml(g.country)}" placeholder="0.025" step="0.001" min="0" style="margin-top:2px" oninput="window.numbers.brRateHint2(this)"></div>
+                                <div><label style="font-size:11px;color:var(--text-secondary)">Monthly Rate ($ or blank = panel default)</label>
+                                    <input type="number" class="fly-input bri-monthly" data-country="${window.ui.escapeHtml(g.country)}" placeholder="Leave blank = panel rate" step="0.001" min="0" style="margin-top:2px" oninput="window.numbers.brRateHint2(this)"></div>
                                 <div><label style="font-size:11px;color:var(--text-secondary)">Weekly Rate ($)</label>
                                     <input type="number" class="fly-input bri-weekly" data-country="${window.ui.escapeHtml(g.country)}" placeholder="0.015" step="0.001" min="0" style="margin-top:2px"></div>
                                 <div><label style="font-size:11px;color:var(--text-secondary)">Daily OTP Limit</label>
