@@ -598,8 +598,25 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
         for key, items in groups.items():
             rep = items[0]
             term     = key
-            prov_mon = float(override_monthly or rep.get("monthly_rate", 0) or 0)
-            prov_wk  = float(override_weekly  or rep.get("weekly_rate",  0) or 0)
+            _raw_m = float(override_monthly or rep.get("monthly_rate", 0) or 0)
+            _raw_w = float(override_weekly  or rep.get("weekly_rate",  0) or 0)
+            # Fallback to panel payout-rates settings if provider rate is 0
+            if not _raw_m:
+                try:
+                    from database import get_db as _gdb2
+                    with _gdb2() as _c2:
+                        _row = _c2.execute("SELECT setting_value FROM settings WHERE setting_key='payout_rate_monthly' AND user_id IS NULL").fetchone()
+                        if _row: _raw_m = float(_row["setting_value"] or 0)
+                except Exception: pass
+            if not _raw_w:
+                try:
+                    from database import get_db as _gdb3
+                    with _gdb3() as _c3:
+                        _row = _c3.execute("SELECT setting_value FROM settings WHERE setting_key='payout_rate_weekly' AND user_id IS NULL").fetchone()
+                        if _row: _raw_w = float(_row["setting_value"] or 0)
+                except Exception: pass
+            prov_mon = _raw_m
+            prov_wk  = _raw_w
             our_mon  = _provider_to_our_rate(prov_mon)
             our_wk   = _provider_to_our_rate(prov_wk)
             country  = term.split(" - ")[0].strip().title() if " - " in term else term.title()
@@ -617,8 +634,20 @@ async def bulk_range_import(request: Request, preview: int = 0, p=Depends(requir
         for termination, items in groups.items():
             # Representative row for rates / date
             rep = items[0]
-            provider_monthly = float(override_monthly or rep["monthly_rate"] or 0)
-            provider_weekly  = float(override_weekly  or rep["weekly_rate"]  or 0)
+            _im = float(override_monthly or rep.get("monthly_rate", 0) or 0)
+            _iw = float(override_weekly  or rep.get("weekly_rate",  0) or 0)
+            if not _im:
+                try:
+                    _row = conn.execute("SELECT setting_value FROM settings WHERE setting_key='payout_rate_monthly' AND user_id IS NULL").fetchone()
+                    if _row: _im = float(_row["setting_value"] or 0)
+                except Exception: pass
+            if not _iw:
+                try:
+                    _row = conn.execute("SELECT setting_value FROM settings WHERE setting_key='payout_rate_weekly' AND user_id IS NULL").fetchone()
+                    if _row: _iw = float(_row["setting_value"] or 0)
+                except Exception: pass
+            provider_monthly = _im
+            provider_weekly  = _iw
             our_monthly = _provider_to_our_rate(provider_monthly)
             our_weekly  = _provider_to_our_rate(provider_weekly)
             # Country = prefix before " - "
