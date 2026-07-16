@@ -646,7 +646,7 @@ const numbers = {
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="fly-label" for="up-range">Destination Range *</label>
-                                <select id="up-range" class="fly-input">
+                                <select id="up-range" class="fly-input" onchange="window.numbers._refreshUploadBar()">
                                     <option value="">Select range...</option>
                                     ${options}
                                 </select>
@@ -666,6 +666,7 @@ const numbers = {
                             </div>
                             <textarea id="up-text" class="fly-input upload-textarea" rows="10" placeholder="+1234567890&#10;+9876543210&#10;001234567890"></textarea>
                         </div>
+                        <div id="up-preview-bar" style="display:none;padding:10px 14px;background:rgba(99,102,241,.07);border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:8px"></div>
                         <button class="fly-btn upload-submit-btn" onclick="window.numbers.doUpload()">${ICONS.upload} Import Numbers</button>
                     </div>
                 </div>
@@ -1037,6 +1038,15 @@ const numbers = {
             }
             const target = document.getElementById('up-text');
             if (target) target.value = numbers.join('\n');
+            // Show preview info bar
+            const infoBar = document.getElementById('up-preview-bar');
+            if (infoBar) {
+                const rangeEl = document.getElementById('up-range');
+                const rangeName = rangeEl?.options[rangeEl?.selectedIndex]?.dataset?.name || '';
+                infoBar.style.display = 'block';
+                infoBar.innerHTML = `<strong>${numbers.length}</strong> numbers extracted from file`
+                    + (rangeName ? ` → will import into <strong>${window.ui.escapeHtml(rangeName)}</strong>` : ' → <span style="color:var(--danger)">please select a range first</span>');
+            }
             window.ui.showToast(`Extracted ${numbers.length} number(s) from file`, 'success');
         };
         reader.onerror = () => window.ui.showToast('Could not read upload file', 'error');
