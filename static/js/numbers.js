@@ -660,8 +660,8 @@ const numbers = {
                             <div class="upload-toolbar">
                                 <label class="fly-label" for="up-text">Numbers *</label>
                                 <div class="upload-toolbar-actions">
-                                    <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('up-file').click()">${ICONS.upload} Upload TXT/CSV</button>
-                                    <input type="file" id="up-file" accept=".txt,.csv,text/plain,text/csv" style="display:none" onchange="window.numbers.loadUploadFile(this)">
+                                    <button type="button" class="fly-btn fly-btn-sm fly-btn-secondary" onclick="document.getElementById('up-file').click()">${ICONS.upload} Upload File (TXT/CSV/Excel)</button>
+                                    <input type="file" id="up-file" accept=".txt,.csv,.xlsx,.xls,text/plain,text/csv" style="display:none" onchange="window.numbers.loadUploadFile(this)">
                                 </div>
                             </div>
                             <textarea id="up-text" class="fly-input upload-textarea" rows="10" placeholder="+1234567890&#10;+9876543210&#10;001234567890"></textarea>
@@ -1021,11 +1021,23 @@ const numbers = {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            const text = String(e.target.result || '').replace(/,/g, '\n');
+            const raw = String(e.target.result || '');
+            const lines = raw.split(/[\r\n]+/);
+            const numbers = [];
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                // Split by tab, comma, semicolon, or 2+ spaces to get columns
+                const cols = line.trim().split(/\t|,|;|\s{2,}/);
+                // First column is the number - strip spaces and dashes
+                const candidate = (cols[0] || '').trim().replace(/[^0-9+]/g, '');
+                // Must be a valid phone number (7+ digits)
+                if (candidate && candidate.replace(/\+/g, '').length >= 7) {
+                    numbers.push(candidate);
+                }
+            }
             const target = document.getElementById('up-text');
-            if (target) target.value = text;
-            const count = text.split(/[\n;]+/).map(v => v.trim()).filter(Boolean).length;
-            window.ui.showToast(`Loaded ${count} number(s) from file`, 'success');
+            if (target) target.value = numbers.join('\n');
+            window.ui.showToast(`Extracted ${numbers.length} number(s) from file`, 'success');
         };
         reader.onerror = () => window.ui.showToast('Could not read upload file', 'error');
         reader.readAsText(file);
