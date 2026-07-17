@@ -350,55 +350,110 @@ const numbers = {
             const limit = Number(user.self_allocation_limit || 100);
             const used = myNums.pagination ? myNums.pagination.total : 0;
             const remaining = limitEnabled ? Math.max(0, limit - used) : null;
-
-            const limitBar = limitEnabled ? `
-                <div style="padding:12px 18px;background:rgba(99,102,241,.06);border-bottom:1px solid var(--border)">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px">
-                        <span>Allocation Quota</span>
-                        <strong>${used} / ${limit} used — <span style="color:${remaining===0?'var(--danger)':'var(--success)'}">${remaining} remaining</span></strong>
-                    </div>
-                    <div style="height:6px;background:#e2e8f0;border-radius:10px;overflow:hidden">
-                        <div style="height:100%;width:${Math.min(100,Math.round(used/limit*100))}%;background:${used>=limit?'var(--danger)':'var(--primary)'};border-radius:10px;transition:width .5s ease"></div>
-                    </div>
-                    ${remaining === 0 ? `<div style="margin-top:8px;color:var(--danger);font-size:12px;font-weight:600">${ICONS.alertCircle} Self allocation limit reached. Contact support for more numbers.</div>` : ''}
-                </div>` : '';
+            const allRanges = res.data || [];
+            const countries = [...new Set(allRanges.map(r => r.country_name).filter(Boolean))].sort();
 
             container.innerHTML = `
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Self-Allocation Marketplace</div>
-                    <div style="display:flex;gap:8px;align-items:center">
-                        <span class="badge badge-info">Weekly payout/SMS</span>
-                        <span class="badge badge-success">Monthly payout/SMS</span>
+            <div style="display:flex;flex-direction:column;gap:16px">
+
+                <!-- HOW IT WORKS banner -->
+                <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(16,185,129,.06));border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:16px 20px">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--primary)">📋 How Self-Allocation Works</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:12px;color:var(--text-secondary)">
+                        <div><span style="color:var(--primary);font-weight:700">1.</span> Browse ranges below and pick a country/range</div>
+                        <div><span style="color:var(--primary);font-weight:700">2.</span> Choose <strong>Weekly</strong> or <strong>Monthly</strong> payout term</div>
+                        <div><span style="color:var(--primary);font-weight:700">3.</span> Enter how many numbers you want</div>
+                        <div><span style="color:var(--primary);font-weight:700">4.</span> Numbers are assigned instantly to your account</div>
+                        <div><span style="color:var(--primary);font-weight:700">5.</span> You earn the listed payout for every SMS received</div>
+                        <div><span style="color:var(--primary);font-weight:700">6.</span> Numbers go live immediately — no waiting</div>
                     </div>
                 </div>
-                ${limitBar}
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:20px">
-                    ${res.data.map(r => {
-                        const disabled = r._count.available === 0 || (limitEnabled && remaining === 0);
-                        return `<div class="stat-card" style="display:flex;flex-direction:column;gap:10px">
-                            <div style="display:flex;justify-content:space-between;align-items:center">
-                                <h3 style="margin:0;font-size:15px;font-weight:700">${window.ui.escapeHtml(r.name)}</h3>
-                                <span class="badge badge-primary">${r.country_name || 'Global'}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;font-size:13px">
-                                <span>Weekly</span><strong>$${Number(r.weekly_rate ?? r.rate ?? 0).toFixed(4)}/SMS</strong>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;font-size:13px">
-                                <span>Monthly</span><strong style="color:var(--success)">$${Number(r.monthly_rate ?? r.rate ?? 0).toFixed(4)}/SMS</strong>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;font-size:13px">
-                                <span>Available</span><strong style="color:var(--success)">${r._count.available}</strong>
-                            </div>
-                            <button class="fly-btn" onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)}, ${r._count.available}, ${Number(r.weekly_rate ?? r.rate ?? 0)}, ${Number(r.monthly_rate ?? r.rate ?? 0)})" ${disabled ? 'disabled' : ''}>
-                                ${disabled && r._count.available > 0 ? 'Limit Reached' : 'Allocate Numbers'}
-                            </button>
-                        </div>`;
-                    }).join('')}
-                    ${res.data.length === 0 ? '<div class="empty-state"><p>No active ranges available</p></div>' : ''}
+
+                <!-- Stats + quota -->
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-card-label">My Numbers</div><div class="stat-card-value">${used}</div></div>
+                    <div class="stat-card"><div class="stat-card-label">Available Ranges</div><div class="stat-card-value">${allRanges.filter(r=>r._count.available>0).length}</div></div>
+                    <div class="stat-card"><div class="stat-card-label">Countries</div><div class="stat-card-value">${countries.length}</div></div>
+                    ${limitEnabled ? `<div class="stat-card" style="border:1px solid ${remaining===0?'var(--danger)':'var(--success)'}">
+                        <div class="stat-card-label">Quota Remaining</div>
+                        <div class="stat-card-value" style="color:${remaining===0?'var(--danger)':'var(--success)'}">${remaining}</div>
+                    </div>` : ''}
+                </div>
+
+                ${limitEnabled && remaining === 0 ? `
+                <div style="padding:14px 18px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:8px;font-size:13px;color:var(--danger);font-weight:600">
+                    ${ICONS.alertCircle} Allocation limit reached (${used}/${limit}). Contact your manager to increase your limit.
+                </div>` : ''}
+
+                <!-- Filter bar -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Available Ranges</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                            <input type="text" id="sa-search" class="search-input" placeholder="Search range..." style="width:160px"
+                                oninput="window.numbers.filterSelfAlloc()">
+                            <select id="sa-country" class="filter-select" onchange="window.numbers.filterSelfAlloc()">
+                                <option value="">All Countries</option>
+                                ${countries.map(c=>`<option value="${window.ui.escapeHtml(c)}">${window.ui.escapeHtml(c)}</option>`).join('')}
+                            </select>
+                            <select id="sa-avail" class="filter-select" onchange="window.numbers.filterSelfAlloc()">
+                                <option value="">All</option>
+                                <option value="1">Available only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Range table -->
+                    <div class="table-wrapper">
+                        <table class="fly-table">
+                            <thead><tr>
+                                <th>Range</th>
+                                <th>Country</th>
+                                <th>Weekly Payout</th>
+                                <th>Monthly Payout</th>
+                                <th>Available</th>
+                                <th>Action</th>
+                            </tr></thead>
+                            <tbody id="sa-tbody">
+                            ${allRanges.map(r => {
+                                const disabled = r._count.available === 0 || (limitEnabled && remaining === 0);
+                                const avail = r._count.available || 0;
+                                return `<tr data-range="${window.ui.escapeHtml(r.name)}" data-country="${window.ui.escapeHtml(r.country_name||'')}" data-avail="${avail}">
+                                    <td><strong>${window.ui.escapeHtml(r.name)}</strong></td>
+                                    <td>${window.ui.escapeHtml(r.country_name||'—')}</td>
+                                    <td><span class="badge badge-info">$${Number(r.weekly_rate??r.rate??0).toFixed(4)}</span></td>
+                                    <td><span class="badge badge-success">$${Number(r.monthly_rate??r.rate??0).toFixed(4)}</span></td>
+                                    <td><strong style="color:${avail>0?'var(--success)':'var(--text-secondary)'}">${avail}</strong></td>
+                                    <td>
+                                        <button class="fly-btn fly-btn-sm" ${disabled?'disabled':''}
+                                            onclick="window.numbers.showSelfAllocModal(${window.ui.jsArg(r.name)},${avail},${Number(r.weekly_rate??r.rate??0)},${Number(r.monthly_rate??r.rate??0)})">
+                                            ${disabled&&avail>0?'Limit Reached':avail===0?'Unavailable':'Allocate'}
+                                        </button>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                            ${allRanges.length===0?'<tr class="empty-row"><td colspan="6">No active ranges available</td></tr>':''}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>`;
         } catch (e) { container.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p><button class="fly-btn" onclick="window.numbers.renderSelfAllocation(document.getElementById('page-content'))">Retry</button></div>`; }
+    },
+
+    filterSelfAlloc() {
+        const q  = (document.getElementById('sa-search')?.value||'').toLowerCase();
+        const co = (document.getElementById('sa-country')?.value||'').toLowerCase();
+        const av = document.getElementById('sa-avail')?.value||'';
+        document.querySelectorAll('#sa-tbody tr').forEach(row => {
+            const name    = (row.dataset.range||'').toLowerCase();
+            const country = (row.dataset.country||'').toLowerCase();
+            const avail   = parseInt(row.dataset.avail||0);
+            const matchQ  = !q  || name.includes(q) || country.includes(q);
+            const matchC  = !co || country.includes(co);
+            const matchAv = !av || avail > 0;
+            row.style.display = matchQ && matchC && matchAv ? '' : 'none';
+        });
     },
 
     async showSelfAllocModal(range, available, weeklyRate, monthlyRate) {
